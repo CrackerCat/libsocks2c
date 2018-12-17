@@ -29,6 +29,10 @@ public:
 
     ClientUdpProxy(){}
 
+	~ClientUdpProxy()
+	{
+		LOG_DEBUG("ClientUdpProxy die")
+	}
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
     {
@@ -49,6 +53,14 @@ public:
 
         this->RunIO();
     }
+
+
+	void StopProxy()
+	{
+		this->pacceptor_->cancel();
+		this->pacceptor_.reset();
+	}
+
 
 private:
 
@@ -76,7 +88,8 @@ private:
 
                 if (ec || bytes_read == 0)
                 {
-                    LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
+					LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
+					if (ec == boost::system::errc::operation_canceled) return;
                     continue;
                 }
 

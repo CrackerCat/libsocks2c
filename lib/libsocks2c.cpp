@@ -8,16 +8,19 @@
 #include "../src/protocol/custom/aes256gcmwithobf/aes256gcmwithobf.h"
 #elif  PROTOCOL_CHACHA20POLY1305
 #include "../src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf.h"
-#define aes256gcmwithobf_Protocol chacha20poly1305withobf_Protocol
+#define Protocol chacha20poly1305withobf_Protocol
 #elif  PROTOCOL_CHACHA20
 #include "../src/protocol/custom/chacha20/chacha20.h"
-#define aes256gcmwithobf_Protocol chacha20_Protocol
+#define Protocol chacha20_Protocol
 #endif
 
 static boost::asio::io_context* pio_context_ = nullptr;
 static bool isLogInited(false);
 static std::mutex log_mutex;
 static std::mutex io_mutex;
+
+static ClientProxy<Protocol> client_handle;
+static ServerProxy<Protocol> server_handle;
 
 void initLog()
 {
@@ -35,40 +38,34 @@ void initLog()
 
 }
 
-void LibSocks2c::RunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout) {
+void LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 
     initLog();
-    pio_context_ = new boost::asio::io_context();
 
-    {
-        Socks2cFactory::CreateClientProxyWithContext<aes256gcmwithobf_Protocol>(pio_context_, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
-    }
-
-    pio_context_->run();
-}
-void LibSocks2c::RunClientMt(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout) {
-    initLog();
-    pio_context_ = new boost::asio::io_context();
-
-    {
-        Socks2cFactory::CreateClientProxyWithContext<aes256gcmwithobf_Protocol>(pio_context_, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
-    }
-    pio_context_->run();
+	client_handle = Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
 
 }
 
+void LibSocks2c::StopClient()
+{	
+	auto tcph = std::get<0>(client_handle);
+	tcph->StopProxy();
+	std::get<0>(client_handle).reset();
+
+	auto udph = std::get<1>(client_handle);
+	udph->StopProxy();
+	udph->StopIO();
+	std::get<1>(client_handle).reset();
+
+}
 
 
-void LibSocks2c::RunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
+void LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 
     initLog();
-    pio_context_ = new boost::asio::io_context();
 
-    {
-        Socks2cFactory::CreateServerProxyWithContext<aes256gcmwithobf_Protocol>(pio_context_, proxyKey, server_ip, server_port, timeout);
-    }
+	server_handle = Socks2cFactory::CreateServerProxy<Protocol>(proxyKey, server_ip, server_port, timeout);
 
-    pio_context_->run();
 }
 
 void LibSocks2c::RunServerMt(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout)
@@ -77,9 +74,9 @@ void LibSocks2c::RunServerMt(std::string proxyKey, std::string server_ip, uint16
 
 #ifndef __linux__
 	LOG_INFO("Proxy Server running on win32 or mac is only for testing")
-    RunServer(proxyKey, server_ip, server_port, timeout);
+    AsyncRunServer(proxyKey, server_ip, server_port, timeout);
 #else
-    auto proxytuple = Socks2cFactory::CreateServerProxyMt<aes256gcmwithobf_Protocol>(proxyKey, server_ip, server_port, timeout);
+    auto proxytuple = Socks2cFactory::CreateServerProxyMt<Protocol>(proxyKey, server_ip, server_port, timeout);
 #endif
 
 }
@@ -89,7 +86,7 @@ void LibSocks2c::RunServerWithExternContext(boost::asio::io_context &io_context,
     initLog();
 
     {
-        Socks2cFactory::CreateServerProxyWithContext<aes256gcmwithobf_Protocol>(&io_context, proxyKey, server_ip, server_port, timeout);
+        Socks2cFactory::CreateServerProxyWithContext<Protocol>(&io_context, proxyKey, server_ip, server_port, timeout);
     }
 
 }
@@ -98,22 +95,20 @@ void LibSocks2c::RunClientWithExternContext(boost::asio::io_context &io_context,
     initLog();
 
     {
-        Socks2cFactory::CreateClientProxyWithContext<aes256gcmwithobf_Protocol>(&io_context, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
+        Socks2cFactory::CreateClientProxyWithContext<Protocol>(&io_context, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
     }
 
 }
 
-void LibSocks2c::Stop() {
-	std::lock_guard<std::mutex> lg(io_mutex);
+void LibSocks2c::StopServer() {
+	auto tcph = std::get<0>(server_handle);
+	tcph->StopProxy();
+	std::get<0>(client_handle).reset();
 
-	if (!pio_context_)
-	{
-		printf("iocontext already stop\n");
-		return;
-	}
-	pio_context_->stop();
-	delete pio_context_;
-	pio_context_ = nullptr;
+	auto udph = std::get<1>(server_handle);
+	udph->StopProxy();
+	udph->StopIO();
+	std::get<1>(server_handle).reset();
 }
 
 

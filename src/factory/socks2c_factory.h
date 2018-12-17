@@ -8,11 +8,13 @@
 
 #ifdef __linux__
 #include "../net/tcp/server/server_tcp_proxy_mt.h"
-//#include "../net/tcp/client/client_tcp_proxy_mt.h"
 #endif
 
-#define ServerProxy std::tuple<boost::shared_ptr<ServerTcpProxy<Protocol>>, boost::shared_ptr<ServerUdpProxy<Protocol>>>
-#define ClientProxy std::tuple<boost::shared_ptr<ClientTcpProxy<Protocol>>, boost::shared_ptr<ClientUdpProxy<Protocol>>>
+template<class Protocol>
+using ServerProxy = std::tuple<boost::shared_ptr<ServerTcpProxy<Protocol>>, boost::shared_ptr<ServerUdpProxy<Protocol>>>;
+
+template<class Protocol>
+using ClientProxy = std::tuple<boost::shared_ptr<ClientTcpProxy<Protocol>>, boost::shared_ptr<ClientUdpProxy<Protocol>>>;
 
 class Socks2cFactory {
 
@@ -20,10 +22,9 @@ public:
 
 	// if defined MULTITHREAD_IO, then ServerTcpProxy would be multithread version
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
-	// call Join() after getting the proxy pair
 	// use CreateServerProxyMt() instead on linux which provide better performance
     template<class Protocol>
-    static ServerProxy CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
+    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
         tcps->SetProxyKey(proxyKey);
@@ -35,28 +36,27 @@ public:
         udps->SetExpireTime(timeout);
         udps->StartProxy(server_ip, server_port);
 
-        return ServerProxy(tcps, udps);
+        return ServerProxy<Protocol>(tcps, udps);
     }
 
 	// if defined MULTITHREAD_IO, then ClientTcpProxy would be multithread version
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
-	// call Join() after getting the proxy pair
     template<class Protocol>
-    static ClientProxy CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
+    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ClientTcpProxy<Protocol>>();
+
+		tcps->SetSocks5Host(socks5_ip, socks5_port);
         tcps->SetProxyKey(proxyKey);
         tcps->SetProxyInfo(server_ip, server_port);
-        tcps->SetExpireTime(timeout);
-        tcps->StartProxy(socks5_ip, socks5_port);
+        tcps->StartProxy();
 
         auto udps = boost::make_shared<ClientUdpProxy<Protocol>>();
         udps->SetProxyKey(proxyKey);
         udps->SetProxyInfo(server_ip, server_port);
-        udps->SetExpireTime(timeout);
         udps->StartProxy(socks5_ip, socks5_port);
 
-        return ClientProxy(tcps, udps);
+        return ClientProxy<Protocol>(tcps, udps);
     }
 
 #ifdef __linux__
@@ -82,7 +82,7 @@ public:
 		Two Proxy function below are single threaded, you need to manage the io_context but don't run it on different thread
 	*/
     template<class Protocol>
-    static ServerProxy CreateServerProxyWithContext(boost::asio::io_context* io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
+    static ServerProxy<Protocol> CreateServerProxyWithContext(boost::asio::io_context* io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
         tcps->SetIOContext(io_context);
@@ -98,19 +98,19 @@ public:
         udps->SetProxyInfo(server_ip, server_port);
         udps->StartProxy(server_ip, server_port);
 
-        return ServerProxy(tcps, udps);
+        return ServerProxy<Protocol>(tcps, udps);
     }
 
 
     template<class Protocol>
-    static ClientProxy CreateClientProxyWithContext(boost::asio::io_context* io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
+    static ClientProxy<Protocol> CreateClientProxyWithContext(boost::asio::io_context* io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ClientTcpProxy<Protocol>>();
         tcps->SetIOContext(io_context);
         tcps->SetProxyKey(proxyKey);
         tcps->SetProxyInfo(server_ip, server_port);
         tcps->SetExpireTime(timeout);
-        tcps->StartProxy(socks5_ip, socks5_port);
+        tcps->StartProxy();
 
         auto udps = boost::make_shared<ClientUdpProxy<Protocol>>();
         udps->SetIOContext(io_context);
@@ -119,7 +119,7 @@ public:
         udps->SetExpireTime(timeout);
         udps->StartProxy(socks5_ip, socks5_port);
 
-        return ClientProxy(tcps, udps);
+        return ClientProxy<Protocol>(tcps, udps);
     }
 };
 

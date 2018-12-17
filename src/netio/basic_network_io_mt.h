@@ -23,13 +23,17 @@ public:
 
     BasicNetworkIO_MT(){
 
+#ifdef MULTITHREAD_IO
 		ioNum = boost::thread::physical_concurrency();
-
+#else
+		ioNum = 1;
+#endif
+		//return if vio was created previously
 		if (vpio_context_.size() != 0) return;
 
         for (unsigned int i = 0; i < ioNum; i++)
         {
-            vpio_context_.emplace_back(new IO_CONTEXT(BOOST_ASIO_CONCURRENCY_HINT_UNSAFE_IO));
+            vpio_context_.emplace_back(new IO_CONTEXT());
             vwork_guard_.emplace_back(boost::asio::make_work_guard(*vpio_context_[i]));
         }
     }
@@ -57,6 +61,21 @@ public:
 		thread_group_.join_all();
 	}
 
+
+	void StopIO()
+	{
+		for (unsigned int i = 0; i < ioNum; i++)
+		{
+			vpio_context_[i]->stop();
+		}
+
+		this->thread_group_.join_all();
+
+		isRunning = false;
+	}
+
+
+
 protected:
 
     void RunIO()
@@ -64,13 +83,23 @@ protected:
         if (!use_buildin_context) return;
 		if (isRunning) return;
 
+		if (!firstRun)
+		{
+			for (unsigned int i = 0; i < ioNum; ++i)
+			{
+				LOG_DEBUG("restarting io {}", i);
+				vpio_context_[i]->restart();
+			}
+		}
+
         for(unsigned int i = 0; i < ioNum; ++i)
         {
-			//printf("running thread %d\n", i);
+			LOG_DEBUG("running thread {}", i);
             thread_group_.create_thread(boost::bind(&boost::asio::io_context::run, vpio_context_[i]));
         }
 
 		isRunning = true;
+		firstRun = false;
     }
 
 
@@ -98,11 +127,13 @@ protected:
         return vpio_context_.size();
     }
 
-private:
-    THREAD_GROUP thread_group_;
-
 	static VWORK_GUARD vwork_guard_;
-    static VPIO_CONTEXT vpio_context_;
+	static VPIO_CONTEXT vpio_context_;
+	THREAD_GROUP thread_group_;
+
+private:
+
+	static bool firstRun;
 
 	static bool isRunning;
 	static bool use_buildin_context;

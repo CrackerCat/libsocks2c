@@ -32,18 +32,25 @@ public:
         last_active_time = time(nullptr);
     }
 
+	~ClientTcpProxy()
+	{
+		LOG_DEBUG("ClientTcpProxy die")
+	}
+
     void EnableDnsResolver()
     {
         resolve_dns = true;
     }
 
-    virtual void StartProxy(std::string local_address, uint16_t local_port) override
+	void SetSocks5Host(std::string ip, uint16_t port)
+	{
+		this->local_address = ip;
+		this->local_port = port;
+	}
+
+    virtual void StartProxy()
     {
         pacceptor_ = std::make_unique<ACCEPTOR>(this->GetIOContext());
-//  we currently don't set expire time for client
-//        ptimer_ = std::make_unique<TIMER>(this->GetIOContext());
-//        ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
-//        ptimer_->async_wait(boost::bind(&ClientTcpProxy::onTimeExpire, this, boost::asio::placeholders::error));
 
         auto ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(local_address),local_port);
 
@@ -91,9 +98,19 @@ public:
     }
 
 
+	void StopProxy()
+	{
+		this->pacceptor_->cancel();
+		this->pacceptor_.reset();
+	}
+
+
 private:
 
     PACCEPTOR pacceptor_;
+
+	std::string local_address;
+	uint16_t local_port;
 
     bool resolve_dns = false;
 

@@ -23,36 +23,18 @@ namespace boost
 class OS_Dll_API LibSocks2c {
 
 public:
-    /*
-     *    block until interrupt,
-     */
-    static void RunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+
+    static void AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 	
-	/*
-	 * 	  Multi thread version
-	 */
-	static void RunClientMt(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+	static void StopClient();
 
-    /*
-     *    block until timeout or interrupt
-     */
-    static void RunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
-	
-	/*
-	 * 	  Multi thread version
-	 */
-    static void RunServerMt(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+    static void AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
-	/*
-	 *    @Thread Safe
-	 *    stop RunServer() or RunClient()
-	 */
-    static void Stop();
+    static void AsyncRunServerMt(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
-    /*
-     *    @Thread Safe
-     *    manage io_context yourself
-     */
+    static void StopServer();
+
+
     static void RunClientWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
     static void RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);

@@ -1,23 +1,34 @@
 cmake_minimum_required(VERSION 3.10)
-project(socks2c_core)
+project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
 add_definitions(-DLOG_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
+
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_CXX_FLAGS '-fPIC')
-set(CMAKE_C_FLAGS '-fPIC')
-
-include_directories("/usr/local/include")
+IF (WIN32)
+  add_definitions(-D_WIN32_WINNT=0x0A00)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+  add_definitions(-DSODIUM_STATIC)
+  
+  include_directories("C:/Users/mario/Documents/spdlog-1.2.1/include")
+  include_directories("C:/Users/mario/Documents/libsodium-1.0.16/src/libsodium/include")
+ELSE()
 IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     include_directories("/Users/mario/Documents/spdlog-1.2.1/include")
 ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
     include_directories("/root/spdlog-1.2.1/include")
 ENDIF()
+include_directories("/usr/local/include")
+set(CMAKE_CXX_FLAGS '-fPIC')
+set(CMAKE_C_FLAGS '-fPIC')
+ENDIF()
 
 
-add_executable(socks2c_core
+
+
+add_executable(libsocks2c
         main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
@@ -40,8 +51,6 @@ add_executable(socks2c_core
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf_helper.h
         src/protocol/client_proxy_protocol.h src/utils/randomNumberGenerator.cpp
         src/utils/randomNumberGenerator.h src/protocol/server_proxy_protocol.h
-        src/net/tcp/client/client_tcp_proxy_mt.h
-        include/socks2c.h
 
         src/net/tcp/server/server_tcp_proxy.h
         src/net/tcp/server/server_tcp_proxy_session.h
@@ -54,19 +63,21 @@ add_executable(socks2c_core
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp src/net/udp/fec.cpp src/net/udp/fec.h test/multiservertest.h test/multiservertestwithmultiio.h test/runclient.h)
 
-
-target_link_libraries(socks2c_core pthread)
-
-target_link_libraries(socks2c_core "/usr/local/lib/libsodium.a")
+IF (WIN32)
+target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/x64/Release/v141/static/libsodium.lib")
+ELSE()
+target_link_libraries(libsocks2c pthread)
+target_link_libraries(libsocks2c "/usr/local/lib/libsodium.a")
+ENDIF()
 
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.68.0 REQUIRED system coroutine regex thread)
+find_package(Boost REQUIRED system coroutine regex thread)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    target_link_libraries(socks2c_core ${Boost_LIBRARIES})
+    target_link_libraries(libsocks2c ${Boost_LIBRARIES})
 endif ()
 
 

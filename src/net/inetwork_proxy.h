@@ -25,7 +25,7 @@ public:
      *  block when using build-in context
      *  no block if you provide your own context
      */
-    virtual void StartProxy(std::string local_address, uint16_t local_port) = 0;
+	virtual void StartProxy(std::string local_address, uint16_t local_port) {}
 
     /*
      *  Key for client-server connection, max length is 32U

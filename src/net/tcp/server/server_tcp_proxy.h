@@ -96,6 +96,11 @@ public:
 
 	}
 
+	void StopProxy()
+	{
+		this->pacceptor_->cancel();
+		this->pacceptor_.reset();
+	}
 
 private:
 
