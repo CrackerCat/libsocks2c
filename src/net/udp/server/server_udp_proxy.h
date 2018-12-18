@@ -27,7 +27,7 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 public:
 
 	ServerUdpProxy() {
-		//LOG_DEBUG("[{}] UDP Server created", (void*)this)
+		LOG_DEBUG("[{}] UDP Server created", (void*)this)
 
 	}
 	~ServerUdpProxy() {

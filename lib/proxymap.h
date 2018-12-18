@@ -19,8 +19,8 @@ public:
         std::lock_guard<std::mutex> lg(map_mutex);
 
         auto sit = server_map.find(port);
-        //auto cit = client_map.find(port);
-        if (sit != server_map.end()) return true;
+        auto cit = client_map.find(port);
+        if (sit != server_map.end() && sit != client_map.end()) return true;
 
         return false;
     }
@@ -69,6 +69,35 @@ public:
         return false;
     }
 
+    bool StopClient(int port)
+    {
+        std::lock_guard<std::mutex> lg(map_mutex);
+
+        auto sit = server_map.find(port);
+        if (sit == server_map.end()) return false;
+        if (std::get<0>(sit->second)->Stopped()) return false;
+        std::get<0>(sit->second)->StopProxy();
+        std::get<1>(sit->second)->StopProxy();
+        return true;
+    }
+
+
+    bool ClearClient(int port)
+    {
+        std::lock_guard<std::mutex> lg(map_mutex);
+
+        auto sit = server_map.find(port);
+        if (sit == server_map.end()) return true;
+
+        if (std::get<1>(sit->second)->ShouldClose() && std::get<0>(sit->second)->ShouldClose())
+        {
+            std::get<0>(sit->second).reset();
+            std::get<1>(sit->second).reset();
+            server_map.erase(port);
+            return true;
+        }
+        return false;
+    }
 
 
 private:

@@ -41,7 +41,14 @@ void LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uin
 	Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
 
 }
+bool LibSocks2c::StopClient(int id)
+{
 
+}
+bool LibSocks2c::ClearClient(int id)
+{
+    
+}
 
 int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 

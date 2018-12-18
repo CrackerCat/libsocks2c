@@ -70,7 +70,7 @@ protected:
 
     PTIMER ptimer_;
     time_t last_active_time;
-    time_t expire_time = 600;
+    time_t expire_time = 0;
 
 
     std::string server_ip;

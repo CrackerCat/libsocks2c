@@ -3,7 +3,6 @@ project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
 add_definitions(-DLOG_DEBUG_DETAIL)
-add_definitions(-DMULTITHREAD_IO)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -61,7 +60,15 @@ add_executable(libsocks2c
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
-        src/utils/trafficcounter.cpp src/net/udp/fec.cpp src/net/udp/fec.h test/multiservertest.h test/multiservertestwithmultiio.h test/runclient.h test/servermt.h  lib/proxymap.cpp lib/proxymap.h)
+        src/utils/trafficcounter.cpp
+        src/net/udp/fec.cpp
+        src/net/udp/fec.h
+        test/multiservertest.h
+        test/multiservertestwithmultiio.h
+        test/runclient.h
+        test/example/runservermt.h
+        lib/proxymap.cpp
+        lib/proxymap.h test/servermt_loop.h test/example/runclient.h)
 
 IF (WIN32)
 target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/x64/Release/v141/static/libsodium.lib")
