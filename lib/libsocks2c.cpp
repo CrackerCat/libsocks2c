@@ -47,7 +47,7 @@ bool LibSocks2c::StopClient(int id)
 }
 bool LibSocks2c::ClearClient(int id)
 {
-    
+
 }
 
 int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
