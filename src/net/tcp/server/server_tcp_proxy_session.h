@@ -37,7 +37,7 @@ public:
 
 	~ServerTcpProxySession()
 	{
-		LOG_DETAIL(LOG_DEBUG("[{:p}] tcp session die", (void*)this))
+		LOG_DETAIL(LOG_DEBUG("[{}] tcp session die", (void*)this))
 	}
 
 
@@ -81,7 +81,7 @@ private:
 		this->local_socket_.set_option(boost::asio::ip::tcp::no_delay(true), ec);
 		if (ec)
 		{
-			LOG_DEBUG("setNoDelay err")
+			LOG_DEBUG("[{}] setNoDelay err", (void*)this)
 				return false;
 		}
 		return true;
@@ -127,7 +127,7 @@ private:
 
 		if (socks5_req_header->VER != 0x05 || socks5_req_header->RSV != 0x00)
 		{
-			LOG_DEBUG("VER or RSV field of handleSocks5Request err, drop connection")
+			LOG_DEBUG("[{}] VER or RSV field of handleSocks5Request err, drop connection", (void*)this)
 				return false;
 		}
 
@@ -156,24 +156,24 @@ private:
 
 			if (!Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5_req_header, ip_str, port))
 			{
-				LOG_DEBUG("parseDomainPortFromSocks5Request err ")
-					return false;
+				LOG_DEBUG("[{}] parseDomainPortFromSocks5Request err ", (void*)this)
+				return false;
 			}
 
 			boost::system::error_code ec;
 			boost::asio::ip::tcp::resolver::query query{ ip_str,std::to_string(port),boost::asio::ip::resolver_query_base::all_matching };
 
-			LOG_INFO("resolving {}:{}", ip_str.c_str(), port)
+			LOG_INFO("[{}] resolving {}:{}", (void*)this, ip_str.c_str(), port)
 
 				auto dns_result = dns_resolver_.async_resolve(query, yield[ec]);
 
 			if (ec)
 			{
-				LOG_DEBUG("async_resolve {} err --> {}", ip_str.c_str(), ec.message().c_str())
+				LOG_DEBUG("[{}] async_resolve {} err --> {}", (void*)this, ip_str.c_str(), ec.message().c_str())
 					return false;
 			}
 
-			LOG_INFO("Dns Resolved: {} --> {}:{}", ip_str.c_str(), dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
+			LOG_INFO("[{}] Dns Resolved: {} --> {}:{}", (void*)this, ip_str.c_str(), dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
 
 			if (!openRemoteSocket(dns_result->endpoint())) return false;
 
@@ -185,7 +185,7 @@ private:
 		}
 		else
 		{
-			LOG_DEBUG("unknow ATYP")
+			LOG_DEBUG("[{}] unknow ATYP",(void*)this)
 				return false;
 		}
 
@@ -201,7 +201,7 @@ private:
 
 		if (ec)
 		{
-			LOG_ERROR("err when opening remote_socket_ --> {}", ec.message().c_str())
+			LOG_ERROR("[{}] err when opening remote_socket_ --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
 
@@ -211,14 +211,14 @@ private:
 		remote_socket_.set_option(reuse_address, ec);
 		if (ec)
 		{
-			LOG_ERROR("err reuse_address remote_socket_ --> {}", ec.message().c_str())
+			LOG_ERROR("[{}] err reuse_address remote_socket_ --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
 
 		remote_socket_.set_option(no_delay, ec);
 		if (ec)
 		{
-			LOG_ERROR("err no_delay remote_socket_ --> {}", ec.message().c_str())
+			LOG_ERROR("[{}] err no_delay remote_socket_ --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
 		return true;
@@ -281,11 +281,11 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("handleTunnelFlow async_read from remote err --> {}", ec.message().c_str())
+			LOG_DEBUG("[{}] handleTunnelFlow async_read from remote err --> {}", (void*)this, ec.message().c_str())
 				return 0;
 		}
 
-		LOG_DETAIL(LOG_DEBUG("read {} bytes from remote", bytes_read))
+		LOG_DETAIL(LOG_DEBUG("[{}] read {} bytes from remote", (void*)this, bytes_read))
 
 			return bytes_read;
 	}
@@ -309,12 +309,11 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("sendToLocal err --> {}", ec.message().c_str())
-				return false;
+			LOG_DEBUG("[{}] sendToLocal err --> {}", (void*)this, ec.message().c_str())
+			return false;
 		}
-		LOG_DETAIL(LOG_DEBUG("send {} bytes to local", bytes_write))
 
-			return true;
+		return true;
 	}
 
 
@@ -330,7 +329,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("handleTunnelFlow read header err --> {}", ec.message().c_str())
+			LOG_DEBUG("[{}] handleTunnelFlow read header err --> {}", (void*)this, ec.message().c_str())
 				return 0;
 		}
 
@@ -344,7 +343,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("handleTunnelFlow read payload err --> {}", ec.message().c_str())
+			LOG_DEBUG("[{}] handleTunnelFlow read payload err --> {}", (void*)this, ec.message().c_str())
 				return 0;
 		}
 
@@ -361,10 +360,10 @@ private:
 		uint64_t bytes_write = async_write(this->remote_socket_, boost::asio::buffer(local_recv_buff_ + Protocol::ProtocolHeader::Size(), bytes), yield[ec]);
 		if (ec)
 		{
-			LOG_DEBUG("sendToRemote payload err --> {}", ec.message().c_str())
+			LOG_DEBUG("[{}] sendToRemote payload err --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
-		LOG_DEBUG("send {} bytes to remote", bytes_write)
+		LOG_DEBUG("[{}] send {} bytes to remote", (void*)this, bytes_write)
 			return true;
 	}
 
@@ -374,16 +373,16 @@ private:
 	bool connectToRemote(boost::asio::yield_context yield, boost::asio::ip::tcp::endpoint ep)
 	{
 		boost::system::error_code ec;
-		LOG_INFO("connecting to --> {}:{}", ep.address().to_string().c_str(), ep.port())
+		LOG_INFO("[{}] connecting to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
 
 			this->remote_socket_.async_connect(ep, yield[ec]);
 
 		if (ec)
 		{
-			LOG_DEBUG("can't connect to remote --> {}", ec.message().c_str())
+			LOG_DEBUG("[{}] can't connect to remote --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
-		LOG_DEBUG("connected to --> {}:{}", ep.address().to_string().c_str(), ep.port())
+		LOG_DEBUG("[{}] connected to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
 
 			return true;
 	}
@@ -398,7 +397,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("this->local_socket_.remote_endpoint Transport endpoint is not connected")
+			LOG_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected", (void*)this)
 				ec.clear();
 		}
 

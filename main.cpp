@@ -1,4 +1,4 @@
-#include "test/multiservertest.h"
+#include "test/servermt.h"
 
 int main() {
 

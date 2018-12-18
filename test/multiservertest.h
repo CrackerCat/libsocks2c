@@ -5,6 +5,8 @@
 #ifdef _WIN32
 #include <Windows.h>
 #define sleep(x) Sleep(x)
+#else
+#include <unistd.h>
 #endif
 
 void test()
@@ -12,15 +14,15 @@ void test()
 	while (true)
 	{
 		printf("enter to start\n");
+		fflush(stdout);
 		getchar();
-		LibSocks2c::AsyncRunServer("12345678", "::0", 2222, 3000);		sleep(1000);
+		LibSocks2c::AsyncRunServer("12345678", "::0", 2222, 3000);
 		printf("enter to stop\n");
+		fflush(stdout);
 		getchar();
 		LibSocks2c::StopServer();
-		sleep(1000);
 	}
 	
 
-	sleep(30000);
 
 }

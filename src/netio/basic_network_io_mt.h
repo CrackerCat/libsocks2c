@@ -33,7 +33,7 @@ public:
 
         for (unsigned int i = 0; i < ioNum; i++)
         {
-            vpio_context_.emplace_back(new IO_CONTEXT());
+            vpio_context_.emplace_back(new IO_CONTEXT(BOOST_ASIO_CONCURRENCY_HINT_SAFE));
             vwork_guard_.emplace_back(boost::asio::make_work_guard(*vpio_context_[i]));
         }
     }
@@ -62,19 +62,6 @@ public:
 	}
 
 
-	void StopIO()
-	{
-		for (unsigned int i = 0; i < ioNum; i++)
-		{
-			vpio_context_[i]->stop();
-		}
-
-		this->thread_group_.join_all();
-
-		isRunning = false;
-	}
-
-
 
 protected:
 
@@ -83,15 +70,6 @@ protected:
         if (!use_buildin_context) return;
 		if (isRunning) return;
 
-		if (!firstRun)
-		{
-			for (unsigned int i = 0; i < ioNum; ++i)
-			{
-				LOG_DEBUG("restarting io {}", i);
-				vpio_context_[i]->restart();
-			}
-		}
-
         for(unsigned int i = 0; i < ioNum; ++i)
         {
 			LOG_DEBUG("running thread {}", i);
@@ -99,7 +77,6 @@ protected:
         }
 
 		isRunning = true;
-		firstRun = false;
     }
 
 
@@ -127,13 +104,12 @@ protected:
         return vpio_context_.size();
     }
 
-	static VWORK_GUARD vwork_guard_;
-	static VPIO_CONTEXT vpio_context_;
+    static VWORK_GUARD vwork_guard_;
+    static VPIO_CONTEXT vpio_context_;
 	THREAD_GROUP thread_group_;
 
 private:
 
-	static bool firstRun;
 
 	static bool isRunning;
 	static bool use_buildin_context;

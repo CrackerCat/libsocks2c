@@ -24,7 +24,6 @@ public:
 		downstream_bytes += size;
 	}
 
-
 	uint64_t GetUpstreamBytes()
 	{
 		return upstream_bytes;

@@ -13,6 +13,7 @@ public:
     void SetLevel(spdlog::level::level_enum log_level)
     {
         Logger::GetInstance()->GetConsole()->set_level(log_level);
+
     }
 
 private:

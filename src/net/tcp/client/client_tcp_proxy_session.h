@@ -528,16 +528,16 @@ private:
     bool connectToRemote(boost::asio::yield_context& yield)
     {
         boost::system::error_code ec;
-        LOG_DEBUG("[{:p}] connecting to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
+        LOG_DEBUG("[{}] connecting to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
 
         this->remote_socket_.async_connect(remote_ep_, yield[ec]);
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] can't connect to remote --> {}",(void*)this, ec.message().c_str())
+            LOG_DEBUG("[{}] can't connect to remote --> {}",(void*)this, ec.message().c_str())
             return false;
         }
-		LOG_DEBUG("[{:p}] connected to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
+		LOG_DEBUG("[{}] connected to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
 
         return true;
     }
@@ -550,7 +550,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] this->local_socket_.remote_endpoint Transport endpoint is not connected",(void*)this)
+            LOG_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected",(void*)this)
         }
 
         auto num = RandomNumberGenerator::GetRandomIntegerBetween<uint16_t>(3, 10);

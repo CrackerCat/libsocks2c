@@ -26,7 +26,7 @@ public:
 
 	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket.get_io_context()), timer_(local_socket.get_io_context())
 	{
-		LOG_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
+		//LOG_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
 		this->remote_socket_.open(remote_ep_.protocol());
 		this->last_update_time = time(nullptr);
@@ -219,14 +219,14 @@ private:
 		if (ec)
 		{
 			LOG_DEBUG("Udp timer err --> {}", ec.message().c_str())
-				this->session_map_.erase(local_ep_);
+			this->session_map_.erase(local_ep_);
 			return;
 		}
 
 
 		if (time(nullptr) - last_update_time > SESSION_TIMEOUT)
 		{
-			LOG_DEBUG("Udp session {}:{} timeout --> {}", local_ep_.address().to_string().c_str(), local_ep_.port(), ec.message().c_str())
+			LOG_DEBUG("Udp session {}:{} timeout", local_ep_.address().to_string().c_str(), local_ep_.port())
 
 				boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);

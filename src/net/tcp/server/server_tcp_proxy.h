@@ -58,7 +58,7 @@ public:
 		if (ec)
 		{
 			LOG_ERROR("err opening acceptor --> {}", ec.message().c_str())
-				return;
+			return;
 		}
 
 
@@ -99,7 +99,7 @@ public:
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
-		this->pacceptor_.reset();
+		//this->pacceptor_.reset();
 	}
 
 private:
@@ -145,8 +145,6 @@ private:
 				return;
 		}
 		LOG_DEBUG("[{}] TCP onTimeExpire", (void*)this)
-
-		//LOG_DEBUG("[{}] now {}, last_active_time {}", (void*)this, time(nullptr), last_active_time)
 
 		if (time(nullptr) - last_active_time > expire_time)
 		{

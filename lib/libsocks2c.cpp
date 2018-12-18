@@ -3,6 +3,7 @@
 #include "../src/factory/socks2c_factory.h"
 #include <boost/asio/io_context.hpp>
 #include <mutex>
+#include "proxymap.h"
 
 #ifdef PROTOCOL_AES256GCM
 #include "../src/protocol/custom/aes256gcmwithobf/aes256gcmwithobf.h"
@@ -14,13 +15,8 @@
 #define Protocol chacha20_Protocol
 #endif
 
-static boost::asio::io_context* pio_context_ = nullptr;
 static bool isLogInited(false);
 static std::mutex log_mutex;
-static std::mutex io_mutex;
-
-static ClientProxy<Protocol> client_handle;
-static ServerProxy<Protocol> server_handle;
 
 void initLog()
 {
@@ -32,7 +28,7 @@ void initLog()
         Logger::GetInstance()->GetConsole()->set_level(spdlog::level::debug);
         isLogInited = true;
 #ifndef MULTITHREAD_IO
-        LOG_INFO("This build without MULTITHREAD_IO definition, running in single thread mode")
+        LOG_INFO("This build without MULTITHREAD_IO definition")
 #endif
     }
 
@@ -42,44 +38,41 @@ void LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uin
 
     initLog();
 
-	client_handle = Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
-
-}
-
-void LibSocks2c::StopClient()
-{	
-	auto tcph = std::get<0>(client_handle);
-	tcph->StopProxy();
-	std::get<0>(client_handle).reset();
-
-	auto udph = std::get<1>(client_handle);
-	udph->StopProxy();
-	udph->StopIO();
-	std::get<1>(client_handle).reset();
+	Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
 
 }
 
 
-void LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
+int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 
     initLog();
 
-	server_handle = Socks2cFactory::CreateServerProxy<Protocol>(proxyKey, server_ip, server_port, timeout);
+    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(server_port)) return 0;
 
+    auto handle = Socks2cFactory::CreateServerProxy<Protocol>(proxyKey, server_ip, server_port, timeout);
+
+    auto res = ProxyMap<Protocol>::GetInstance()->Insert(server_port, handle);
+
+    if (res) return server_port;
+
+    return 0;
 }
 
-void LibSocks2c::RunServerMt(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout)
+bool LibSocks2c::StopServer(int id)
 {
-	initLog();
+    if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
 
-#ifndef __linux__
-	LOG_INFO("Proxy Server running on win32 or mac is only for testing")
-    AsyncRunServer(proxyKey, server_ip, server_port, timeout);
-#else
-    auto proxytuple = Socks2cFactory::CreateServerProxyMt<Protocol>(proxyKey, server_ip, server_port, timeout);
-#endif
+    return ProxyMap<Protocol>::GetInstance()->StopServer(id);
 
 }
+bool LibSocks2c::ClearServer(int id)
+{
+    if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
+    return ProxyMap<Protocol>::GetInstance()->ClearServer(id);
+}
+
+
+
 
 void LibSocks2c::RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 
@@ -100,16 +93,6 @@ void LibSocks2c::RunClientWithExternContext(boost::asio::io_context &io_context,
 
 }
 
-void LibSocks2c::StopServer() {
-	auto tcph = std::get<0>(server_handle);
-	tcph->StopProxy();
-	std::get<0>(client_handle).reset();
-
-	auto udph = std::get<1>(server_handle);
-	udph->StopProxy();
-	udph->StopIO();
-	std::get<1>(server_handle).reset();
-}
 
 
 uint64_t LibSocks2c::GetUpstreamTraffic()

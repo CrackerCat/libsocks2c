@@ -61,7 +61,7 @@ add_executable(libsocks2c
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
-        src/utils/trafficcounter.cpp src/net/udp/fec.cpp src/net/udp/fec.h test/multiservertest.h test/multiservertestwithmultiio.h test/runclient.h)
+        src/utils/trafficcounter.cpp src/net/udp/fec.cpp src/net/udp/fec.h test/multiservertest.h test/multiservertestwithmultiio.h test/runclient.h test/servermt.h  lib/proxymap.cpp lib/proxymap.h)
 
 IF (WIN32)
 target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/x64/Release/v141/static/libsodium.lib")
@@ -73,7 +73,7 @@ ENDIF()
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED system coroutine regex thread)
+find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})

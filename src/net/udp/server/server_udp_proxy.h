@@ -27,7 +27,7 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 public:
 
 	ServerUdpProxy() {
-		LOG_DEBUG("[{}] UDP Server created", (void*)this)
+		//LOG_DEBUG("[{}] UDP Server created", (void*)this)
 
 	}
 	~ServerUdpProxy() {
@@ -80,8 +80,14 @@ public:
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
-		this->pacceptor_.reset();
 	}
+
+	bool ShouldClose()
+    {
+	    return should_close;
+    }
+
+
 private:
 
 	Protocol protocol_;
@@ -89,6 +95,8 @@ private:
 	PACCEPTOR pacceptor_;
 
 	SESSION_MAP session_map_;
+
+	bool should_close = false;
 
 	virtual void startAcceptorCoroutine() override
 	{
@@ -99,11 +107,8 @@ private:
 			while (1)
 			{
 				boost::system::error_code ec;
-#ifdef MULTITHREAD_IO
-				auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetRandomIOContext());
-#else
-				auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_);
-#endif
+
+				auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetIOContext());
 
 				boost::asio::ip::udp::endpoint local_ep_;
 				//async recv
@@ -148,11 +153,7 @@ private:
 
 					LOG_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-						//					for (int i = 0; i < bytes_read; ++i) {
-						//						printf("%x ", map_it->second->GetLocalDataBuffer()[i]);
-						//					}
-						//					printf("\n");
-						map_it->second->sendToRemote(bytes_read);
+					map_it->second->sendToRemote(bytes_read);
 
 				}
 
@@ -166,16 +167,17 @@ private:
 
 	void onTimeExpire(const boost::system::error_code &ec)
 	{
-		LOG_DEBUG("[{}] UDP onTimeExpire", (void*)this)
+		LOG_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, session_map_.size())
 
 		if (ec) return;
 
-		if (time(nullptr) - last_active_time > expire_time)
+		if (time(nullptr) - last_active_time > expire_time && session_map_.size() == 0)
 		{
 			boost::system::error_code ec;
 			this->pacceptor_->cancel(ec);
 			LOG_INFO("[{}] udp server at port {} timeout", (void*)this, server_port)
-				return;
+			should_close = true;
+			return;
 		}
 
 		ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));

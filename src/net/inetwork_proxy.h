@@ -18,6 +18,10 @@ public:
 
     INetworkProxy(){}
 
+   ~INetworkProxy(){
+       LOG_DEBUG("INetworkProxy die")
+
+   }
 
     /*
      *  Start proxy at local_address:local_port

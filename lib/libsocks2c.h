@@ -24,26 +24,46 @@ class OS_Dll_API LibSocks2c {
 
 public:
 
-    static void AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
-	
-	static void StopClient();
+	/*
+	 * @Thread Safe
+	 *
+	 * @Return server id, it's the port actually
+	 * 		   0 if there is another server running at that port
+	 */
+    static int AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
-    static void AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+    /*
+	 * @Thread Safe
+	 *
+	 * Stop call is asynchronous and it only stops TCP/UDP acceptor, sessions will die as time goes by
+	 *
+	 * @Return true if the inner asyncstop is called
+	 * 		   false if server not exist or you call StopServer() before
+	 */
+    static bool StopServer(int id);
 
-    static void AsyncRunServerMt(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+	/*
+	 * @Thread Safe
+	 *
+	 * Need to call StopServer() before clear, or you can never clear it
+	 *
+	 * @Return true if the server is deleted
+	 * 		   false if there are some time pending
+	 */
+	static bool ClearServer(int id);
 
-    static void StopServer();
 
 
-    static void RunClientWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+
+	static void AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+
+	static void RunClientWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
     static void RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
 	/*
 	 *	  @Thread Safe
-	 *	  BUT, the impl doesn't use mutex nor atomic variable
-	 *	  so it might return weired value which you'll need to drop
-	 *	  
+	 *
 	 *	  if not compile with ENABLE_TRAFFIC_COUNT, it always will return 0
 	 */
 	static uint64_t GetUpstreamTraffic();

@@ -4,10 +4,11 @@
 #include "../net/tcp/client/client_tcp_proxy.h"
 
 #include "../net/udp/server/server_udp_proxy.h"
-#include "../net/tcp/server/server_tcp_proxy.h"
 
-#ifdef __linux__
+#if defined(__linux__) && defined(MULTITHREAD_IO)
 #include "../net/tcp/server/server_tcp_proxy_mt.h"
+#else
+#include "../net/tcp/server/server_tcp_proxy.h"
 #endif
 
 template<class Protocol>
@@ -29,11 +30,13 @@ public:
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
         tcps->SetProxyKey(proxyKey);
         tcps->SetExpireTime(timeout);
+        tcps->SetProxyInfo(server_ip, server_port);
         tcps->StartProxy(server_ip, server_port);
 
         auto udps = boost::make_shared<ServerUdpProxy<Protocol>>();
         udps->SetProxyKey(proxyKey);
         udps->SetExpireTime(timeout);
+        udps->SetProxyInfo(server_ip, server_port);
         udps->StartProxy(server_ip, server_port);
 
         return ServerProxy<Protocol>(tcps, udps);
@@ -58,25 +61,6 @@ public:
 
         return ClientProxy<Protocol>(tcps, udps);
     }
-
-#ifdef __linux__
-	//multithread server with SO_REUSEPORT feature is only support on linux
-    template<class Protocol>
-    static auto CreateServerProxyMt(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
-    {
-        auto tcps = boost::make_shared<ServerTcpProxy_MT<Protocol>>();
-        tcps->SetProxyKey(proxyKey);
-        tcps->SetExpireTime(timeout);
-        tcps->StartProxy(server_ip, server_port);
-
-        auto udps = boost::make_shared<ServerUdpProxy<Protocol>>();
-        udps->SetProxyKey(proxyKey);
-        udps->SetExpireTime(timeout);
-        udps->StartProxy(server_ip, server_port);
-
-        return std::tuple<boost::shared_ptr<ServerTcpProxy_MT<Protocol>>, boost::shared_ptr<ServerUdpProxy<Protocol>>> (tcps, udps);
-    }
-#endif
 
 	/*
 		Two Proxy function below are single threaded, you need to manage the io_context but don't run it on different thread
