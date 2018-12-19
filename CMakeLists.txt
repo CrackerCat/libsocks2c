@@ -67,7 +67,6 @@ add_executable(libsocks2c
         test/multiservertestwithmultiio.h
         test/runclient.h
         test/example/runservermt.h
-        lib/proxymap.cpp
         lib/proxymap.h test/servermt_loop.h test/example/runclient.h)
 
 IF (WIN32)

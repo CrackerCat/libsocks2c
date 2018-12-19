@@ -34,20 +34,29 @@ void initLog()
 
 }
 
-void LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout) {
+int LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 
     initLog();
+    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(socks5_port)) return 0;
 
-	Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
+	auto handle = Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
 
+    auto res = ProxyMap<Protocol>::GetInstance()->Insert(socks5_port, handle);
+
+    if (res) return socks5_port;
+
+    return 0;
 }
-bool LibSocks2c::StopClient(int id)
+bool LibSocks2c::StopProxy(int id)
 {
+    if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
 
+    return ProxyMap<Protocol>::GetInstance()->StopProxy(id);
 }
-bool LibSocks2c::ClearClient(int id)
+bool LibSocks2c::ClearProxy(int id)
 {
-
+    if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
+    return ProxyMap<Protocol>::GetInstance()->ClearProxy(id);
 }
 
 int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
@@ -63,19 +72,6 @@ int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint
     if (res) return server_port;
 
     return 0;
-}
-
-bool LibSocks2c::StopServer(int id)
-{
-    if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
-
-    return ProxyMap<Protocol>::GetInstance()->StopServer(id);
-
-}
-bool LibSocks2c::ClearServer(int id)
-{
-    if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
-    return ProxyMap<Protocol>::GetInstance()->ClearServer(id);
 }
 
 

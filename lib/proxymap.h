@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../src/utils/Singleton.h"
 #include "../src/utils/logger.h"
+#include "../src/utils/Singleton.h"
+#include "../src/factory/socks2c_factory.h"
 
 #include <unordered_map>
-#include "../src/factory/socks2c_factory.h"
 #include <mutex>
 
 template <class Protocol>
@@ -20,7 +20,7 @@ public:
 
         auto sit = server_map.find(port);
         auto cit = client_map.find(port);
-        if (sit != server_map.end() && sit != client_map.end()) return true;
+        if (sit != server_map.end() || cit != client_map.end()) return true;
 
         return false;
     }
@@ -30,73 +30,86 @@ public:
     {
         std::lock_guard<std::mutex> lg(map_mutex);
 
-        server_map.insert({port, handle});
+        return server_map.insert({port, handle}).second;
     }
 
     bool Insert(int port, ClientProxy<Protocol> handle)
     {
-        client_map.insert(port, handle);
+        std::lock_guard<std::mutex> lg(map_mutex);
+
+        return client_map.insert({port, handle}).second;
     }
 
 
-    bool StopServer(int port)
+    bool StopProxy(int port)
     {
         std::lock_guard<std::mutex> lg(map_mutex);
 
+        auto cit = client_map.find(port);
         auto sit = server_map.find(port);
-        if (sit == server_map.end()) return false;
-        if (std::get<0>(sit->second)->Stopped()) return false;
-        std::get<0>(sit->second)->StopProxy();
-        std::get<1>(sit->second)->StopProxy();
-        return true;
-    }
 
+        if (sit == server_map.end() && cit == client_map.end()) return false;
 
-    bool ClearServer(int port)
-    {
-        std::lock_guard<std::mutex> lg(map_mutex);
+        if (sit != server_map.end() && cit == client_map.end()) return false;
 
-        auto sit = server_map.find(port);
-        if (sit == server_map.end()) return true;
-
-        if (std::get<1>(sit->second)->ShouldClose() && std::get<0>(sit->second)->ShouldClose())
+        if (sit != server_map.end())
         {
-            std::get<0>(sit->second).reset();
-            std::get<1>(sit->second).reset();
-            server_map.erase(port);
+            if (std::get<0>(sit->second)->Stopped()) return false;
+            std::get<0>(sit->second)->StopProxy();
+            std::get<1>(sit->second)->StopProxy();
             return true;
         }
-        return false;
-    }
-
-    bool StopClient(int port)
-    {
-        std::lock_guard<std::mutex> lg(map_mutex);
-
-        auto sit = server_map.find(port);
-        if (sit == server_map.end()) return false;
-        if (std::get<0>(sit->second)->Stopped()) return false;
-        std::get<0>(sit->second)->StopProxy();
-        std::get<1>(sit->second)->StopProxy();
-        return true;
-    }
 
 
-    bool ClearClient(int port)
-    {
-        std::lock_guard<std::mutex> lg(map_mutex);
-
-        auto sit = server_map.find(port);
-        if (sit == server_map.end()) return true;
-
-        if (std::get<1>(sit->second)->ShouldClose() && std::get<0>(sit->second)->ShouldClose())
+        if (cit != client_map.end())
         {
-            std::get<0>(sit->second).reset();
-            std::get<1>(sit->second).reset();
-            server_map.erase(port);
+            if (std::get<0>(cit->second)->Stopped()) return false;
+            std::get<0>(cit->second)->StopProxy();
+            std::get<1>(cit->second)->StopProxy();
             return true;
         }
-        return false;
+
+
+    }
+
+    bool ClearProxy(int port)
+    {
+        std::lock_guard<std::mutex> lg(map_mutex);
+
+        auto cit = client_map.find(port);
+        auto sit = server_map.find(port);
+
+        if (sit == server_map.end() && cit == client_map.end()) return false;
+
+        if (sit != server_map.end() && cit == client_map.end()) return false;
+
+        if (sit != server_map.end())
+        {
+            if (std::get<1>(sit->second)->ShouldClose() && std::get<0>(sit->second)->ShouldClose())
+            {
+                std::get<0>(sit->second).reset();
+                std::get<1>(sit->second).reset();
+                server_map.erase(port);
+                return true;
+            }
+            return false;
+        }
+
+
+        if (cit != client_map.end())
+        {
+            if (std::get<1>(cit->second)->ShouldClose() && std::get<0>(cit->second)->ShouldClose())
+            {
+                std::get<0>(cit->second).reset();
+                std::get<1>(cit->second).reset();
+                client_map.erase(port);
+                return true;
+            }
+            return false;
+        }
+
+
+
     }
 
 

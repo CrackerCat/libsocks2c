@@ -133,9 +133,17 @@ public:
 
 
     }
+
+    bool ShouldClose()
+    {
+        return should_close;
+    }
+
 private:
 
     Protocol protocol_;
+
+    bool should_close = false;
 
     SESSION_MAP& session_map_;
 

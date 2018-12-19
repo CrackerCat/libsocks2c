@@ -58,9 +58,12 @@ public:
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
-		this->pacceptor_.reset();
 	}
 
+    bool ShouldClose()
+    {
+        return session_map_.size() == 0;
+    }
 
 private:
 
@@ -70,7 +73,7 @@ private:
 
     SESSION_MAP session_map_;
 
-	unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
+    unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
 
     virtual void startAcceptorCoroutine() override
     {

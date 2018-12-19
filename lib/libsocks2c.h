@@ -40,7 +40,7 @@ public:
 	 * @Return true if the inner asyncstop is called
 	 * 		   false if server not exist or you call StopServer() before
 	 */
-    static bool StopServer(int id);
+	static bool StopProxy(int id);
 
 	/*
 	 * @Thread Safe
@@ -48,16 +48,14 @@ public:
 	 * Need to call StopServer() before clear, or you can never clear it
 	 *
 	 * @Return true if the server is deleted
-	 * 		   false if there are some time pending
+	 * 		   false if there are some pending session
 	 */
-	static bool ClearServer(int id);
+	static bool ClearProxy(int id);
 
 
 
 
-	static void AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
-	static bool StopClient(int id);
-	static bool ClearClient(int id);
+	static int AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
 	static void RunClientWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
