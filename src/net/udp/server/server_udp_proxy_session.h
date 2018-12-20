@@ -177,7 +177,7 @@ private:
 
 		LOG_DETAIL(LOG_DEBUG("[{}] udp read {} bytes from remote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
 
-			last_update_time = time(nullptr);
+		last_update_time = time(nullptr);
 
 		auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;
 		Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort(remote_recv_buff_ + Protocol::ProtocolHeader::Size(), remote_recv_ep_.address().to_string(), remote_recv_ep_.port());

@@ -5,15 +5,9 @@
 #include <mutex>
 #include "proxymap.h"
 
-#ifdef PROTOCOL_AES256GCM
-#include "../src/protocol/custom/aes256gcmwithobf/aes256gcmwithobf.h"
-#elif  PROTOCOL_CHACHA20POLY1305
-#include "../src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf.h"
-#define Protocol chacha20poly1305withobf_Protocol
-#elif  PROTOCOL_CHACHA20
-#include "../src/protocol/custom/chacha20/chacha20.h"
-#define Protocol chacha20_Protocol
-#endif
+#include "../src/protocol/protocol_def.h"
+
+#include "proxymanager.h"
 
 static bool isLogInited(false);
 static std::mutex log_mutex;
@@ -57,6 +51,13 @@ bool LibSocks2c::ClearProxy(int id)
 {
     if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
     return ProxyMap<Protocol>::GetInstance()->ClearProxy(id);
+}
+
+void LibSocks2c::AutoManage(int id)
+{
+
+    ProxyManager::GetInstance()->TakeManage(id);
+
 }
 
 int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {

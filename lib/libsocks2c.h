@@ -58,7 +58,7 @@ public:
 	/*
 	 * @Thread Safe
 	 *
-	 * Manage the proxy instance by the system, do not Stop or Clear proxy once you call AutoManage
+	 * Manage the proxy instance by the system, do not Clear proxy once you call AutoManage
 	 *
 	 */
 	static void AutoManage(int id);

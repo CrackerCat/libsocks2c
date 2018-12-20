@@ -69,7 +69,7 @@ public:
             return true;
         }
 
-
+        return false;
     }
 
     bool ClearProxy(int port)
@@ -81,7 +81,7 @@ public:
 
         if (sit == server_map.end() && cit == client_map.end()) return false;
 
-        if (sit != server_map.end() && cit == client_map.end()) return false;
+        if (sit != server_map.end() && cit != client_map.end()) return false;
 
         if (sit != server_map.end())
         {
@@ -108,7 +108,7 @@ public:
             return false;
         }
 
-
+        return false;
 
     }
 
