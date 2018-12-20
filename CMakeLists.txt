@@ -3,7 +3,7 @@ project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
 add_definitions(-DLOG_DEBUG_DETAIL)
-
+add_definitions(-DMULTITHREAD_IO)
 set(CMAKE_CXX_STANDARD 14)
 
 IF (WIN32)
@@ -27,7 +27,7 @@ ENDIF()
 
 
 
-add_executable(libsocks2c
+add_library(libsocks2c
         main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
@@ -67,7 +67,8 @@ add_executable(libsocks2c
         test/multiservertestwithmultiio.h
         test/runclient.h
         test/example/runservermt.h
-        lib/proxymap.h test/servermt_loop.h test/example/runclient.h)
+        lib/proxymap.h test/servermt_loop.h test/example/runclient.h lib/proxymanager.cpp lib/proxymanager.h)
+set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)
 target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/x64/Release/v141/static/libsodium.lib")

@@ -75,8 +75,6 @@ int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint
 }
 
 
-
-
 void LibSocks2c::RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
 
     initLog();
@@ -95,16 +93,3 @@ void LibSocks2c::RunClientWithExternContext(boost::asio::io_context &io_context,
     }
 
 }
-
-
-
-uint64_t LibSocks2c::GetUpstreamTraffic()
-{
-	return TrafficCounter::GetInstance()->GetUpstreamBytes();
-}
-
-uint64_t LibSocks2c::GetDownstreamTraffic()
-{
-	return TrafficCounter::GetInstance()->GetDownstreamBytes();
-}
-
