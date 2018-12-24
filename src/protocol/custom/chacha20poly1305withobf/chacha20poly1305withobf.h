@@ -23,7 +23,7 @@ struct chacha20poly1305withobf_Header{
     unsigned char LEN_TAG[16];
     unsigned char PAYLOAD_TAG[16];
     uint32_t PAYLOAD_LENGTH;
-    uint32_t PADDLE_LENGTH;
+    uint32_t PADDING_LENGTH;
     //data
 
     static constexpr int Size()
@@ -104,7 +104,7 @@ struct chacha20poly1305withobf_Protocol : virtual public ClientProxyProtocol<cha
 
         if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
         {
-            header->PADDLE_LENGTH = 0;
+            header->PADDING_LENGTH = 0;
             return;
         }
 
@@ -114,7 +114,7 @@ struct chacha20poly1305withobf_Protocol : virtual public ClientProxyProtocol<cha
 
         randombytes_buf(header->GetDataOffsetPtr() + header->PAYLOAD_LENGTH, paddle_len);
 
-        header->PADDLE_LENGTH = (uint32_t)paddle_len;
+        header->PADDING_LENGTH = (uint32_t)paddle_len;
 
 
     }
@@ -124,7 +124,7 @@ struct chacha20poly1305withobf_Protocol : virtual public ClientProxyProtocol<cha
     inline uint32_t encryptHeaderLen(typename IProxyProtocol<chacha20poly1305withobf_Header>::ProtocolHeader *header)
     {
 
-        uint32_t original_len = header->PADDLE_LENGTH + header->PAYLOAD_LENGTH;
+        uint32_t original_len = header->PADDING_LENGTH + header->PAYLOAD_LENGTH;
 
         unsigned char encrypted_length[8];
         uint64_t tag_len = 0;
@@ -132,7 +132,7 @@ struct chacha20poly1305withobf_Protocol : virtual public ClientProxyProtocol<cha
         //randombytes_buf(header->NONCE, sizeof(header->NONCE));
 
         chacha20poly1305withobf_Helper::encryptData(ProxyKey, header->NONCE, (unsigned char*)&header->PAYLOAD_LENGTH,
-                                                    sizeof(header->PAYLOAD_LENGTH) + sizeof(header->PADDLE_LENGTH), encrypted_length, &tag_len, header->LEN_TAG);
+                                                    sizeof(header->PAYLOAD_LENGTH) + sizeof(header->PADDING_LENGTH), encrypted_length, &tag_len, header->LEN_TAG);
 
         memcpy(&header->PAYLOAD_LENGTH, encrypted_length, 8);
 
@@ -227,21 +227,21 @@ struct chacha20poly1305withobf_Protocol : virtual public ClientProxyProtocol<cha
     {
         struct {
             uint32_t PAYLOAD_LENGTH;
-            uint32_t PADDLE_LENGTH;
+            uint32_t PADDING_LENGTH;
         } len;
 
 
         bool res = chacha20poly1305withobf_Helper::decryptData(ProxyKey, header->NONCE,
                                                                (unsigned char *) &header->PAYLOAD_LENGTH,
                                                                sizeof(header->PAYLOAD_LENGTH) +
-                                                               sizeof(header->PADDLE_LENGTH), (unsigned char *) &len,
+                                                               sizeof(header->PADDING_LENGTH), (unsigned char *) &len,
                                                                header->LEN_TAG);
 
         //LOG_DEBUG("decrypt data length = {}   total length = {} ", len.PAYLOAD_LENGTH, len.TOTAL_LENGTH)
 
         if (res) {
             memcpy(&header->PAYLOAD_LENGTH, &len, sizeof(len));
-            return len.PAYLOAD_LENGTH + len.PADDLE_LENGTH;
+            return len.PAYLOAD_LENGTH + len.PADDING_LENGTH;
         }
 
         return 0;

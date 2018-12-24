@@ -27,7 +27,7 @@ ENDIF()
 
 
 
-add_library(libsocks2c
+add_executable(libsocks2c
         main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
@@ -57,6 +57,7 @@ add_library(libsocks2c
 
         src/net/udp/server/server_udp_proxy.h
         src/net/udp/server/server_udp_proxy_session.h
+        src/protocol/protocol_def.h
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h

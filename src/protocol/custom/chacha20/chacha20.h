@@ -22,7 +22,7 @@ struct chacha20_Header{
 
     unsigned char NONCE[8];
     uint32_t PAYLOAD_LENGTH;
-    uint32_t PADDLE_LENGTH;
+    uint32_t PADDING_LENGTH;
     //data
 
 
@@ -105,7 +105,7 @@ struct chacha20_Protocol : virtual public ClientProxyProtocol<chacha20_Header>, 
 
         if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
         {
-            header->PADDLE_LENGTH = 0;
+            header->PADDING_LENGTH = 0;
             return;
         }
 
@@ -115,7 +115,7 @@ struct chacha20_Protocol : virtual public ClientProxyProtocol<chacha20_Header>, 
 
         randombytes_buf(header->GetDataOffsetPtr() + header->PAYLOAD_LENGTH, paddle_len);
 
-        header->PADDLE_LENGTH = (uint32_t)paddle_len;
+        header->PADDING_LENGTH = (uint32_t)paddle_len;
 
 
     }
@@ -125,12 +125,12 @@ struct chacha20_Protocol : virtual public ClientProxyProtocol<chacha20_Header>, 
     inline uint32_t encryptHeaderLen(typename IProxyProtocol<chacha20_Header>::ProtocolHeader *header)
     {
 
-        uint32_t original_len = header->PADDLE_LENGTH + header->PAYLOAD_LENGTH;
+        uint32_t original_len = header->PADDING_LENGTH + header->PAYLOAD_LENGTH;
 
         unsigned char encrypted_length[8];
 
         chacha20_Helper::encryptData(ProxyKey, header->NONCE, (unsigned char*)&header->PAYLOAD_LENGTH,
-                                             sizeof(header->PAYLOAD_LENGTH) + sizeof(header->PADDLE_LENGTH), encrypted_length);
+                                             sizeof(header->PAYLOAD_LENGTH) + sizeof(header->PADDING_LENGTH), encrypted_length);
 
         memcpy(&header->PAYLOAD_LENGTH, encrypted_length, 8);
 
@@ -224,14 +224,14 @@ struct chacha20_Protocol : virtual public ClientProxyProtocol<chacha20_Header>, 
     {
         struct {
             uint32_t PAYLOAD_LENGTH;
-            uint32_t PADDLE_LENGTH;
+            uint32_t PADDING_LENGTH;
         } len;
 
 
         chacha20_Helper::decryptData(ProxyKey, header->NONCE,
                                                         (unsigned char *) &header->PAYLOAD_LENGTH,
                                                         sizeof(header->PAYLOAD_LENGTH) +
-                                                        sizeof(header->PADDLE_LENGTH), (unsigned char *) &len);
+                                                        sizeof(header->PADDING_LENGTH), (unsigned char *) &len);
 
         //LOG_DEBUG("decrypt data length = {}   total length = {} ", len.PAYLOAD_LENGTH, len.TOTAL_LENGTH)
 
@@ -239,14 +239,14 @@ struct chacha20_Protocol : virtual public ClientProxyProtocol<chacha20_Header>, 
 
 		if (isTcpData)
 		{
-			if ((len.PAYLOAD_LENGTH + len.PADDLE_LENGTH) > (TCP_BUFFER_SIZE - chacha20_Header::Size())) return 0;
+			if ((len.PAYLOAD_LENGTH + len.PADDING_LENGTH) > (TCP_BUFFER_SIZE - chacha20_Header::Size())) return 0;
 		}
 		else
 		{
-			if ((len.PAYLOAD_LENGTH + len.PADDLE_LENGTH) > (UDP_BUFFER_SIZE - chacha20_Header::Size())) return 0;
+			if ((len.PAYLOAD_LENGTH + len.PADDING_LENGTH) > (UDP_BUFFER_SIZE - chacha20_Header::Size())) return 0;
 		}
 
-		return len.PAYLOAD_LENGTH + len.PADDLE_LENGTH;
+		return len.PAYLOAD_LENGTH + len.PADDING_LENGTH;
 
     }
 
