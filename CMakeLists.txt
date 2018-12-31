@@ -81,7 +81,7 @@ ENDIF()
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
+find_package(Boost 1.69.0 REQUIRED system  coroutine context regex thread)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
