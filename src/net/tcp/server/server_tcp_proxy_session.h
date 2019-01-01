@@ -125,7 +125,7 @@ private:
 
 		auto socks5_req_header = (socks5::SOCKS_REQ*)(local_recv_buff_ + Protocol::ProtocolHeader::Size());
 
-		if (socks5_req_header->VER != 0x05 || socks5_req_header->RSV != 0x00)
+		if (socks5_req_header->VER != 0x05)
 		{
 			LOG_DEBUG("[{}] VER or RSV field of handleSocks5Request err, drop connection", (void*)this)
 				return false;

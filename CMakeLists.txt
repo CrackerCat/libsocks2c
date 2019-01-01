@@ -27,8 +27,8 @@ ENDIF()
 
 
 
-add_executable(libsocks2c
-        main.cpp
+add_library(libsocks2c
+        #main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5_protocol.h
@@ -64,11 +64,15 @@ add_executable(libsocks2c
         src/utils/trafficcounter.cpp
         src/net/udp/fec.cpp
         src/net/udp/fec.h
-        test/multiservertest.h
-        test/multiservertestwithmultiio.h
-        test/runclient.h
-        test/example/runservermt.h
-        lib/proxymap.h test/servermt_loop.h test/example/runclient.h lib/proxymanager.cpp lib/proxymanager.h)
+        #test/multiservertest.h
+        #test/multiservertestwithmultiio.h
+        #test/runclient.h
+        #test/example/runservermt.h
+        lib/proxymap.h
+        #test/servermt_loop.h
+        #test/example/runclient.h
+        lib/proxymanager.cpp
+        lib/proxymanager.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)
@@ -81,7 +85,7 @@ ENDIF()
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.69.0 REQUIRED system  coroutine context regex thread)
+find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
