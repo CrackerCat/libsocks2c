@@ -5,12 +5,9 @@
 #if defined(BUILD_DLL) && defined(_WIN32)
 #define OS_Dll_API   __declspec( dllexport )   
 #else
-	#ifdef _WIN32
-	#define OS_Dll_API   __declspec( dllimport )   
-	#else 
-	#define OS_Dll_API
-	#endif
+#define OS_Dll_API     
 #endif
+
 
 namespace boost
 {
@@ -31,7 +28,7 @@ public:
 	 * 		   0 if there is another server running at that port
 	 */
     static int AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
-    static int AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
+	static int AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
     /*
 	 * @Thread Safe
@@ -43,30 +40,10 @@ public:
 	 */
 	static bool StopProxy(int id);
 
-	/*
-	 * @Thread Safe
-	 *
-	 * Clear the proxy server and release the memory
-	 *
-	 * Call StopServer() before clear, or you can never clear it
-	 *
-	 * @Return true if the server is deleted
-	 * 		   false if there are some pending session
-	 */
-	static bool ClearProxy(int id);
-
-	/*
-	 * @Thread Safe
-	 *
-	 * Manage the proxy instance by the system, do not Clear proxy once you call AutoManage
-	 *
-	 */
-	static void AutoManage(int id);
 
 	static void RunClientWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
     static void RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
-
 
 };
 
