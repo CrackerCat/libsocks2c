@@ -43,7 +43,7 @@ add_library(libsocks2c
         src/net/udp/client/client_udp_proxy.h
         src/net/udp/client/client_udp_proxy_session.h
 
-        src/utils/Singleton.h src/utils/logger.cpp
+        src/utils/logger.cpp
         src/utils/logger.h
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf.h
         src/protocol/iproxy_protocol.h
