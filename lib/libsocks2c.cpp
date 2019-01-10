@@ -1,13 +1,14 @@
 #include "libsocks2c.h"
+
+#include "proxymap.h"
+#include "proxymanager.h"
+
 #include "../src/utils/logger.h"
 #include "../src/factory/socks2c_factory.h"
-#include <boost/asio/io_context.hpp>
-#include <mutex>
-#include "proxymap.h"
-
 #include "../src/protocol/protocol_def.h"
 
-#include "proxymanager.h"
+#include <mutex>
+#include <boost/asio/io_context.hpp>
 
 static bool isLogInited(false);
 static std::mutex log_mutex;
@@ -19,10 +20,15 @@ void initLog()
     if (!isLogInited)
     {
         Logger::GetInstance()->InitLog();
+#ifndef LOG_DEBUG_DETAIL
+        Logger::GetInstance()->GetConsole()->set_level(spdlog::level::info);
+#else
         Logger::GetInstance()->GetConsole()->set_level(spdlog::level::debug);
+#endif
         isLogInited = true;
+
 #ifndef MULTITHREAD_IO
-        LOG_INFO("This build without MULTITHREAD_IO definition")
+        LOG_INFO("This build without MULTITHREAD_IO")
 #endif
     }
 
