@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../src/utils/Singleton.h"
+#include "../src/utils/singleton.h"
 #include "../src/protocol/protocol_def.h"
 #include "proxymap.h"
 

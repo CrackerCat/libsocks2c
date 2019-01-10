@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
-add_definitions(-DLOG_DEBUG_DETAIL)
+#add_definitions(-DLOG_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
+add_definitions(-DSINGLETON_RAW_POINTER)
+
 set(CMAKE_CXX_STANDARD 14)
 
 IF (WIN32)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../src/utils/logger.h"
-#include "../src/utils/Singleton.h"
+#include "../src/utils/singleton.h"
 #include "../src/factory/socks2c_factory.h"
 
 #include <unordered_map>
