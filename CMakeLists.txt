@@ -72,7 +72,7 @@ add_library(libsocks2c
         #test/servermt_loop.h
         #test/example/runclient.h
         lib/proxymanager.cpp
-        lib/proxymanager.h)
+        lib/proxymanager.h src/utils/singleton.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)
