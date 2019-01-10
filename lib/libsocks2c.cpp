@@ -45,11 +45,39 @@ int LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint
 
 	if (res)
 	{
-		ProxyManager::GetInstance()->TakeManage(server_port);
-		return server_port;
+		ProxyManager::GetInstance()->TakeManage(socks5_port);
+		return socks5_port;
 	}
     return 0;
 }
+
+bool LibSocks2c::PauseClient(int id)
+{
+	if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
+
+	return ProxyMap<Protocol>::GetInstance()->PauseClient(id);
+
+}
+bool LibSocks2c::RestartClient(int id)
+{
+	if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
+
+	return ProxyMap<Protocol>::GetInstance()->RestartClient(id);
+
+
+
+}
+
+bool LibSocks2c::RetargetProxyServer(int id, std::string ip, uint16_t port)
+{
+	if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
+
+	return ProxyMap<Protocol>::GetInstance()->RetargetServer(id, ip, port);
+
+}
+
+
+
 bool LibSocks2c::StopProxy(int id)
 {
     if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;

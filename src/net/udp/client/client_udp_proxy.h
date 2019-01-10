@@ -54,6 +54,15 @@ public:
         this->RunIO();
     }
 
+	void Pause()
+	{
+		this->pacceptor_->cancel();
+	}
+
+	void Restart()
+	{
+		startAcceptorCoroutine();
+	}
 
 	void StopProxy()
 	{

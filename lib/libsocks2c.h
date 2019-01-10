@@ -30,6 +30,13 @@ public:
     static int AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 	static int AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
+
+	static bool PauseClient(int id);
+	static bool RestartClient(int id);
+
+	static bool RetargetProxyServer(int id, std::string ip, uint16_t port);
+
+
     /*
 	 * @Thread Safe
 	 *

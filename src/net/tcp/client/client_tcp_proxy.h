@@ -99,6 +99,15 @@ public:
 
     }
 
+	void Pause()
+	{
+		this->pacceptor_->cancel();
+	}
+
+	void Restart()
+	{
+		startAcceptorCoroutine();
+	}
 
 	void StopProxy()
 	{
