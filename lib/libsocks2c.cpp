@@ -64,8 +64,6 @@ bool LibSocks2c::RestartClient(int id)
 
 	return ProxyMap<Protocol>::GetInstance()->RestartClient(id);
 
-
-
 }
 
 bool LibSocks2c::RetargetProxyServer(int id, std::string ip, uint16_t port)
@@ -123,3 +121,10 @@ void LibSocks2c::RunClientWithExternContext(boost::asio::io_context &io_context,
     }
 
 }
+
+#include "version.h"
+std::string LibSocks2c::GetLibVersion()
+{
+    return Libsocks2cVersion;
+}
+

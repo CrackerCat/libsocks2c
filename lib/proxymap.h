@@ -50,6 +50,7 @@ public:
 		std::get<0>(cit->second)->Pause();
 		std::get<1>(cit->second)->Pause();
 
+		return true;
 	}
 
 	//restart the acceptor
@@ -62,6 +63,7 @@ public:
 		std::get<0>(cit->second)->Restart();
 		std::get<1>(cit->second)->Restart();
 
+		return true;
 	}
 	
 	bool RetargetServer(int port, std::string ip, uint16_t port2)

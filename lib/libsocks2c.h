@@ -52,6 +52,7 @@ public:
 
     static void RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);
 
+    static std::string GetLibVersion();
 };
 
 
