@@ -2,59 +2,64 @@
 
 #include <queue>
 #include <cstring>
+#include <memory>
 
 class BufferQueue
 {
 
 public:
+
     struct buffer_data
     {
 
         buffer_data(size_t size, void* src, boost::asio::ip::udp::endpoint& ep)
         {
-            size = size;
-            payload_ = malloc(size);
+            size_ = size;
+            payload_ = new char[size];
             memcpy(payload_, src, size);
             remote_ep_ = ep;
-        }
 
-        ~buffer_data()
-        {
-            free(payload_);
         }
 
         size_t size_;
-        void* payload_;
+        char* payload_;
         boost::asio::ip::udp::endpoint remote_ep_;
     };
+    using PBufferData = std::shared_ptr<buffer_data>;
 
 
-    buffer_data& Enqueue(size_t size, void* src, boost::asio::ip::udp::endpoint ep)
+    PBufferData Enqueue(size_t size, void* src, boost::asio::ip::udp::endpoint ep)
     {
-        data_queue_.push(buffer_data(size, src, ep));
+        //printf("enqueue size: %zu\n", size);
+        data_queue_.emplace(std::make_shared<buffer_data>(buffer_data(size, src, ep)));
+        //auto front = data_queue_.front();
         return data_queue_.back();
     }
 
-    buffer_data Dequeue()
+    void Dequeue()
     {
-        auto data = data_queue_.front();
+        auto front = data_queue_.front();
         data_queue_.pop();
-        return data;
+        delete [] front->payload_;
     }
 
-    buffer_data* GetFront()
+    PBufferData GetFront()
     {
         if (data_queue_.empty()) return nullptr;
-        return &data_queue_.front();
+        return data_queue_.front();
     }
 
-    bool IsEmpty()
+    bool Empty()
     {
+        //printf("data queue empty? %d\n", data_queue_.empty());
         return data_queue_.empty();
     }
 
+    auto GetQueueSize()
+    {
+        return data_queue_.size();
+    }
 private:
-
-    std::queue<buffer_data> data_queue_;
+    std::queue<PBufferData> data_queue_;
 
 };

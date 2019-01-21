@@ -77,7 +77,7 @@ public:
 
 		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
-        bufferqueue_.Enqueue(bytes - 10, protocol_hdr->GetDataOffsetPtr() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
+        auto i = bufferqueue_.Enqueue(bytes - 10, protocol_hdr->GetDataOffsetPtr() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
 
         if (remote_sending)
         {
@@ -89,7 +89,7 @@ public:
         boost::asio::spawn(this->local_socket_.get_io_context(),
                 [this, self, port](boost::asio::yield_context yield) {
 
-                    while (!bufferqueue_.IsEmpty())
+                    while (!bufferqueue_.Empty())
 					{
 						boost::system::error_code ec;
 
@@ -103,7 +103,7 @@ public:
 						{
 							UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
 							this->session_map_.erase(local_ep_);
-							while (!bufferqueue_.IsEmpty()){
+							while (bufferqueue_.Empty()){
 								bufferqueue_.Dequeue();
 							}
 							return;
