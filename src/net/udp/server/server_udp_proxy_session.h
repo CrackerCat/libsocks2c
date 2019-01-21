@@ -8,7 +8,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
 #include <string>
-
+#include "bufferqueue.h"
 #include "../../../utils/logger.h"
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
@@ -77,14 +77,53 @@ public:
 
 		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
-		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port);
+        bufferqueue_.Enqueue(bytes - 10, protocol_hdr->GetDataOffsetPtr() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
 
-		if (port == 53) isDnsReq = true;
+        if (remote_sending)
+        {
+            return;
+        }
+		remote_sending = true;
 
-		UDP_DEBUG("udp sending {} bytes to {}:{}", bytes - 10, remote_ep_.address().to_string().c_str(), remote_ep_.port())
+		auto self(this->shared_from_this());
+        boost::asio::spawn(this->local_socket_.get_io_context(),
+                [this, self, port](boost::asio::yield_context yield) {
 
-		this->remote_socket_.async_send_to(boost::asio::buffer(protocol_hdr->GetDataOffsetPtr() + 10, bytes - 10),
-				remote_ep_, boost::bind(&ServerUdpProxySession::onRemoteSend, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+                    while (!bufferqueue_.IsEmpty())
+					{
+						boost::system::error_code ec;
+
+						if (port == 53) isDnsReq = true;
+
+						auto bufferinfo = bufferqueue_.GetFront();
+						this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
+														   bufferinfo->remote_ep_, yield[ec]);
+
+						if (ec)
+						{
+							UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
+							this->session_map_.erase(local_ep_);
+							while (!bufferqueue_.IsEmpty()){
+								bufferqueue_.Dequeue();
+							}
+							return;
+						}
+
+						LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, remote_ep_.address().to_string().c_str(), remote_ep_.port()))
+						bufferqueue_.Dequeue();
+						last_update_time = time(nullptr);
+
+
+					}
+
+					remote_sending = false;
+
+        });
+
+
+
+
+
 
 
 
@@ -153,6 +192,8 @@ private:
 	unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
 	unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
 
+	BufferQueue bufferqueue_;
+    bool remote_sending = false;
 	boost::asio::ip::udp::socket &local_socket_;
 	boost::asio::ip::udp::socket remote_socket_;
 

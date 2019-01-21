@@ -131,19 +131,14 @@ private:
 				//get payload length
 				bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 				UDP_DEBUG("udp payload length: {}", bytes_read)
-					//				for (int i = 0; i < bytes_read; ++i) {
-					//					printf("%x ", new_session->GetLocalDataBuffer()[i]);
-					//				}
-					//				printf("\n");
-									//if (!Socks5ProtocolHelper::IsUdpSocks5PacketValid(new_session->GetLocalBuffer())) continue;
 
-					auto map_it = session_map_.find(local_ep_);
+				auto map_it = session_map_.find(local_ep_);
 
 				if (map_it == session_map_.end())
 				{
 					UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-						session_map_.insert(std::make_pair(local_ep_, new_session));
+					session_map_.insert(std::make_pair(local_ep_, new_session));
 					new_session->sendToRemote(bytes_read);
 					new_session->Start();
 
