@@ -60,5 +60,17 @@ private:
 
 #endif
 
+#ifdef UDP_DEBUG_DETAIL
+#define UDP_DEBUG(x, ...) LOG_DEBUG((x), ##__VA_ARGS__)
+#else
+#define UDP_DEBUG(x, ...)
+#endif
+
+#ifdef TCP_DEBUG_DETAIL
+#define TCP_DEBUG(x, ...) LOG_DEBUG((x), ##__VA_ARGS__)
+#else
+#define TCP_DEBUG(x, ...)
+#endif
+
 
 

@@ -37,7 +37,7 @@ public:
 
 	~ServerTcpProxySession()
 	{
-		LOG_DETAIL(LOG_DEBUG("[{}] tcp session die", (void*)this))
+		LOG_DETAIL(TCP_DEBUG("[{}] tcp session die", (void*)this))
 	}
 
 
@@ -81,7 +81,7 @@ private:
 		this->local_socket_.set_option(boost::asio::ip::tcp::no_delay(true), ec);
 		if (ec)
 		{
-			LOG_DEBUG("[{}] setNoDelay err", (void*)this)
+			TCP_DEBUG("[{}] setNoDelay err", (void*)this)
 				return false;
 		}
 		return true;
@@ -104,7 +104,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("handleSocks5Request read err --> {}", ec.message().c_str())
+			TCP_DEBUG("handleSocks5Request read err --> {}", ec.message().c_str())
 			return false;
 		}
 
@@ -117,7 +117,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("handleSocks5Request read err --> {}", ec.message().c_str())
+			TCP_DEBUG("handleSocks5Request read err --> {}", ec.message().c_str())
 				return false;
 		}
 
@@ -127,7 +127,7 @@ private:
 
 		if (socks5_req_header->VER != 0x05)
 		{
-			LOG_DEBUG("[{}] VER or RSV field of handleSocks5Request err, drop connection", (void*)this)
+			TCP_DEBUG("[{}] VER or RSV field of handleSocks5Request err, drop connection", (void*)this)
 				return false;
 		}
 
@@ -156,7 +156,7 @@ private:
 
 			if (!Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5_req_header, ip_str, port))
 			{
-				LOG_DEBUG("[{}] parseDomainPortFromSocks5Request err ", (void*)this)
+				TCP_DEBUG("[{}] parseDomainPortFromSocks5Request err ", (void*)this)
 				return false;
 			}
 
@@ -169,7 +169,7 @@ private:
 
 			if (ec)
 			{
-				LOG_DEBUG("[{}] async_resolve {} err --> {}", (void*)this, ip_str.c_str(), ec.message().c_str())
+				TCP_DEBUG("[{}] async_resolve {} err --> {}", (void*)this, ip_str.c_str(), ec.message().c_str())
 					return false;
 			}
 
@@ -185,7 +185,7 @@ private:
 		}
 		else
 		{
-			LOG_DEBUG("[{}] unknow ATYP",(void*)this)
+			TCP_DEBUG("[{}] unknow ATYP",(void*)this)
 				return false;
 		}
 
@@ -281,11 +281,11 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("[{}] handleTunnelFlow async_read from remote err --> {}", (void*)this, ec.message().c_str())
+			TCP_DEBUG("[{}] handleTunnelFlow async_read from remote err --> {}", (void*)this, ec.message().c_str())
 				return 0;
 		}
 
-		LOG_DETAIL(LOG_DEBUG("[{}] read {} bytes from remote", (void*)this, bytes_read))
+		LOG_DETAIL(TCP_DEBUG("[{}] read {} bytes from remote", (void*)this, bytes_read))
 
 			return bytes_read;
 	}
@@ -309,7 +309,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("[{}] sendToLocal err --> {}", (void*)this, ec.message().c_str())
+			TCP_DEBUG("[{}] sendToLocal err --> {}", (void*)this, ec.message().c_str())
 			return false;
 		}
 
@@ -329,7 +329,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("[{}] handleTunnelFlow read header err --> {}", (void*)this, ec.message().c_str())
+			TCP_DEBUG("[{}] handleTunnelFlow read header err --> {}", (void*)this, ec.message().c_str())
 				return 0;
 		}
 
@@ -343,7 +343,7 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("[{}] handleTunnelFlow read payload err --> {}", (void*)this, ec.message().c_str())
+			TCP_DEBUG("[{}] handleTunnelFlow read payload err --> {}", (void*)this, ec.message().c_str())
 				return 0;
 		}
 
@@ -360,10 +360,10 @@ private:
 		uint64_t bytes_write = async_write(this->remote_socket_, boost::asio::buffer(local_recv_buff_ + Protocol::ProtocolHeader::Size(), bytes), yield[ec]);
 		if (ec)
 		{
-			LOG_DEBUG("[{}] sendToRemote payload err --> {}", (void*)this, ec.message().c_str())
+			TCP_DEBUG("[{}] sendToRemote payload err --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
-		LOG_DEBUG("[{}] send {} bytes to remote", (void*)this, bytes_write)
+		TCP_DEBUG("[{}] send {} bytes to remote", (void*)this, bytes_write)
 			return true;
 	}
 
@@ -379,10 +379,10 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("[{}] can't connect to remote --> {}", (void*)this, ec.message().c_str())
+			TCP_DEBUG("[{}] can't connect to remote --> {}", (void*)this, ec.message().c_str())
 				return false;
 		}
-		LOG_DEBUG("[{}] connected to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
+		TCP_DEBUG("[{}] connected to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
 
 			return true;
 	}
@@ -393,11 +393,11 @@ private:
 	{
 		boost::system::error_code ec;
 
-		//LOG_DEBUG("Destroy session from {}:{}", this->local_socket_.remote_endpoint(ec).address().to_string().c_str(), this->local_socket_.remote_endpoint(ec).port())
+		//TCP_DEBUG("Destroy session from {}:{}", this->local_socket_.remote_endpoint(ec).address().to_string().c_str(), this->local_socket_.remote_endpoint(ec).port())
 
 		if (ec)
 		{
-			LOG_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected", (void*)this)
+			TCP_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected", (void*)this)
 				ec.clear();
 		}
 

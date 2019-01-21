@@ -34,7 +34,7 @@ public:
 
 	~ClientTcpProxy()
 	{
-		LOG_DEBUG("ClientTcpProxy die")
+		TCP_DEBUG("ClientTcpProxy die")
 	}
 
     void EnableDnsResolver()
@@ -174,7 +174,7 @@ private:
 
     void onTimeExpire(const boost::system::error_code &ec)
     {
-        LOG_DEBUG("onTimeExpire")
+        TCP_DEBUG("onTimeExpire")
 
         if (ec) return;
 

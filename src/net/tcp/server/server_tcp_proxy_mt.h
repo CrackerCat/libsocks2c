@@ -26,13 +26,13 @@ public:
 
     ServerTcpProxy() {
 
-        LOG_DEBUG("[{}] TCP Server created", (void*)this)
+        TCP_DEBUG("[{}] TCP Server created", (void*)this)
 
     }
     ~ServerTcpProxy() {
 
 
-        LOG_DEBUG("ServerTcpProxy at port: {} die", this->server_port)
+        TCP_DEBUG("ServerTcpProxy at port: {} die", this->server_port)
 
     }
 
@@ -45,7 +45,7 @@ public:
 
         for(int i = 0; i < this->GetVIOContextSize(); i++)
         {
-            LOG_DEBUG("Start tcp acceptor {}", i)
+            TCP_DEBUG("Start tcp acceptor {}", i)
 
             int opt = 1;
 
@@ -90,7 +90,7 @@ public:
 
         startAcceptorCoroutine();
 
-        LOG_INFO("ServerTcpProxyMt started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
+        LOG_INFO("ServerTcpProxy[MT] started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
 
         this->RunIO();
 
@@ -100,7 +100,7 @@ public:
     {
         for(int i = 0; i < GetVIOContextSize(); i++)
         {
-            LOG_DEBUG("stopping tcp acceptor {}", i)
+            TCP_DEBUG("stopping tcp acceptor {}", i)
             this->vpacceptor_[i]->cancel();
             this->vptimer_[i]->cancel();
         }
@@ -147,7 +147,7 @@ private:
                         return;
                     }
 
-                    LOG_DEBUG("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
+                    TCP_DEBUG("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
 
                     new_session->Start();
                 }
@@ -167,7 +167,7 @@ private:
             LOG_ERROR("timer {} onTimeExpire err --> {}", index, ec.message().c_str())
             return;
         }
-        LOG_DEBUG("[{}] timer {} TCP onTimeExpire", index, (void*)this)
+        TCP_DEBUG("[{}] timer {} TCP onTimeExpire", index, (void*)this)
 
         if (time(nullptr) - last_active_time > expire_time)
         {

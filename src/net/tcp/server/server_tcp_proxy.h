@@ -28,12 +28,12 @@ public:
 
 	ServerTcpProxy() {
 
-		LOG_DEBUG("[{}] TCP Server created", (void*)this)
+		TCP_DEBUG("[{}] TCP Server created", (void*)this)
 
 	}
 	~ServerTcpProxy() {
 
-		LOG_DEBUG("ServerTcpProxy at port: {} die", this->server_port)
+		TCP_DEBUG("ServerTcpProxy at port: {} die", this->server_port)
 
 	}
 	virtual void StartProxy(std::string local_address, uint16_t local_port) override
@@ -159,7 +159,7 @@ private:
 			LOG_ERROR("onTimeExpire err --> {}", ec.message().c_str())
 				return;
 		}
-		LOG_DEBUG("[{}] TCP onTimeExpire", (void*)this)
+		TCP_DEBUG("[{}] TCP onTimeExpire", (void*)this)
 
 		if (time(nullptr) - last_active_time > expire_time)
 		{

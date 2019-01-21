@@ -27,11 +27,11 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 public:
 
 	ServerUdpProxy() {
-		LOG_DEBUG("[{}] UDP Server created", (void*)this)
+		UDP_DEBUG("[{}] UDP Server created", (void*)this)
 
 	}
 	~ServerUdpProxy() {
-		LOG_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
+		UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
 	}
 
 
@@ -121,7 +121,7 @@ private:
 					LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
 					continue;
 				}
-				LOG_DEBUG("read {} bytes udp data from local", bytes_read)
+				UDP_DEBUG("read {} bytes udp data from local", bytes_read)
 					last_active_time = time(nullptr);
 
 				new_session->GetLocalEndPoint() = local_ep_;
@@ -130,7 +130,7 @@ private:
 				auto protocol_hdr = (typename Protocol::ProtocolHeader*)new_session->GetLocalBuffer();
 				//get payload length
 				bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
-				LOG_DEBUG("udp payload length: {}", bytes_read)
+				UDP_DEBUG("udp payload length: {}", bytes_read)
 					//				for (int i = 0; i < bytes_read; ++i) {
 					//					printf("%x ", new_session->GetLocalDataBuffer()[i]);
 					//				}
@@ -141,7 +141,7 @@ private:
 
 				if (map_it == session_map_.end())
 				{
-					LOG_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
+					UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
 						session_map_.insert(std::make_pair(local_ep_, new_session));
 					new_session->sendToRemote(bytes_read);
@@ -151,7 +151,7 @@ private:
 				else {
 					memcpy(map_it->second->GetLocalDataBuffer(), new_session->GetLocalDataBuffer(), bytes_read);
 
-					LOG_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
+					UDP_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
 					map_it->second->sendToRemote(bytes_read);
 
@@ -167,7 +167,7 @@ private:
 
 	void onTimeExpire(const boost::system::error_code &ec)
 	{
-		LOG_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, session_map_.size())
+		UDP_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, session_map_.size())
 
 		if (ec) return;
 

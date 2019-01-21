@@ -43,7 +43,7 @@ public:
 
     ~ClientTcpProxySession()
     {
-        LOG_DETAIL(LOG_DEBUG("[{:p}] tcp session die", (void*)this))
+        LOG_DETAIL(TCP_DEBUG("[{:p}] tcp session die", (void*)this))
     }
 
     void Start()
@@ -92,7 +92,7 @@ private:
         this->local_socket_.set_option(boost::asio::ip::tcp::no_delay(true),ec);
         if (ec)
         {
-            LOG_DEBUG("[{:p}] setNoDelay err", (void*)this)
+            TCP_DEBUG("[{:p}] setNoDelay err", (void*)this)
             return false;
         }
         return true;
@@ -107,7 +107,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleMethodSelection read err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleMethodSelection read err --> {}", (void*)this, ec.message().c_str())
             return false;
         }
 
@@ -115,7 +115,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleMethodSelection write err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleMethodSelection write err --> {}", (void*)this, ec.message().c_str())
             return false;
         }
 
@@ -135,7 +135,7 @@ private:
                     [this, self](const boost::system::error_code &ec, const size_t &bytes_send){
                         if (ec)
                         {
-                            LOG_DEBUG("[{:p}] udpReply err --> {}", (void*)this, ec.message().c_str())
+                            TCP_DEBUG("[{:p}] udpReply err --> {}", (void*)this, ec.message().c_str())
                             return;
                         }
 
@@ -147,7 +147,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] tcp link of socks5 udp proxy disconnect --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] tcp link of socks5 udp proxy disconnect --> {}", (void*)this, ec.message().c_str())
             return;
         }
 
@@ -183,7 +183,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleSocks5Request read err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleSocks5Request read err --> {}", (void*)this, ec.message().c_str())
             return false;
         }
 
@@ -195,7 +195,7 @@ private:
 		//socks5_req_header->RSV != 0x00
         if (socks5_req_header->VER != 0x05)
         {
-            LOG_DEBUG("[{:p}] VER or RSV field of handleSocks5Request err, drop connection", (void*)this)
+            TCP_DEBUG("[{:p}] VER or RSV field of handleSocks5Request err, drop connection", (void*)this)
             return false;
         }
 
@@ -207,7 +207,7 @@ private:
                 udpReply(yield);
                 return false;
             }
-            LOG_DEBUG("[{:p}] unknow CMD, drop connection", (void*)this)
+            TCP_DEBUG("[{:p}] unknow CMD, drop connection", (void*)this)
             return false;
         }
 
@@ -219,7 +219,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleSocks5Request async_write DEFAULT_METHOD_REPLY to local err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleSocks5Request async_write DEFAULT_METHOD_REPLY to local err --> {}", (void*)this, ec.message().c_str())
             return false;
         }
 
@@ -254,7 +254,7 @@ private:
              */
             if (!sendToRemote(bytes_read,PayloadType::SOCKS5_DATA,yield))
             {
-                LOG_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
+                TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
                 return false;
             }
 
@@ -273,30 +273,30 @@ private:
 
                 if (!Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5_req_header, ip_str, port))
                 {
-                    LOG_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
+                    TCP_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
                     return false;
                 }
 
                 boost::system::error_code ec;
                 boost::asio::ip::tcp::resolver::query query{ip_str,std::to_string(port),boost::asio::ip::resolver_query_base::all_matching};
 
-                LOG_DEBUG("[{:p}] resolving {}:{}", (void*)this, ip_str.c_str(), port)
+                TCP_DEBUG("[{:p}] resolving {}:{}", (void*)this, ip_str.c_str(), port)
                 auto dns_result = pdns_resolver_->async_resolve(query, yield[ec]);
 
                 if (ec)
                 {
-                    LOG_DEBUG("[{:p}] async_resolve err --> {}", (void*)this, ec.message().c_str())
+                    TCP_DEBUG("[{:p}] async_resolve err --> {}", (void*)this, ec.message().c_str())
                     return false;
                 }
 
-                LOG_DEBUG("[{:p}] Dns Resolved: {}:{}", (void*)this, dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
+                TCP_DEBUG("[{:p}] Dns Resolved: {}:{}", (void*)this, dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
 
                 // once the ip is resolved, construct socks5 packet with ATYP == ipv4 and send to remote
 
                 Socks5ProtocolHelper::ConstructSocks5RequestFromIpStringAndPort(protocol_hdr->GetDataOffsetPtr(), dns_result->endpoint().address().to_string(), dns_result->endpoint().port());
                 if (!sendToRemote(bytes_read,PayloadType::SOCKS5_DATA,yield))
                 {
-                    LOG_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
+                    TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
                     return false;
                 }
 
@@ -308,7 +308,7 @@ private:
 
                 if (ec)
                 {
-                    LOG_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err (remote resolve dns)--> {}", (void*)this, ec.message().c_str())
+                    TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err (remote resolve dns)--> {}", (void*)this, ec.message().c_str())
                     return false;
                 }
 
@@ -318,7 +318,7 @@ private:
         }
         else
         {
-            LOG_DEBUG("[{:p}] unknow ATYP", (void*)this)
+            TCP_DEBUG("[{:p}] unknow ATYP", (void*)this)
             return false;
         }
 
@@ -422,7 +422,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleTunnelFlow readHeaderFromRemote  err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleTunnelFlow readHeaderFromRemote  err --> {}", (void*)this, ec.message().c_str())
             return 0;
         }
 
@@ -436,12 +436,12 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleTunnelFlow readFromRemote err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleTunnelFlow readFromRemote err --> {}", (void*)this, ec.message().c_str())
             return 0;
         }
 
         if (!protocol_.OnPayloadReadFromRemote(protocol_hdr)) return 0;
-        LOG_DETAIL(LOG_DEBUG("[{:p}] read {} bytes from remote", (void*)this, bytes_read))
+        LOG_DETAIL(TCP_DEBUG("[{:p}] read {} bytes from remote", (void*)this, bytes_read))
 
         return protocol_hdr->PAYLOAD_LENGTH;
     }
@@ -456,10 +456,10 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] sendToLocal err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] sendToLocal err --> {}", (void*)this, ec.message().c_str())
             return false;
         }
-		LOG_DETAIL(LOG_DEBUG("[{:p}] send {} bytes to Local", (void*)this, bytes_write))
+		LOG_DETAIL(TCP_DEBUG("[{:p}] send {} bytes to Local", (void*)this, bytes_write))
 		AddDownTraffic(bytes_write)
         return true;
     }
@@ -474,10 +474,10 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleTunnelFlow readFromLocal err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleTunnelFlow readFromLocal err --> {}", (void*)this, ec.message().c_str())
             return 0;
         }
-		LOG_DETAIL(LOG_DEBUG("[{:p}] read {} bytes from local", (void*)this, bytes_read))
+		LOG_DETAIL(TCP_DEBUG("[{:p}] read {} bytes from local", (void*)this, bytes_read))
 
         return bytes_read;
     }
@@ -513,11 +513,11 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
+            TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
             return false;
         }
 
-		LOG_DETAIL(LOG_DEBUG("[{:p}] send {} bytes to remote", (void*)this, bytes_write))
+		LOG_DETAIL(TCP_DEBUG("[{:p}] send {} bytes to remote", (void*)this, bytes_write))
 		AddUpTraffic(bytes_write)
         return true;
     }
@@ -528,16 +528,16 @@ private:
     bool connectToRemote(boost::asio::yield_context& yield)
     {
         boost::system::error_code ec;
-        LOG_DEBUG("[{}] connecting to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
+        TCP_DEBUG("[{}] connecting to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
 
         this->remote_socket_.async_connect(remote_ep_, yield[ec]);
 
         if (ec)
         {
-            LOG_DEBUG("[{}] can't connect to remote --> {}",(void*)this, ec.message().c_str())
+            TCP_DEBUG("[{}] can't connect to remote --> {}",(void*)this, ec.message().c_str())
             return false;
         }
-		LOG_DEBUG("[{}] connected to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
+		TCP_DEBUG("[{}] connected to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
 
         return true;
     }
@@ -550,7 +550,7 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected",(void*)this)
+            TCP_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected",(void*)this)
         }
 
         auto num = RandomNumberGenerator::GetRandomIntegerBetween<uint16_t>(3, 10);

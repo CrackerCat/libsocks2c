@@ -47,7 +47,7 @@ public:
 
 	~ClientUdpProxySession()
 	{
-		LOG_DETAIL(LOG_DEBUG("[{:p}] udp session die", (void*)this))
+		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
 	}
 
     auto& GetLocalEndpoint()
@@ -170,7 +170,7 @@ private:
             return;
         }
 
-		LOG_INFO("[{:p}] send {} bytes to remote", (void*)this, bytes_send)
+        LOG_DETAIL(UDP_DEBUG("[{:p}] send {} bytes to remote", (void*)this, bytes_send))
 
     }
 
@@ -182,10 +182,10 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] Udp readFromRemote err --> {}", (void*)this, ec.message().c_str())
+            UDP_DEBUG("[{:p}] Udp readFromRemote err --> {}", (void*)this, ec.message().c_str())
 			return 0;
         }
-		LOG_DETAIL(LOG_DEBUG("[{:p}] Udp read {} bytes FromRemote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
+		LOG_DETAIL(UDP_DEBUG("[{:p}] Udp read {} bytes FromRemote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
 
         auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;
         return protocol_.OnUdpPayloadReadFromClientRemote(protocol_hdr);
@@ -207,10 +207,10 @@ private:
 
         if (ec)
         {
-            LOG_DEBUG("[{:p}] Udp sendToLocal err --> {}", (void*)this, ec.message().c_str())
+            UDP_DEBUG("[{:p}] Udp sendToLocal err --> {}", (void*)this, ec.message().c_str())
 			return false;
         }
-		LOG_DETAIL(LOG_DEBUG("[{:p}] Udp send {} bytes to Local", (void*)this, bytes_send))
+		LOG_DETAIL(UDP_DEBUG("[{:p}] Udp send {} bytes to Local", (void*)this, bytes_send))
 
 
 		if (this->isDnsReq)
@@ -227,8 +227,8 @@ private:
 	{
 		if (ec)
 		{
-			LOG_DEBUG("Udp timer err --> {}", ec.message().c_str())
-			LOG_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
+			UDP_DEBUG("Udp timer err --> {}", ec.message().c_str())
+			UDP_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
 
 			this->session_map_.erase(local_ep_);
 			return;
@@ -237,11 +237,11 @@ private:
 
 		if (time(nullptr) - last_update_time > SESSION_TIMEOUT)
 		{
-			LOG_DEBUG("[{}] udp session {}:{} timeout --> {}", (void*)this,local_ep_.address().to_string().c_str(), local_ep_.port(), ec.message().c_str())
+			UDP_DEBUG("[{}] udp session {}:{} timeout --> {}", (void*)this,local_ep_.address().to_string().c_str(), local_ep_.port(), ec.message().c_str())
 
 			boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);
-			LOG_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
+			UDP_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
 
 			this->session_map_.erase(local_ep_);
 			return;

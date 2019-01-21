@@ -2,4 +2,4 @@
 
 #include <string>
 
-const std::string Libsocks2cVersion = "Libsocks2c 0.0.1";
+const std::string Libsocks2cVersion = "Libsocks2c Version 0.0.3 Debug";

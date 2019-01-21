@@ -26,7 +26,7 @@ public:
 
 	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket.get_io_context()), timer_(local_socket.get_io_context())
 	{
-		//LOG_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
+		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
 		this->remote_socket_.open(remote_ep_.protocol());
 		this->last_update_time = time(nullptr);
@@ -34,7 +34,7 @@ public:
 
 	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
 	{
-		LOG_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
+		UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
 		this->remote_socket_.open(remote_ep_.protocol());
 		this->last_update_time = time(nullptr);
@@ -42,7 +42,7 @@ public:
 
 	~ServerUdpProxySession()
 	{
-		LOG_DETAIL(LOG_DEBUG("[{:p}] udp session die", (void*)this))
+		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
 	}
 
 	unsigned char* GetLocalDataBuffer()
@@ -81,7 +81,7 @@ public:
 
 		if (port == 53) isDnsReq = true;
 
-		LOG_DEBUG("sending {} bytes to {}:{}", bytes - 10, remote_ep_.address().to_string().c_str(), remote_ep_.port())
+		UDP_DEBUG("udp sending {} bytes to {}:{}", bytes - 10, remote_ep_.address().to_string().c_str(), remote_ep_.port())
 
 		this->remote_socket_.async_send_to(boost::asio::buffer(protocol_hdr->GetDataOffsetPtr() + 10, bytes - 10),
 				remote_ep_, boost::bind(&ServerUdpProxySession::onRemoteSend, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
@@ -100,7 +100,7 @@ public:
 				this->session_map_.erase(local_ep_);
 			return;
 		}
-		LOG_DETAIL(LOG_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, remote_ep_.address().to_string().c_str(), remote_ep_.port()))
+		LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, remote_ep_.address().to_string().c_str(), remote_ep_.port()))
 
 		last_update_time = time(nullptr);
 
@@ -170,12 +170,12 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("Udp readFromRemote err --> {}", ec.message().c_str())
+			UDP_DEBUG("Udp readFromRemote err --> {}", ec.message().c_str())
 				this->session_map_.erase(local_ep_);
 			return 0;
 		}
 
-		LOG_DETAIL(LOG_DEBUG("[{}] udp read {} bytes from remote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
+		LOG_DETAIL(UDP_DEBUG("[{}] udp read {} bytes from remote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
 
 		last_update_time = time(nullptr);
 
@@ -198,11 +198,11 @@ private:
 
 		if (ec)
 		{
-			LOG_DEBUG("Udp sendToLocal err --> {}", ec.message().c_str())
+			UDP_DEBUG("Udp sendToLocal err --> {}", ec.message().c_str())
 				this->session_map_.erase(local_ep_);
 			return false;
 		}
-		LOG_DETAIL(LOG_DEBUG("[{}] udp send {} bytes to Local {}:{}", (void*)this, bytes_send, local_ep_.address().to_string().c_str(), local_ep_.port()))
+		LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to Local {}:{}", (void*)this, bytes_send, local_ep_.address().to_string().c_str(), local_ep_.port()))
 		
 		if (this->isDnsReq)
 		{
@@ -218,7 +218,7 @@ private:
 	{
 		if (ec)
 		{
-			LOG_DEBUG("Udp timer err --> {}", ec.message().c_str())
+			UDP_DEBUG("Udp timer err --> {}", ec.message().c_str())
 			this->session_map_.erase(local_ep_);
 			return;
 		}
@@ -226,7 +226,7 @@ private:
 
 		if (time(nullptr) - last_update_time > SESSION_TIMEOUT)
 		{
-			LOG_DEBUG("Udp session {}:{} timeout", local_ep_.address().to_string().c_str(), local_ep_.port())
+			UDP_DEBUG("Udp session {}:{} timeout", local_ep_.address().to_string().c_str(), local_ep_.port())
 
 				boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);

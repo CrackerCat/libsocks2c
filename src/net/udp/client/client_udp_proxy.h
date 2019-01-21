@@ -31,7 +31,7 @@ public:
 
 	~ClientUdpProxy()
 	{
-		LOG_DEBUG("ClientUdpProxy die")
+		UDP_DEBUG("ClientUdpProxy die")
 	}
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
@@ -105,7 +105,7 @@ private:
                     continue;
                 }
 
-				LOG_DETAIL(LOG_DEBUG("read {} bytes udp data from local ", bytes_read))
+				LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local ", bytes_read))
 
 				bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket((socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size()));
                 last_active_time = time(nullptr);
@@ -129,7 +129,7 @@ private:
 					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetIOContext());
 					#endif
 					if (isDnsPacket) new_session->SetDnsPacket();
-                    LOG_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port())
+                    UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port())
 					new_session->GetLocalEndPoint() = local_ep_;
                     session_map_.insert(std::make_pair(local_ep_, new_session));
 					memcpy(new_session->GetLocalBuffer(), local_recv_buff_, bytes_read);
@@ -137,7 +137,7 @@ private:
                     new_session->Start();
 
                 } else{
-					LOG_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
+					UDP_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
 					memcpy(map_it->second->GetLocalBuffer(), local_recv_buff_, bytes_read);
                     map_it->second->sendToRemote(bytes_read);
@@ -154,7 +154,7 @@ private:
 
     void onTimeExpire(const boost::system::error_code &ec)
     {
-        LOG_DEBUG("onTimeExpire")
+        UDP_DEBUG("onTimeExpire")
 
         if (ec) return;
 
