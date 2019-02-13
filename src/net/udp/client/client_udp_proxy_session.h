@@ -9,16 +9,12 @@
 #include <boost/unordered_map.hpp>
 #include <boost/bind.hpp>
 
+#include "../bufferqueue.h"
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/ephash.h"
 #include "../../bufferdef.h"
 
-#ifdef MULTITHREAD_IO
-#define COROUTINE_CONTEXT this->remote_socket_.get_io_context()
-#else
-#define COROUTINE_CONTEXT this->local_socket_.get_io_context()
-#endif
 
 template <class Protocol>
 class ClientUdpProxySession : public boost::enable_shared_from_this<ClientUdpProxySession<Protocol>>{
@@ -35,15 +31,6 @@ public:
 		this->last_update_time = time(nullptr);
 
     }
-
-	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
-	{
-		this->protocol_.SetKey(key);
-		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
-		this->remote_socket_.open(remote_ep_.protocol());
-		this->last_update_time = time(nullptr);
-	}
-
 
 	~ClientUdpProxySession()
 	{
@@ -79,7 +66,7 @@ public:
     {
 
         auto self(this->shared_from_this());
-        boost::asio::spawn(COROUTINE_CONTEXT, [this, self](boost::asio::yield_context yield){
+        boost::asio::spawn(this->local_socket_.get_io_context(), [this, self](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
 
@@ -97,10 +84,7 @@ public:
 					return;
                 }
 
-
             }
-
-
 
         });
 
@@ -128,9 +112,52 @@ public:
         auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
         auto udp_socks_packet = (socks5::UDP_RELAY_PACKET*)protocol_hdr->GetDataOffsetPtr();
 
-        this->remote_socket_.async_send_to(boost::asio::buffer(local_recv_buff_, bytes),
-                                           remote_ep_, boost::bind(&ClientUdpProxySession::onRemoteSend,this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+		std::string ip_str;
+		uint16_t port;
 
+		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
+
+		auto i = bufferqueue_.Enqueue(bytes, GetLocalBuffer(), remote_ep_);
+		// return if there's another coroutine running
+		// Enqueue is thread safe cause we are in the same context
+		if (remote_sending) return;
+
+		remote_sending = true;
+
+		auto self(this->shared_from_this());
+		boost::asio::spawn(this->local_socket_.get_io_context(),
+			[this, self](boost::asio::yield_context yield) {
+
+			while (!bufferqueue_.Empty())
+			{
+				boost::system::error_code ec;
+
+				auto bufferinfo = bufferqueue_.GetFront();
+				auto bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
+					bufferinfo->remote_ep_, yield[ec]);
+
+				if (ec)
+				{
+					UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
+						this->session_map_.erase(local_ep_);
+					while (bufferqueue_.Empty()) {
+						bufferqueue_.Dequeue();
+					}
+					return;
+				}
+
+				LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, remote_ep_.address().to_string().c_str(), remote_ep_.port()))
+					
+				bufferqueue_.Dequeue();
+				
+				last_update_time = time(nullptr);
+
+
+			}
+
+			remote_sending = false;
+
+		});
 
     }
 
@@ -153,6 +180,9 @@ private:
 
     unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
     unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
+
+	BufferQueue bufferqueue_;
+	bool remote_sending = false;
 
     boost::asio::ip::udp::socket &local_socket_;
     boost::asio::ip::udp::socket remote_socket_;
@@ -194,15 +224,7 @@ private:
     bool sendToLocal(uint64_t bytes, boost::asio::yield_context yield)
     {
         boost::system::error_code ec;
-		/*
-			auto udpreq = (socks5::UDP_RELAY_PACKET*)(remote_recv_buff_ + Protocol::ProtocolHeader::Size());
 
-			std::string ip;
-			uint16_t port;
-			Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udpreq, ip, port);
-
-			printf("udp packet original is : %s:%d\n", ip.c_str(), port);
-		*/
 		uint64_t bytes_send = this->local_socket_.async_send_to(boost::asio::buffer(remote_recv_buff_ + Protocol::ProtocolHeader::Size(), bytes), local_ep_, yield[ec]);
 
         if (ec)
@@ -211,7 +233,6 @@ private:
 			return false;
         }
 		LOG_DETAIL(UDP_DEBUG("[{:p}] Udp send {} bytes to Local", (void*)this, bytes_send))
-
 
 		if (this->isDnsReq)
 		{
@@ -242,8 +263,6 @@ private:
 			boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);
 			UDP_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
-
-			this->session_map_.erase(local_ep_);
 			return;
 		}
 

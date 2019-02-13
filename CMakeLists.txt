@@ -3,8 +3,8 @@ project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
 add_definitions(-DDISABLE_DEBUG_LOG)
-#add_definitions(-DLOG_DEBUG_DETAIL)
-#add_definitions(-DUDP_DEBUG_DETAIL)
+add_definitions(-DLOG_DEBUG_DETAIL)
+add_definitions(-DUDP_DEBUG_DETAIL)
 #add_definitions(-DTCP_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
@@ -32,8 +32,8 @@ ENDIF()
 
 
 
-add_library(libsocks2c
-        #main.cpp
+add_executable(libsocks2c
+        main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5_protocol.h
@@ -67,8 +67,7 @@ add_library(libsocks2c
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp
-        src/net/udp/fec.cpp
-        src/net/udp/fec.h
+
         #test/multiservertest.h
         #test/multiservertestwithmultiio.h
         #test/runclient.h
@@ -77,7 +76,10 @@ add_library(libsocks2c
         #test/servermt_loop.h
         #test/example/runclient.h
         lib/proxymanager.cpp
-        lib/proxymanager.h src/utils/singleton.h lib/version.h src/net/udp/server/bufferqueue.h)
+        lib/proxymanager.h 
+		src/utils/singleton.h 
+		lib/version.h 
+		src/net/udp/bufferqueue.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)

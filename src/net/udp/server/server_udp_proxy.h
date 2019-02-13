@@ -59,21 +59,21 @@ public:
 		if (ec)
 		{
 			LOG_ERROR("udp acceptor open err--> {}", ec.message().c_str())
-			return;
+				return;
 		}
 		pacceptor_->bind(ep, ec);
 
 		if (ec)
 		{
 			LOG_ERROR("udp acceptor bind err--> {}", ec.message().c_str())
-			return;
+				return;
 		}
 
 		startAcceptorCoroutine();
 
 		LOG_INFO("ServerUdpProxy started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
 
-		this->RunIO();
+			this->RunIO();
 
 	}
 
@@ -83,9 +83,9 @@ public:
 	}
 
 	bool ShouldClose()
-    {
-	    return should_close;
-    }
+	{
+		return should_close;
+	}
 
 
 private:
@@ -98,6 +98,8 @@ private:
 
 	bool should_close = false;
 
+	unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
+
 	virtual void startAcceptorCoroutine() override
 	{
 		auto self(this->shared_from_this());
@@ -108,35 +110,39 @@ private:
 			{
 				boost::system::error_code ec;
 
-				auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetIOContext());
 
 				boost::asio::ip::udp::endpoint local_ep_;
 				//async recv
 
-				uint64_t bytes_read = pacceptor_->async_receive_from(boost::asio::buffer(new_session->GetLocalBuffer(), 2048), local_ep_, yield[ec]);
+				uint64_t bytes_read = pacceptor_->async_receive_from(boost::asio::buffer(local_recv_buff_, UDP_LOCAL_RECV_BUFF_SIZE), local_ep_, yield[ec]);
 
 				if (ec == boost::system::errc::operation_canceled) return;
 				if (ec || bytes_read == 0)
 				{
 					LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
-					continue;
+						continue;
 				}
 				UDP_DEBUG("read {} bytes udp data from local", bytes_read)
+
 					last_active_time = time(nullptr);
 
-				new_session->GetLocalEndPoint() = local_ep_;
-
-				//decrypt packet
-				auto protocol_hdr = (typename Protocol::ProtocolHeader*)new_session->GetLocalBuffer();
-				//get payload length
+				auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
+				// decrypt packet and get payload length
 				bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 				UDP_DEBUG("udp payload length: {}", bytes_read)
 
-				auto map_it = session_map_.find(local_ep_);
+					auto map_it = session_map_.find(local_ep_);
 
 				if (map_it == session_map_.end())
 				{
 					UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
+
+						auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_);
+
+					new_session->GetLocalEndPoint() = local_ep_;
+
+					// COPY proxy data only (without protocol header)
+					memcpy(new_session->GetLocalBuffer(), protocol_hdr->GetDataOffsetPtr(), bytes_read);
 
 					session_map_.insert(std::make_pair(local_ep_, new_session));
 					new_session->sendToRemote(bytes_read);
@@ -144,12 +150,11 @@ private:
 
 				}
 				else {
-					memcpy(map_it->second->GetLocalDataBuffer(), new_session->GetLocalDataBuffer(), bytes_read);
-
 					UDP_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
+						// COPY proxy data only (without protocol header)
+						memcpy(map_it->second->GetLocalBuffer(), protocol_hdr->GetDataOffsetPtr(), bytes_read);
 					map_it->second->sendToRemote(bytes_read);
-
 				}
 
 
@@ -164,14 +169,16 @@ private:
 	{
 		UDP_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, session_map_.size())
 
-		if (ec) return;
+			if (ec) return;
 
 		if (time(nullptr) - last_active_time > expire_time && session_map_.size() == 0)
 		{
 			boost::system::error_code ec;
 			this->pacceptor_->cancel(ec);
 			LOG_INFO("[{}] udp server at port {} timeout", (void*)this, server_port)
+				
 			should_close = true;
+			
 			return;
 		}
 

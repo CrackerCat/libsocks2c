@@ -122,16 +122,14 @@ private:
                 auto map_it = session_map_.find(local_ep_);
                 if (map_it == session_map_.end())
                 {
+					UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port())
 
-					#ifdef MULTITHREAD_IO
-					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetRandomIOContext());
-					#else
-					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetIOContext());
-					#endif
+					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_);
+
 					if (isDnsPacket) new_session->SetDnsPacket();
-                    UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port())
 					new_session->GetLocalEndPoint() = local_ep_;
                     session_map_.insert(std::make_pair(local_ep_, new_session));
+
 					memcpy(new_session->GetLocalBuffer(), local_recv_buff_, bytes_read);
                     new_session->sendToRemote(bytes_read);
                     new_session->Start();
