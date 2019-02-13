@@ -3,8 +3,8 @@ project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
 add_definitions(-DDISABLE_DEBUG_LOG)
-add_definitions(-DLOG_DEBUG_DETAIL)
-add_definitions(-DUDP_DEBUG_DETAIL)
+#add_definitions(-DLOG_DEBUG_DETAIL)
+#add_definitions(-DUDP_DEBUG_DETAIL)
 #add_definitions(-DTCP_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
@@ -32,8 +32,8 @@ ENDIF()
 
 
 
-add_executable(libsocks2c
-        main.cpp
+add_library(libsocks2c
+        #main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5_protocol.h
