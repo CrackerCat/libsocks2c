@@ -248,7 +248,7 @@ private:
 				
 			this->session_map_.erase(local_ep_);
 
-			DestructionQueue::GetInstance()->GetQueueIO().post(boost::bind(&ServerUdpProxySession::void_destruct, shared_from_this()));
+			DestructionQueue::GetInstance()->GetQueueIO().post(boost::bind(&ServerUdpProxySession::void_destruct, this->shared_from_this()));
 
 			return;
 		}
