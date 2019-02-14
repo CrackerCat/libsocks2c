@@ -27,7 +27,11 @@ class ClientUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 public:
 
-    ClientUdpProxy(){}
+    ClientUdpProxy()
+	{
+		//init destruction queue
+		DestructionQueue::GetInstance();
+	}
 
 	~ClientUdpProxy()
 	{
@@ -120,11 +124,13 @@ private:
                 //if (!Socks5ProtocolHelper::IsUdpSocks5PacketValid(new_session->GetLocalBuffer())) continue;
 
                 auto map_it = session_map_.find(local_ep_);
+
                 if (map_it == session_map_.end())
                 {
-					UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port())
 
 					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_);
+					
+					UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port());
 
 					if (isDnsPacket) new_session->SetDnsPacket();
 					new_session->GetLocalEndPoint() = local_ep_;

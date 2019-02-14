@@ -12,6 +12,7 @@
 #include "../../../utils/logger.h"
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
+#include "../../../utils/destruction_queue.h"
 #include "../../bufferdef.h"
 
 
@@ -94,7 +95,6 @@ public:
 				if (ec)
 				{
 					UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
-						this->session_map_.erase(local_ep_);
 					while (bufferqueue_.Empty()) {
 						bufferqueue_.Dequeue();
 					}
@@ -112,13 +112,7 @@ public:
 
 		});
 
-
-
-
-
-
-
-
+		
 	}
 
 
@@ -205,7 +199,6 @@ private:
 		if (ec)
 		{
 			UDP_DEBUG("Udp readFromRemote err --> {}", ec.message().c_str())
-				this->session_map_.erase(local_ep_);
 			return 0;
 		}
 
@@ -233,7 +226,6 @@ private:
 		if (ec)
 		{
 			UDP_DEBUG("Udp sendToLocal err --> {}", ec.message().c_str())
-				this->session_map_.erase(local_ep_);
 			return false;
 		}
 		LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to Local {}:{}", (void*)this, bytes_send, local_ep_.address().to_string().c_str(), local_ep_.port()))
@@ -255,6 +247,9 @@ private:
 			UDP_DEBUG("Udp timer err --> {}", ec.message().c_str())
 				
 			this->session_map_.erase(local_ep_);
+
+			DestructionQueue::GetInstance()->GetQueueIO().post(boost::bind(&ServerUdpProxySession::void_destruct, shared_from_this()));
+
 			return;
 		}
 
@@ -272,6 +267,11 @@ private:
 		timer_.async_wait(boost::bind(&ServerUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
 
+	}
+
+	void void_destruct()
+	{
+		boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
 	}
 
 };

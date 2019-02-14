@@ -13,6 +13,7 @@
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/ephash.h"
+#include "../../../utils/destruction_queue.h"
 #include "../../bufferdef.h"
 
 
@@ -31,6 +32,14 @@ public:
 		this->last_update_time = time(nullptr);
 
     }
+
+	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
+	{
+		this->protocol_.SetKey(key);
+		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
+		this->remote_socket_.open(remote_ep_.protocol());
+		this->last_update_time = time(nullptr);
+	}
 
 	~ClientUdpProxySession()
 	{
@@ -139,10 +148,12 @@ public:
 				if (ec)
 				{
 					UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
-						this->session_map_.erase(local_ep_);
+
 					while (bufferqueue_.Empty()) {
 						bufferqueue_.Dequeue();
 					}
+
+
 					return;
 				}
 
@@ -252,6 +263,9 @@ private:
 			UDP_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
 
 			this->session_map_.erase(local_ep_);
+
+			DestructionQueue::GetInstance()->GetQueueIO().post(boost::bind(&ClientUdpProxySession::void_destruct, shared_from_this()));
+
 			return;
 		}
 
@@ -262,6 +276,7 @@ private:
 
 			boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);
+
 			UDP_DEBUG("session_map_ size --> {}, max size -> {}, max bucket count -> {}", session_map_.size(), session_map_.max_size(), session_map_.max_bucket_count());
 			return;
 		}
@@ -270,6 +285,11 @@ private:
 		timer_.async_wait(boost::bind(&ClientUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
 
+	}
+
+	void void_destruct() 
+	{
+		boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
 	}
 
 };
