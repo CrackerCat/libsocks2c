@@ -9,7 +9,7 @@ void test()
      *            setting server host 127.0.0.1:2222
      *            proxy password "12345678"
      */
-    auto id = LibSocks2c::AsyncRunClient("12345678", "::0", 5555, "127.0.0.1", 2222);
+    auto id = LibSocks2c::AsyncRunClient("12345678", "::0", 5555, "192.168.1.176", 2222);
 
     getchar();
 }
