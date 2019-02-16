@@ -3,11 +3,17 @@
 #include <queue>
 #include <cstring>
 #include <memory>
+#include <boost/lockfree/spsc_queue.hpp>
 
 class BufferQueue
 {
 
 public:
+
+    BufferQueue() : data_queue_(32)
+    {
+
+    }
 
     struct buffer_data
     {
@@ -30,10 +36,12 @@ public:
 
     PBufferData Enqueue(size_t size, void* src, boost::asio::ip::udp::endpoint ep)
     {
+        if (data_queue_.write_available() > 0) return nullptr;
         //printf("enqueue size: %zu\n", size);
-        data_queue_.emplace(std::make_shared<buffer_data>(buffer_data(size, src, ep)));
+        auto data = std::make_shared<buffer_data>(buffer_data(size, src, ep));
+        data_queue_.push(data);
         //auto front = data_queue_.front();
-        return data_queue_.back();
+        return data;
     }
 
     void Dequeue()
@@ -55,11 +63,7 @@ public:
         return data_queue_.empty();
     }
 
-    auto GetQueueSize()
-    {
-        return data_queue_.size();
-    }
 private:
-    std::queue<PBufferData> data_queue_;
-
+    //std::queue<PBufferData> data_queue_;
+    boost::lockfree::spsc_queue<PBufferData> data_queue_;
 };

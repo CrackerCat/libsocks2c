@@ -12,6 +12,7 @@
 #include "../../../utils/logger.h"
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
+#include "../../../utils/macro_def.h"
 #include "../../../utils/destruction_queue.h"
 #include "../../bufferdef.h"
 
@@ -36,6 +37,7 @@ public:
 	~ServerUdpProxySession()
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
+		assert(bufferqueue_.Empty());
 	}
 
 	unsigned char* GetLocalDataBuffer()
@@ -71,7 +73,11 @@ public:
 
 		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
-		auto i = bufferqueue_.Enqueue(bytes - 10, GetLocalBuffer() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
+		auto res = bufferqueue_.Enqueue(bytes - 10, GetLocalBuffer() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
+
+        // queue is full if res == nullptr, we have to discard data
+        if (likely(!res)) return;
+
 		// return if there's another coroutine running
 		// Enqueue is thread safe cause we are in the same context
 		if (remote_sending) return;
@@ -95,7 +101,7 @@ public:
 				if (ec)
 				{
 					UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
-					while (bufferqueue_.Empty()) {
+					while (!bufferqueue_.Empty()) {
 						bufferqueue_.Dequeue();
 					}
 					return;

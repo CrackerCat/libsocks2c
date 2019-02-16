@@ -13,6 +13,7 @@
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/ephash.h"
+#include "../../../utils/macro_def.h"
 #include "../../../utils/destruction_queue.h"
 #include "../../bufferdef.h"
 
@@ -33,7 +34,7 @@ public:
 
     }
 
-	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
+	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
 	{
 		this->protocol_.SetKey(key);
 		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
@@ -44,7 +45,8 @@ public:
 	~ClientUdpProxySession()
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
-	}
+        assert(bufferqueue_.Empty());
+    }
 
     auto& GetLocalEndpoint()
     {
@@ -126,7 +128,11 @@ public:
 
 		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
-		auto i = bufferqueue_.Enqueue(bytes, GetLocalBuffer(), remote_ep_);
+		auto res = bufferqueue_.Enqueue(bytes, GetLocalBuffer(), remote_ep_);
+
+		// queue is full if res == nullptr, we have to discard data
+		if (likely(!res)) return;
+
 		// return if there's another coroutine running
 		// Enqueue is thread safe cause we are in the same context
 		if (remote_sending) return;
@@ -149,10 +155,9 @@ public:
 				{
 					UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
 
-					while (bufferqueue_.Empty()) {
+					while (!bufferqueue_.Empty()) {
 						bufferqueue_.Dequeue();
 					}
-
 
 					return;
 				}
