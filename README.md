@@ -7,7 +7,7 @@
 3. **UDP_DEBUG_DETAIL**     enable tcp log
 3. **TCP_DEBUG_DETAIL**     enable udp log
 4. **MULTITHREAD_IO**       will enable multithread support both server and client proxy
-
+5. **BUILD_DLL**			export dll on win32
 ###Encryption: 
 There are three enctyption methods avaliable
 
