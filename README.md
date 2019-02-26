@@ -1,4 +1,4 @@
-# libsocks2c is a socks5 proxy with multithread
+# libsocks2c is a multithreaded socks5 proxy
 
 ##Build macro:
 
