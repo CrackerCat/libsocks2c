@@ -14,7 +14,6 @@
 #include "../../../utils/logger.h"
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
-#include "../../../utils/destruction_queue.h"
 #include "../../bufferdef.h"
 
 
@@ -102,9 +101,7 @@ public:
 		timer_.expires_from_now(boost::posix_time::seconds(TIMER_EXPIRE_TIME));
 		timer_.async_wait(boost::bind(&ClientUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
-
     }
-
 
     auto& GetLocalSocketRef()
     {
@@ -115,7 +112,6 @@ public:
     {
         return local_ep_;
     }
-
 
     void sendToRemote(uint64_t bytes)
     {
@@ -167,7 +163,6 @@ public:
 				bufferqueue_.Dequeue();
 				
 				last_update_time = time(nullptr);
-
 
 			}
 
@@ -269,8 +264,6 @@ private:
 
 			this->session_map_.erase(local_ep_);
 
-			DestructionQueue::GetInstance()->GetQueueIO().post(boost::bind(&ClientUdpProxySession::void_destruct, this->shared_from_this()));
-
 			return;
 		}
 
@@ -289,13 +282,8 @@ private:
 		timer_.expires_from_now(boost::posix_time::seconds(TIMER_EXPIRE_TIME));
 		timer_.async_wait(boost::bind(&ClientUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
-
 	}
 
-	void void_destruct() 
-	{
-		boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
-	}
 
 };
 

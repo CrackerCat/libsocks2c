@@ -77,9 +77,8 @@ add_library(libsocks2c
         #test/example/runclient.h
         lib/proxymanager.cpp
         lib/proxymanager.h 
-		src/utils/singleton.h 
-		src/utils/destruction_queue.h 
-		lib/version.h 
+		src/utils/singleton.h
+        lib/version.h
 		src/net/udp/bufferqueue.h src/utils/macro_def.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 

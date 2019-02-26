@@ -34,7 +34,6 @@ public:
 		UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
 	}
 
-
 	virtual void StartProxy(std::string local_address, uint16_t local_port) override
 	{
 		pacceptor_ = std::make_unique<ACCEPTOR>(this->GetIOContext());
@@ -137,7 +136,7 @@ private:
 				{
 					UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-						auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_);
+					auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetRandomIOContext());
 
 					new_session->GetLocalEndPoint() = local_ep_;
 
@@ -152,8 +151,8 @@ private:
 				else {
 					UDP_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-						// COPY proxy data only (without protocol header)
-						memcpy(map_it->second->GetLocalBuffer(), protocol_hdr->GetDataOffsetPtr(), bytes_read);
+					// COPY proxy data only (without protocol header)
+					memcpy(map_it->second->GetLocalBuffer(), protocol_hdr->GetDataOffsetPtr(), bytes_read);
 					map_it->second->sendToRemote(bytes_read);
 				}
 

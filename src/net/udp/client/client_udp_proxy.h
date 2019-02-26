@@ -27,11 +27,7 @@ class ClientUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 public:
 
-    ClientUdpProxy()
-	{
-		//init destruction queue
-		DestructionQueue::GetInstance();
-	}
+    ClientUdpProxy() {}
 
 	~ClientUdpProxy()
 	{

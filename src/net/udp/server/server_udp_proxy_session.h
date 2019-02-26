@@ -13,7 +13,6 @@
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
-#include "../../../utils/destruction_queue.h"
 #include "../../bufferdef.h"
 
 
@@ -27,6 +26,14 @@ class ServerUdpProxySession : public boost::enable_shared_from_this<ServerUdpPro
 public:
 
 	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket.get_io_context()), timer_(local_socket.get_io_context())
+	{
+		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
+		this->protocol_.SetKey(key);
+		this->remote_socket_.open(remote_ep_.protocol());
+		this->last_update_time = time(nullptr);
+	}
+
+	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
 	{
 		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
@@ -128,12 +135,11 @@ public:
 		if (ec)
 		{
 			LOG_INFO("onRemoteSend err --> {}", ec.message().c_str())
-				this->session_map_.erase(local_ep_);
 			return;
 		}
 		LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, remote_ep_.address().to_string().c_str(), remote_ep_.port()))
 
-			last_update_time = time(nullptr);
+		last_update_time = time(nullptr);
 
 	}
 
@@ -156,16 +162,12 @@ public:
 					return;
 				}
 
-
 			}
-
 
 		});
 
 		timer_.expires_from_now(boost::posix_time::seconds(TIMER_EXPIRE_TIME));
 		timer_.async_wait(boost::bind(&ServerUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
-
-
 
 	}
 
@@ -219,9 +221,6 @@ private:
 		return protocol_.OnUdpPayloadReadFromServerRemote(protocol_hdr);
 	}
 
-
-
-
 	bool sendToLocal(uint64_t bytes, boost::asio::yield_context yield)
 	{
 		boost::system::error_code ec;
@@ -254,8 +253,6 @@ private:
 				
 			this->session_map_.erase(local_ep_);
 
-			DestructionQueue::GetInstance()->GetQueueIO().post(boost::bind(&ServerUdpProxySession::void_destruct, this->shared_from_this()));
-
 			return;
 		}
 
@@ -273,11 +270,6 @@ private:
 		timer_.async_wait(boost::bind(&ServerUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
 
-	}
-
-	void void_destruct()
-	{
-		boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
 	}
 
 };
