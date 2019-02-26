@@ -35,7 +35,7 @@ public:
 
     PBufferData Enqueue(size_t size, void* src, boost::asio::ip::udp::endpoint ep)
     {
-        if (data_queue_.write_available() > 0) return nullptr;
+        if (data_queue_.write_available() == 0) return nullptr;
         //printf("enqueue size: %zu\n", size);
         auto data = std::make_shared<buffer_data>(buffer_data(size, src, ep));
         data_queue_.push(data);
