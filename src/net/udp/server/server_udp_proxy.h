@@ -123,14 +123,20 @@ private:
 				}
 				UDP_DEBUG("read {} bytes udp data from local", bytes_read)
 
-					last_active_time = time(nullptr);
+				last_active_time = time(nullptr);
 
 				auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
 				// decrypt packet and get payload length
 				bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 				UDP_DEBUG("udp payload length: {}", bytes_read)
 
-					auto map_it = session_map_.find(local_ep_);
+				if (bytes_read == 0)
+				{
+					UDP_DEBUG("decrypt err, drop packet")
+					continue;
+				}
+
+				auto map_it = session_map_.find(local_ep_);
 
 				if (map_it == session_map_.end())
 				{

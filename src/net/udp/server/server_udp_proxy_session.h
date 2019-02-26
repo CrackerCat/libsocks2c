@@ -114,7 +114,7 @@ public:
 					return;
 				}
 
-				LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, remote_ep_.address().to_string().c_str(), remote_ep_.port()))
+				LOG_DETAIL(UDP_DEBUG("[{}] udp send {} bytes to remote : {}:{}", (void*)this, bytes_send, bufferinfo->remote_ep_.address().to_string().c_str(), bufferinfo->remote_ep_.port()))
 					bufferqueue_.Dequeue();
 				last_update_time = time(nullptr);
 
