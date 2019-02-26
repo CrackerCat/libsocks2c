@@ -15,7 +15,7 @@ IF (WIN32)
   add_definitions(-D_WIN32_WINNT=0x0A00)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-DSODIUM_STATIC)
-  
+  add_definitions(-DBUILD_DLL)
   include_directories("C:/Users/mario/Documents/spdlog-1.3.1/include")
   include_directories("C:/Users/mario/Documents/libsodium-1.0.16/src/libsodium/include")
 ELSE()
@@ -29,10 +29,7 @@ set(CMAKE_CXX_FLAGS '-fPIC')
 set(CMAKE_C_FLAGS '-fPIC')
 ENDIF()
 
-
-
-
-add_library(libsocks2c
+add_library(libsocks2c SHARED
         #main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
@@ -92,7 +89,7 @@ ENDIF()
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.69.0 REQUIRED system  coroutine context regex thread)
+find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
