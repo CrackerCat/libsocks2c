@@ -1,6 +1,6 @@
 # libsocks2c is a multithreaded socks5 proxy
 
-##Build macro:
+#Macro:
 
 1. **LOG_DEBUG_DETAIL**     more detail log
 2. **DISABLE_DEBUG_LOG**    disable all debug log
@@ -8,7 +8,11 @@
 3. **TCP_DEBUG_DETAIL**     enable udp log
 4. **MULTITHREAD_IO**       will enable multithread support both server and client proxy
 5. **BUILD_DLL**			export dll on win32
-###Encryption: 
+
+---
+
+#Encryption:
+
 There are three enctyption methods avaliable
 
 1. **PROTOCOL_CHACHA20**
