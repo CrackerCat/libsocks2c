@@ -25,6 +25,7 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
     using VPTIMER = std::vector<PTIMER>;
 
     using SESSION_MAP = boost::unordered_map<boost::asio::ip::udp::endpoint, boost::shared_ptr<ServerUdpProxySession<Protocol>>, EndPointHash>;
+    using VSESSION_MAP = std::vector<SESSION_MAP>;
 
 public:
 
@@ -114,6 +115,7 @@ private:
     VPACCEPTOR vpacceptor_;
 
     SESSION_MAP session_map_;
+    VSESSION_MAP vsession_map_;
 
     bool should_close = false;
 
@@ -157,20 +159,20 @@ private:
                         continue;
                     }
 
-                    auto map_it = session_map_.find(local_ep_);
+                    auto map_it = vsession_map_[i].find(local_ep_);
 
-                    if (map_it == session_map_.end())
+                    if (map_it == vsession_map_[i].end())
                     {
                         UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-                        auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *this->vpacceptor_[i], session_map_, this->GetIOContextAt(i));
+                        auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *this->vpacceptor_[i], vsession_map_[i], this->GetIOContextAt(i));
 
                         new_session->GetLocalEndPoint() = local_ep_;
 
                         // COPY proxy data only (without protocol header)
                         memcpy(new_session->GetLocalBuffer(), protocol_hdr->GetDataOffsetPtr(), bytes_read);
 
-                        session_map_.insert(std::make_pair(local_ep_, new_session));
+                        vsession_map_[i].insert(std::make_pair(local_ep_, new_session));
                         new_session->sendToRemote(bytes_read);
                         new_session->Start();
 
@@ -197,23 +199,23 @@ private:
 
     void onTimeExpire(const boost::system::error_code &ec)
     {
-        UDP_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, session_map_.size())
-
-        if (ec) return;
-
-        if (time(nullptr) - last_active_time > expire_time && session_map_.size() == 0)
-        {
-            boost::system::error_code ec;
-            this->pacceptor_->cancel(ec);
-            LOG_INFO("[{}] udp server at port {} timeout", (void*)this, server_port)
-
-            should_close = true;
-
-            return;
-        }
-
-        ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
-        ptimer_->async_wait(boost::bind(&ServerUdpProxy::onTimeExpire, this, boost::asio::placeholders::error));
+//        UDP_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, vsession_map_[i].size())
+//
+//        if (ec) return;
+//
+//        if (time(nullptr) - last_active_time > expire_time && vsession_map_[i].size() == 0)
+//        {
+//            boost::system::error_code ec;
+//            this->pacceptor_->cancel(ec);
+//            LOG_INFO("[{}] udp server at port {} timeout", (void*)this, server_port)
+//
+//            should_close = true;
+//
+//            return;
+//        }
+//
+//        ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
+//        ptimer_->async_wait(boost::bind(&ServerUdpProxy::onTimeExpire, this, boost::asio::placeholders::error));
 
 
     }
