@@ -29,7 +29,8 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 public:
 
-    ServerUdpProxy() {
+    ServerUdpProxy() : vsession_map_(this->GetVIOContextSize())
+    {
         UDP_DEBUG("[{}] UDP Server created", (void*)this)
 
     }
