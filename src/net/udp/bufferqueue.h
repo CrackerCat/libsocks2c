@@ -1,7 +1,11 @@
 #pragma once
 
 #ifdef MULTITHREAD_IO
-#include "lockfree_queue.h"
+    #ifdef __linux__
+    #include "normal_queue.h"
+    #else
+    #include "lockfree_queue.h"
+    #endif
 #else
 #include "normal_queue.h"
 #endif
