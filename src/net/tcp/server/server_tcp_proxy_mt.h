@@ -147,7 +147,7 @@ private:
                         return;
                     }
 
-                    TCP_DEBUG("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
+                    TCP_DEBUG("[Thread {}] new connection from {}:{}", boost::lexical_cast<std::string>(boost::this_thread::get_id()).c_str(), new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
 
                     new_session->Start();
                 }

@@ -29,7 +29,7 @@ set(CMAKE_CXX_FLAGS '-fPIC')
 set(CMAKE_C_FLAGS '-fPIC')
 ENDIF()
 
-add_library(libsocks2c 
+add_library(libsocks2c
         #main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
