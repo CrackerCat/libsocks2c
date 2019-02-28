@@ -64,6 +64,7 @@ add_library(libsocks2c
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp
+		src/utils/cacheline_helper.c
 
         #test/multiservertest.h
         #test/multiservertestwithmultiio.h

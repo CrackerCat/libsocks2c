@@ -1,4 +1,4 @@
-#include "CacheLineSize.h"
+#include "cacheline_helper.h"
 
 #if defined(__APPLE__)
 
