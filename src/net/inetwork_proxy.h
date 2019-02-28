@@ -58,7 +58,6 @@ public:
         if (time_sec == 0) time_sec = 86400;
         this->expire_time = time_sec;
         last_active_time = time(nullptr);
-
     }
 
 protected:
@@ -71,7 +70,6 @@ protected:
     PTIMER ptimer_;
     time_t last_active_time;
     time_t expire_time = 0;
-
 
     std::string server_ip;
     uint16_t server_port;
