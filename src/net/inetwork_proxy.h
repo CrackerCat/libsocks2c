@@ -55,7 +55,6 @@ public:
      */
     void SetExpireTime(uint64_t time_sec)
     {
-        if (time_sec == 0) time_sec = 86400;
         this->expire_time = time_sec;
         last_active_time = time(nullptr);
     }
