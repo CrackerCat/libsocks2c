@@ -20,7 +20,7 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 
     using ACCEPTOR = boost::asio::ip::udp::socket;
-    using PACCEPTOR = std::unique_ptr<ACCEPTOR>;
+    using PACCEPTOR = boost::shared_ptr<ACCEPTOR>;
     using VPACCEPTOR = std::vector<PACCEPTOR>;
     using VPTIMER = std::vector<PTIMER>;
 
@@ -53,7 +53,7 @@ public:
 
             int opt = 1;
 
-            vpacceptor_.emplace_back(std::make_unique<ACCEPTOR>(this->GetIOContextAt(i)));
+            vpacceptor_.emplace_back(boost::make_shared<ACCEPTOR>(this->GetIOContextAt(i)));
             vpacceptor_.back()->open(ep.protocol(), ec);
             if (ec)
             {
