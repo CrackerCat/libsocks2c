@@ -101,7 +101,7 @@ public:
 
     void StopProxy()
     {
-        auto self(shared_from_this());
+        auto self(this->shared_from_this());
 
         for(int i = 0; i < this->GetVIOContextSize(); i++)
         {
