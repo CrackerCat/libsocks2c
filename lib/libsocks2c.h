@@ -22,7 +22,8 @@ public:
     /*
      * @Thread Safe
      *
-     * @Return server id, it's the port actually
+     * @Return server id
+     *
      * 		   0 if there is another server running at that port
      */
     static int AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0);

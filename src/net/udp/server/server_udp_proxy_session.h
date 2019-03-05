@@ -25,7 +25,7 @@ class ServerUdpProxySession : public boost::enable_shared_from_this<ServerUdpPro
 
 public:
 
-	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket.get_io_context()), timer_(local_socket.get_io_context())
+	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_io_context()), timer_(local_socket->get_io_context())
 	{
 		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
@@ -33,7 +33,7 @@ public:
 		this->last_update_time = time(nullptr);
 	}
 
-	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::asio::ip::udp::socket &local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket.get_io_context())
+	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_io_context())
 	{
 		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
@@ -55,11 +55,6 @@ public:
 	unsigned char* GetLocalBuffer()
 	{
 		return local_recv_buff_;
-	}
-
-	auto& GetLocalSocketRef()
-	{
-		return local_socket_;
 	}
 
 	auto& GetLocalEndPoint()
@@ -92,7 +87,7 @@ public:
 		remote_sending = true;
 
 		auto self(this->shared_from_this());
-		boost::asio::spawn(this->local_socket_.get_io_context(),
+		boost::asio::spawn(this->local_socket_->get_io_context(),
 			[this, self, port](boost::asio::yield_context yield) {
 
 			while (!bufferqueue_.Empty())
@@ -147,7 +142,7 @@ public:
 	void Start() {
 
 		auto self(this->shared_from_this());
-		boost::asio::spawn(this->local_socket_.get_io_context(), [this, self](boost::asio::yield_context yield) {
+		boost::asio::spawn(this->local_socket_->get_io_context(), [this, self](boost::asio::yield_context yield) {
 
 			boost::system::error_code ec;
 
@@ -171,7 +166,12 @@ public:
 
 	}
 
-
+	void ForceCancel()
+	{
+		boost::system::error_code ec;
+		this->remote_socket_.cancel(ec);
+		this->timer_.cancel(ec);
+	}
 
 private:
 
@@ -189,7 +189,7 @@ private:
 	BufferQueue bufferqueue_;
 	bool remote_sending = false;
 
-	boost::asio::ip::udp::socket &local_socket_;
+	boost::shared_ptr<boost::asio::ip::udp::socket> local_socket_;
 	boost::asio::ip::udp::socket remote_socket_;
 
 	boost::asio::deadline_timer timer_;
@@ -226,7 +226,7 @@ private:
 		boost::system::error_code ec;
 
 		// Read Header Decode Length
-		uint64_t bytes_send = this->local_socket_.async_send_to(boost::asio::buffer(remote_recv_buff_, bytes), local_ep_, yield[ec]);
+		uint64_t bytes_send = this->local_socket_->async_send_to(boost::asio::buffer(remote_recv_buff_, bytes), local_ep_, yield[ec]);
 
 		if (ec)
 		{
@@ -271,6 +271,11 @@ private:
 
 
 	}
+
+
+
+
+
 
 };
 

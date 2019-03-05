@@ -172,16 +172,16 @@ public:
 
     }
 
-    bool ShouldClose()
-    {
-        return should_close;
-    }
+	void ForceCancel()
+	{
+		boost::system::error_code ec;
+		this->remote_socket_.cancel(ec);
+		this->timer_.cancel(ec);
+	}
 
 private:
 
     Protocol protocol_;
-
-    bool should_close = false;
 
     SESSION_MAP& session_map_;
 

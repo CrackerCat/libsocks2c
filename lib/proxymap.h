@@ -91,63 +91,24 @@ public:
 
         if (sit != server_map.end())
         {
-            if (std::get<0>(sit->second)->Stopped()) return false;
             std::get<0>(sit->second)->StopProxy();
             std::get<1>(sit->second)->StopProxy();
+            server_map.erase(sit);
             return true;
         }
 
 
         if (cit != client_map.end())
         {
-            if (std::get<0>(cit->second)->Stopped()) return false;
             std::get<0>(cit->second)->StopProxy();
             std::get<1>(cit->second)->StopProxy();
+            client_map.erase(cit);
             return true;
         }
 
         return false;
     }
 
-    bool ClearProxy(int port)
-    {
-        std::lock_guard<std::mutex> lg(map_mutex);
-
-        auto cit = client_map.find(port);
-        auto sit = server_map.find(port);
-
-        if (sit == server_map.end() && cit == client_map.end()) return false;
-
-        if (sit != server_map.end() && cit != client_map.end()) return false;
-
-        if (sit != server_map.end())
-        {
-            if (std::get<1>(sit->second)->ShouldClose() && std::get<0>(sit->second)->ShouldClose())
-            {
-                std::get<0>(sit->second).reset();
-                std::get<1>(sit->second).reset();
-                server_map.erase(port);
-                return true;
-            }
-            return false;
-        }
-
-
-        if (cit != client_map.end())
-        {
-            if (std::get<1>(cit->second)->ShouldClose() && std::get<0>(cit->second)->ShouldClose())
-            {
-                std::get<0>(cit->second).reset();
-                std::get<1>(cit->second).reset();
-                client_map.erase(port);
-                return true;
-            }
-            return false;
-        }
-
-        return false;
-
-    }
 
 
 private:

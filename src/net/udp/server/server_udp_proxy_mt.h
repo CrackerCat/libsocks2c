@@ -34,6 +34,7 @@ public:
         UDP_DEBUG("[{}] UDP Server created", (void*)this)
 
     }
+
     ~ServerUdpProxy() {
         UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
     }

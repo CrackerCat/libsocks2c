@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
-add_definitions(-DDISABLE_DEBUG_LOG)
-#add_definitions(-DLOG_DEBUG_DETAIL)
-#add_definitions(-DUDP_DEBUG_DETAIL)
-#add_definitions(-DTCP_DEBUG_DETAIL)
+#add_definitions(-DDISABLE_DEBUG_LOG)
+add_definitions(-DLOG_DEBUG_DETAIL)
+add_definitions(-DUDP_DEBUG_DETAIL)
+add_definitions(-DTCP_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
 
@@ -20,7 +20,7 @@ IF (WIN32)
   include_directories("C:/Users/mario/Documents/libsodium-1.0.16/src/libsodium/include")
 ELSE()
 IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    include_directories("/Users/mario/Documents/spdlog-1.3.1/include")
+    #include_directories("/Users/mario/Documents/spdlog-1.3.1/include")
 ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
     # spdlog include in /usr/local/include
 ENDIF()
@@ -29,8 +29,8 @@ set(CMAKE_CXX_FLAGS '-fPIC')
 set(CMAKE_C_FLAGS '-fPIC')
 ENDIF()
 
-add_library(libsocks2c
-        #main.cpp
+add_executable(libsocks2c
+        main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5_protocol.h

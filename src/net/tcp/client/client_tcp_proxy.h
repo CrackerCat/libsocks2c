@@ -89,8 +89,6 @@ public:
             return;
         }
 
-        ++acceptor_alive;
-
         startAcceptorCoroutine();
 
         LOG_INFO("ClientTcpProxy started, Server: [{}:{}], Key: [{}], Local socks5 Port: [{}:{}]", this->server_ip.c_str(), this->server_port, proxyKey_, local_address.c_str(), local_port)
@@ -112,26 +110,12 @@ public:
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
-		stopped = true;
+		if (this->ptimer_) this->ptimer_->cancel();
 	}
-
-    bool Stopped()
-    {
-        return stopped;
-    }
-
-    bool ShouldClose()
-    {
-        return acceptor_alive == 0;
-    }
 
 private:
 
     PACCEPTOR pacceptor_;
-
-    bool stopped = false;
-    std::atomic<int> acceptor_alive = {0};
-
 
     std::string local_address;
 	uint16_t local_port;
@@ -158,7 +142,6 @@ private:
                 if (ec)
                 {
                     LOG_INFO("client accept err --> {}", ec.message().c_str())
-                    --acceptor_alive;
                     return;
                 }
                 LOG_INFO("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../lib/libsocks2c.h"
+#include <unistd.h>
 
 void test()
 {
@@ -11,5 +12,11 @@ void test()
      */
     auto id = LibSocks2c::AsyncRunClient("12345678", "::0", 5555, "192.168.1.147", 2222);
 
-    getchar();
+    sleep(5);
+
+    LibSocks2c::StopProxy(5555);
+
+    sleep(5222);
+
+
 }

@@ -16,7 +16,17 @@
 
 
 /*
- * Single Thread Version Server Proxy
+ *  multithread version of tcp proxy without reuseport
+ *
+ *  acceptor ->   session
+ *    1     ->      N
+ *
+ *  sessions may or may not in the same thread with acceptor
+ *
+ *  closing method:
+ *      cancel timer and acceptor only
+ *      session will expire when they timeout
+ *
  */
 template <class Protocol>
 class ServerTcpProxy : public INetworkProxy, public boost::enable_shared_from_this<ServerTcpProxy<Protocol>> {
@@ -88,8 +98,6 @@ public:
 				return;
 		}
 
-		++acceptor_alive;
-
 		startAcceptorCoroutine();
 
 		LOG_INFO("ServerTcpProxy started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
@@ -101,24 +109,12 @@ public:
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
-	}
-
-	bool Stopped()
-	{
-		return stopped;
-	}
-
-	bool ShouldClose()
-	{
-		return acceptor_alive == 0;
+		if (this->ptimer_) this->ptimer_->cancel();
 	}
 
 private:
 
 	PACCEPTOR pacceptor_;
-
-	bool stopped = false;
-	std::atomic<int> acceptor_alive = {0};
 
 	virtual void startAcceptorCoroutine() override
 	{
@@ -138,8 +134,7 @@ private:
 
 				if (ec)
 				{
-					LOG_INFO("server accept err --> {}", ec.message().c_str())
-					--acceptor_alive;
+					LOG_INFO("tcp server accept err --> {}", ec.message().c_str())
 					return;
 				}
 
@@ -156,8 +151,8 @@ private:
 	{
 		if (ec)
 		{
-			LOG_ERROR("onTimeExpire err --> {}", ec.message().c_str())
-				return;
+			LOG_INFO("onTimeExpire err --> {}", ec.message().c_str())
+			return;
 		}
 		TCP_DEBUG("[{}] TCP onTimeExpire", (void*)this)
 

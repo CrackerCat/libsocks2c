@@ -66,13 +66,17 @@ public:
 
 	void StopProxy()
 	{
-		this->pacceptor_->cancel();
-	}
+        for (auto it = session_map_.begin(); it != session_map_.end(); )
+        {
 
-    bool ShouldClose()
-    {
-        return session_map_.size() == 0;
-    }
+            it->second->ForceCancel();
+            it = session_map_.erase(it);
+        }
+
+        this->pacceptor_->cancel();
+        // only close timer when it is set
+        if (this->ptimer_) this->ptimer_->cancel();
+	}
 
 private:
 

@@ -15,12 +15,28 @@
 #include <boost/unordered_map.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+
+/*
+ *  multithread version of udp proxy without reuseport
+ *
+ *  acceptor ->   session
+ *    1     ->      N
+ *
+ *  N sessions share 1 acceptor,
+ *  sessions may or may not in the same thread with acceptor
+ *  but the session_map can only be R/W in acceptor's thread
+ *
+ *  closing method:
+ *      iterate the session_map, cancel and remove all the session(including the timer)
+ *      cancel timer for acceptor
+ *
+ */
 template <class Protocol>
 class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_this<ServerUdpProxy<Protocol>> {
 
 
 	using ACCEPTOR = boost::asio::ip::udp::socket;
-	using PACCEPTOR = std::unique_ptr<ACCEPTOR>;
+	using PACCEPTOR = boost::shared_ptr<ACCEPTOR>;
 
 	using SESSION_MAP = boost::unordered_map<boost::asio::ip::udp::endpoint, boost::shared_ptr<ServerUdpProxySession<Protocol>>, EndPointHash>;
 
@@ -36,7 +52,7 @@ public:
 
 	virtual void StartProxy(std::string local_address, uint16_t local_port) override
 	{
-		pacceptor_ = std::make_unique<ACCEPTOR>(this->GetIOContext());
+		pacceptor_ = boost::make_shared<ACCEPTOR>(this->GetIOContext());
 
 		if (expire_time > 0)
 		{
@@ -78,14 +94,17 @@ public:
 
 	void StopProxy()
 	{
+		for (auto it = session_map_.begin(); it != session_map_.end(); )
+		{
+
+			it->second->ForceCancel();
+			it = session_map_.erase(it);
+		}
+
 		this->pacceptor_->cancel();
+		// only close timer when it is set
+		if (this->ptimer_) this->ptimer_->cancel();
 	}
-
-	bool ShouldClose()
-	{
-		return should_close;
-	}
-
 
 private:
 
@@ -94,8 +113,6 @@ private:
 	PACCEPTOR pacceptor_;
 
 	SESSION_MAP session_map_;
-
-	bool should_close = false;
 
 	unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
 
@@ -109,13 +126,15 @@ private:
 			{
 				boost::system::error_code ec;
 
-
 				boost::asio::ip::udp::endpoint local_ep_;
 				//async recv
-
 				uint64_t bytes_read = pacceptor_->async_receive_from(boost::asio::buffer(local_recv_buff_, UDP_LOCAL_RECV_BUFF_SIZE), local_ep_, yield[ec]);
 
-				if (ec == boost::system::errc::operation_canceled) return;
+				if (ec == boost::system::errc::operation_canceled)
+                {
+                    LOG_INFO("udp server accept err --> Operation canceled");
+                    return;
+                }
 				if (ec || bytes_read == 0)
 				{
 					LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
@@ -142,7 +161,7 @@ private:
 				{
 					UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-					auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetRandomIOContext());
+					auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext());
 
 					new_session->GetLocalEndPoint() = local_ep_;
 
@@ -162,9 +181,7 @@ private:
 					map_it->second->sendToRemote(bytes_read);
 				}
 
-
 			}
-
 
 		});
 	}
@@ -174,22 +191,22 @@ private:
 	{
 		UDP_DEBUG("[{}] UDP onTimeExpire, mapsize: {}", (void*)this, session_map_.size())
 
-			if (ec) return;
+		if (ec)
+        {
+            LOG_INFO("onTimeExpire err --> {}", ec.message().c_str())
+            return;
+        }
 
 		if (time(nullptr) - last_active_time > expire_time && session_map_.size() == 0)
 		{
 			boost::system::error_code ec;
 			this->pacceptor_->cancel(ec);
 			LOG_INFO("[{}] udp server at port {} timeout", (void*)this, server_port)
-				
-			should_close = true;
-			
 			return;
 		}
 
 		ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
 		ptimer_->async_wait(boost::bind(&ServerUdpProxy::onTimeExpire, this, boost::asio::placeholders::error));
-
 
 	}
 
