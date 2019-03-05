@@ -101,13 +101,30 @@ public:
 
     void StopProxy()
     {
-        //this->pacceptor_->cancel();
+        auto self(shared_from_this());
+
+        for(int i = 0; i < this->GetVIOContextSize(); i++)
+        {
+            this->vpacceptor_[i]->get_io_context().post([this, self]{
+                for (auto it = vsession_map_[i].begin(); it != vsession_map_[i].end(); )
+                {
+
+                    it->second->ForceCancel();
+                    it = vsession_map_[i].erase(it);
+                }
+
+                this->vpacceptor_[i]->cancel();
+                // only close timer when it is set
+                //if (this->vptimer_[i]) this->ptimer_[i]->cancel();
+            });
+
+
+
+        }
+
+
     }
 
-    bool ShouldClose()
-    {
-        return should_close;
-    }
 
 
 private:

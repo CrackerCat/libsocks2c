@@ -94,16 +94,19 @@ public:
 
 	void StopProxy()
 	{
-		for (auto it = session_map_.begin(); it != session_map_.end(); )
-		{
+	    auto self(this->shared_from_this());
+	    this->pacceptor_->get_io_context().post([this, self]{
+            for (auto it = session_map_.begin(); it != session_map_.end(); )
+            {
 
-			it->second->ForceCancel();
-			it = session_map_.erase(it);
-		}
+                it->second->ForceCancel();
+                it = session_map_.erase(it);
+            }
 
-		this->pacceptor_->cancel();
-		// only close timer when it is set
-		if (this->ptimer_) this->ptimer_->cancel();
+            this->pacceptor_->cancel();
+            // only close timer when it is set
+            if (this->ptimer_) this->ptimer_->cancel();
+	    });
 	}
 
 private:

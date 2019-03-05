@@ -1,7 +1,6 @@
 #include "libsocks2c.h"
 
 #include "proxymap.h"
-#include "proxymanager.h"
 
 #include "../src/utils/logger.h"
 #include "../src/factory/socks2c_factory.h"
@@ -43,37 +42,10 @@ int LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint
 
     auto res = ProxyMap<Protocol>::GetInstance()->Insert(socks5_port, handle);
 
-	if (res)
-	{
-		ProxyManager::GetInstance()->TakeManage(socks5_port);
-		return socks5_port;
-	}
+	if (res) return socks5_port;
+
     return 0;
 }
-
-bool LibSocks2c::PauseClient(int id)
-{
-	if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
-
-	return ProxyMap<Protocol>::GetInstance()->PauseClient(id);
-
-}
-bool LibSocks2c::RestartClient(int id)
-{
-	if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
-
-	return ProxyMap<Protocol>::GetInstance()->RestartClient(id);
-
-}
-
-bool LibSocks2c::RetargetProxyServer(int id, std::string ip, uint16_t port)
-{
-	if (!ProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
-
-	return ProxyMap<Protocol>::GetInstance()->RetargetServer(id, ip, port);
-
-}
-
 
 
 bool LibSocks2c::StopProxy(int id)
@@ -94,11 +66,8 @@ int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint
 
     auto res = ProxyMap<Protocol>::GetInstance()->Insert(server_port, handle);
 
-	if (res)
-	{
-		ProxyManager::GetInstance()->TakeManage(server_port);
-		return server_port;
-	}
+	if (res) return server_port;
+
     return 0;
 }
 

@@ -85,7 +85,6 @@ public:
                 vptimer_.back()->async_wait(boost::bind(&ServerTcpProxy::onTimeExpire, this->shared_from_this(), boost::asio::placeholders::error, i));
             }
 
-            ++acceptor_alive;
         }
 
         startAcceptorCoroutine();
@@ -102,27 +101,16 @@ public:
         {
             TCP_DEBUG("stopping tcp acceptor {}", i)
             this->vpacceptor_[i]->cancel();
-            this->vptimer_[i]->cancel();
+            if (this->vptimer_[i]) this->vptimer_[i]->cancel();
+
         }
-        stopped = true;
     }
 
-    bool Stopped()
-    {
-        return stopped;
-    }
-
-    bool ShouldClose()
-    {
-        return acceptor_alive == 0;
-    }
 
 private:
 
     VPACCEPTOR vpacceptor_;
     VPTIMER vptimer_;
-    bool stopped = false;
-    std::atomic<int> acceptor_alive = {0};
 
     void startAcceptorCoroutine()
     {
@@ -143,7 +131,6 @@ private:
                     if (ec)
                     {
                         LOG_INFO("acceptor {} err --> {}", i, ec.message().c_str())
-                        --acceptor_alive;
                         return;
                     }
 

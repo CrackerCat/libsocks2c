@@ -20,7 +20,7 @@ template <class Protocol>
 class ClientUdpProxy : public INetworkProxy, public boost::enable_shared_from_this<ClientUdpProxy<Protocol>>{
 
     using ACCEPTOR = boost::asio::ip::udp::socket;
-    using PACCEPTOR = std::unique_ptr<ACCEPTOR>;
+    using PACCEPTOR = boost::shared_ptr<ACCEPTOR>;
 
     using SESSION_MAP = boost::unordered_map<boost::asio::ip::udp::endpoint, boost::shared_ptr<ClientUdpProxySession<Protocol>>, EndPointHash>;
 
@@ -36,7 +36,7 @@ public:
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
     {
-        pacceptor_ = std::make_unique<ACCEPTOR>(this->GetIOContext());
+        pacceptor_ = boost::make_shared<ACCEPTOR>(this->GetIOContext());
 
 		Socks5ProtocolHelper::SetUdpSocks5ReplyEndpoint("127.0.0.1", local_port);
 
@@ -128,7 +128,7 @@ private:
                 if (map_it == session_map_.end())
                 {
 
-					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *pacceptor_, session_map_, this->GetRandomIOContext());
+					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext());
 					
 					UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port());
 
