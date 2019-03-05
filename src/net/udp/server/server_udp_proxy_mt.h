@@ -184,7 +184,7 @@ private:
                     {
                         UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-                        auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, *this->vpacceptor_[i], vsession_map_[i], this->GetIOContextAt(i));
+                        auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, this->vpacceptor_[i], vsession_map_[i]);
 
                         new_session->GetLocalEndPoint() = local_ep_;
 
