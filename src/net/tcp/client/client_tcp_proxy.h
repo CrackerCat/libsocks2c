@@ -96,17 +96,7 @@ public:
         this->RunIO();
 
     }
-
-	void Pause()
-	{
-		this->pacceptor_->cancel();
-	}
-
-	void Restart()
-	{
-		startAcceptorCoroutine();
-	}
-
+    
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
@@ -144,7 +134,7 @@ private:
                     LOG_INFO("client accept err --> {}", ec.message().c_str())
                     return;
                 }
-                LOG_INFO("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
+                LOG_DEBUG("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
                 //last_active_time = time(nullptr);
 
                 new_session->Start();

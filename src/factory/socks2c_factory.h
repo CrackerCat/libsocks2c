@@ -45,13 +45,14 @@ public:
 	// if defined MULTITHREAD_IO, then ClientTcpProxy would be multithread version
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
     template<class Protocol>
-    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
+    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, bool resolve_dns, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ClientTcpProxy<Protocol>>();
 
 		tcps->SetSocks5Host(socks5_ip, socks5_port);
         tcps->SetProxyKey(proxyKey);
         tcps->SetProxyInfo(server_ip, server_port);
+        if (resolve_dns) tcps->EnableDnsResolver();
         tcps->StartProxy();
 
         auto udps = boost::make_shared<ClientUdpProxy<Protocol>>();

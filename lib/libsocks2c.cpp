@@ -33,18 +33,45 @@ void initLog()
 
 }
 
-int LibSocks2c::AsyncRunClient(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout) {
+int LibSocks2c::StartProxy(Config config)
+{
 
     initLog();
-    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(socks5_port)) return 0;
 
-	auto handle = Socks2cFactory::CreateClientProxy<Protocol>(proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
+    if (config.isServer)
+    {
+        if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(config.server_port)) return 0;
 
-    auto res = ProxyMap<Protocol>::GetInstance()->Insert(socks5_port, handle);
+        auto handle = Socks2cFactory::CreateServerProxy<Protocol>(
+                config.proxyKey,
+                config.server_ip,
+                config.server_port,
+                config.timeout);
 
-	if (res) return socks5_port;
+        auto res = ProxyMap<Protocol>::GetInstance()->Insert(config.server_port, handle);
 
-    return 0;
+        if (!res) return -1;
+
+        return config.server_port;
+    }
+
+    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port)) return 0;
+
+    auto handle = Socks2cFactory::CreateClientProxy<Protocol>(
+            config.proxyKey,
+            config.socks5_ip,
+            config.socks5_port,
+            config.server_ip,
+            config.server_port,
+            config.resolve_dns,
+            config.timeout);
+
+    auto res = ProxyMap<Protocol>::GetInstance()->Insert(config.socks5_port, handle);
+
+    if (res) return -1;
+
+    return config.socks5_port;
+
 }
 
 
@@ -56,43 +83,20 @@ bool LibSocks2c::StopProxy(int id)
 }
 
 
-int LibSocks2c::AsyncRunServer(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
-
-    initLog();
-
-    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(server_port)) return 0;
-
-    auto handle = Socks2cFactory::CreateServerProxy<Protocol>(proxyKey, server_ip, server_port, timeout);
-
-    auto res = ProxyMap<Protocol>::GetInstance()->Insert(server_port, handle);
-
-	if (res) return server_port;
-
-    return 0;
-}
-
-
-void LibSocks2c::RunServerWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout) {
-
-    initLog();
-
-    {
-        Socks2cFactory::CreateServerProxyWithContext<Protocol>(&io_context, proxyKey, server_ip, server_port, timeout);
-    }
-
-}
-void LibSocks2c::RunClientWithExternContext(boost::asio::io_context &io_context, std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint64_t timeout)
+void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &io_context)
 {
     initLog();
 
     {
-        Socks2cFactory::CreateClientProxyWithContext<Protocol>(&io_context, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
+        //Socks2cFactory::CreateServerProxyWithContext<Protocol>(&io_context, proxyKey, server_ip, server_port, timeout);
     }
+    //Socks2cFactory::CreateClientProxyWithContext<Protocol>(&io_context, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
+
 
 }
 
 #include "version.h"
-std::string LibSocks2c::GetLibVersion()
+std::string LibSocks2c::GetVersion()
 {
     return Libsocks2cVersion;
 }
