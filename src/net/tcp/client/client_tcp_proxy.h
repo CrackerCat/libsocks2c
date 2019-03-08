@@ -96,7 +96,7 @@ public:
         this->RunIO();
 
     }
-    
+
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();

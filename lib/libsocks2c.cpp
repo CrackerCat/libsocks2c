@@ -38,6 +38,7 @@ int LibSocks2c::StartProxy(Config config)
 
     initLog();
 
+    //run server
     if (config.isServer)
     {
         if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(config.server_port)) return 0;
@@ -55,8 +56,10 @@ int LibSocks2c::StartProxy(Config config)
         return config.server_port;
     }
 
-    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port)) return 0;
 
+
+    //run client
+    if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port)) return 0;
     auto handle = Socks2cFactory::CreateClientProxy<Protocol>(
             config.proxyKey,
             config.socks5_ip,

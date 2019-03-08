@@ -1,5 +1,5 @@
 #pragma once
-∂
+
 #include <string>
 
 #if defined(BUILD_DLL) && defined(_WIN32)
