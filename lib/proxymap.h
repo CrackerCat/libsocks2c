@@ -40,43 +40,6 @@ public:
         return client_map.insert({port, handle}).second;
     }
 
-	// we pause proxy by canceling acceptors but not putting stop mark
-	bool PauseClient(int port)
-	{
-		std::lock_guard<std::mutex> lg(map_mutex);
-		auto cit = client_map.find(port);
-		if (cit == client_map.end()) return false;
-
-		std::get<0>(cit->second)->Pause();
-		std::get<1>(cit->second)->Pause();
-
-		return true;
-	}
-
-	//restart the acceptor
-	bool RestartClient(int port)
-	{
-		std::lock_guard<std::mutex> lg(map_mutex);
-		auto cit = client_map.find(port);
-		if (cit == client_map.end()) return false;
-
-		std::get<0>(cit->second)->Restart();
-		std::get<1>(cit->second)->Restart();
-
-		return true;
-	}
-	
-	bool RetargetServer(int port, std::string ip, uint16_t port2)
-	{
-		std::lock_guard<std::mutex> lg(map_mutex);
-		auto cit = client_map.find(port);
-		if (cit == client_map.end()) return false;
-
-		std::get<0>(cit->second)->SetProxyInfo(ip, port2);
-		std::get<1>(cit->second)->SetProxyInfo(ip, port2);
-		
-		return true;
-	}
 
     bool StopProxy(int port)
     {
