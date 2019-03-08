@@ -39,6 +39,7 @@ public:
 
     void EnableDnsResolver()
     {
+        LOG_INFO("Using Local Dns Server")
         resolve_dns = true;
     }
 

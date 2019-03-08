@@ -153,16 +153,18 @@ private:
 
 
     }
+
     void bindReply(){
 
     }
 
-    bool isConnectRequest(socks5::SOCKS_REQ* request)
+    inline bool isConnectRequest(socks5::SOCKS_REQ* request)
     {
         if (request->CMD == socks5::SOCKS5_CMD_TYPE::CONNECT) return true;
         return false;
     }
-    bool isUdpRequest(socks5::SOCKS_REQ* request)
+
+    inline bool isUdpRequest(socks5::SOCKS_REQ* request)
     {
         if (request->CMD == socks5::SOCKS5_CMD_TYPE::UDP_ASSOCIATE) return true;
         return false;
@@ -241,9 +243,6 @@ private:
         if (socks5_req_header->ATYP == socks5::SOCKS5_ATYP_TYPE::IPV4 || socks5_req_header->ATYP == socks5::SOCKS5_ATYP_TYPE::IPV6)
         {
 
-
-
-
             /*
              *
              *  Forward Socks5 request to remote.
@@ -252,12 +251,22 @@ private:
              *      -- Remote send no reply back if successful
              *
              */
-            if (!sendToRemote(bytes_read,PayloadType::SOCKS5_DATA,yield))
+            if (!sendToRemote(bytes_read, PayloadType::SOCKS5_DATA, yield))
             {
                 TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
                 return false;
             }
 
+            std::string ip_str;
+            uint16_t port;
+
+            if (!Socks5ProtocolHelper::parseIpPortFromSocks5Request(socks5_req_header, ip_str, port))
+            {
+                TCP_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
+                return false;
+            }
+
+            TCP_INFO("proxy {}:{}", ip_str, port)
 
             return true;
 
@@ -265,22 +274,24 @@ private:
         else if (socks5_req_header->ATYP == socks5::SOCKS5_ATYP_TYPE::DOMAINNAME)
         {
 
+            std::string domain_str;
+            uint16_t port;
+
+            if (!Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5_req_header, domain_str, port))
+            {
+                TCP_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
+                return false;
+            }
+
+            TCP_INFO("proxy {}:{}", domain_str, port)
 
             if(pdns_resolver_)
             {
-                std::string ip_str;
-                uint16_t port;
-
-                if (!Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5_req_header, ip_str, port))
-                {
-                    TCP_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
-                    return false;
-                }
 
                 boost::system::error_code ec;
-                boost::asio::ip::tcp::resolver::query query{ip_str,std::to_string(port),boost::asio::ip::resolver_query_base::all_matching};
+                boost::asio::ip::tcp::resolver::query query{domain_str,std::to_string(port),boost::asio::ip::resolver_query_base::all_matching};
 
-                TCP_DEBUG("[{:p}] resolving {}:{}", (void*)this, ip_str.c_str(), port)
+                TCP_DEBUG("[{:p}] resolving {}:{}", (void*)this, domain_str.c_str(), port)
                 auto dns_result = pdns_resolver_->async_resolve(query, yield[ec]);
 
                 if (ec)

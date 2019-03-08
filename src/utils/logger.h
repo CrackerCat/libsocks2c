@@ -72,5 +72,8 @@ private:
 #define TCP_DEBUG(x, ...)
 #endif
 
+#define TCP_INFO LOG_INFO
+#define UDP_INFO LOG_INFO
+
 
 
