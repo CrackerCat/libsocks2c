@@ -9,6 +9,23 @@
 #include <memory>
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/lexical_cast.hpp>
+
+
+
+
+
+
+/*
+ * ClientUdpProxySession run in single thread mode
+ * only client_udp_proxy_session will interact with this class when sending packet
+ *
+ * when recv packet from remote, we need to parse the dst endpoint which is encrypted together with data
+ * format:
+ * ip(4 bytes) + port(2 bytes) + data
+ * and send it to local via raw socket
+ *
+ * when sending packet to remote
+ */
 class ClientUdpRawProxy : public Singleton<ClientUdpRawProxy>
 {
     enum SESSION_STATUS
