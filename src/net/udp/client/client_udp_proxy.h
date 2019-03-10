@@ -1,5 +1,4 @@
 #pragma once
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 
 #include "../../inetwork_proxy.h"
 #include "../../../utils/logger.h"
@@ -137,9 +136,9 @@ private:
                     session_map_.insert(std::make_pair(local_ep_, new_session));
 
 					memcpy(new_session->GetLocalBuffer(), local_recv_buff_, bytes_read);
+                    new_session->EnableRawProxy();
                     new_session->sendToRemote(bytes_read);
                     new_session->Start();
-
                 } else{
 					UDP_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 

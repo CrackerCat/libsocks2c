@@ -11,22 +11,18 @@ void test()
      *            proxy password "12345678"
      */
 
-    for (int i = 0; i < 999; i++)
-    {
-        auto id = LibSocks2c::AsyncRunClient("12345678", "::0", 5555, "192.168.1.147", 2222);
+    LibSocks2c::Config config;
+    config.isServer = false;
+    config.proxyKey = "12345678";
+    config.server_ip = "9.108.59.115";
+    config.server_port = 443;
+    config.socks5_ip = "0.0.0.0";
+    config.socks5_port = 5555;
+    config.timeout = 0;
+    config.resolve_dns = false;
 
-        sleep(5);
+    LibSocks2c::StartProxy(config);
 
-        LibSocks2c::AsyncRunClient("12345678", "::0", 5555, "192.168.1.147", 2222);
-
-        sleep(2222);
-
-        LibSocks2c::StopProxy(5555);
-
-        sleep(2);
-    }
-
-
-
+    getchar();
 
 }

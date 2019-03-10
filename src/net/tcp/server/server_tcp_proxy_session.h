@@ -2,8 +2,6 @@
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
-
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 #include <boost/asio/spawn.hpp>
 
 #include "../../../utils/logger.h"
@@ -22,7 +20,7 @@ template<class Protocol>
 class ServerTcpProxySession : public boost::enable_shared_from_this<ServerTcpProxySession<Protocol>> {
 
 	using IO_CONTEXT = boost::asio::io_context;
-	using SOCKET = boost::asio::ip::tcp::socket;
+	using TCP_SOCKET = boost::asio::ip::tcp::socket;
 
 	using DNS_RESOLVER = boost::asio::ip::tcp::resolver;
 	using PDNS_RESOLVER = std::unique_ptr<DNS_RESOLVER>;
@@ -56,7 +54,7 @@ public:
 	}
 
 
-	SOCKET& GetLocalSocketRef()
+	TCP_SOCKET& GetLocalSocketRef()
 	{
 		return local_socket_;
 	}
@@ -67,8 +65,8 @@ private:
 
 	Protocol protocol_;
 
-	SOCKET local_socket_;
-	SOCKET remote_socket_;
+	TCP_SOCKET local_socket_;
+	TCP_SOCKET remote_socket_;
 
 	DNS_RESOLVER dns_resolver_;
 

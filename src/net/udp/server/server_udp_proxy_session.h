@@ -1,6 +1,5 @@
 #pragma once
 
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -14,8 +13,6 @@
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
 #include "../../bufferdef.h"
-
-
 
 template <class Protocol>
 class ServerUdpProxySession : public boost::enable_shared_from_this<ServerUdpProxySession<Protocol>> {

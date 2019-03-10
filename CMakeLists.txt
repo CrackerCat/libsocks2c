@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
 
 add_definitions(-DPROTOCOL_CHACHA20)
-add_definitions(-DDISABLE_DEBUG_LOG)
-#add_definitions(-DUDP_DEBUG_DETAIL)
+#add_definitions(-DDISABLE_DEBUG_LOG)
+add_definitions(-DLOG_DEBUG_DETAIL)
+add_definitions(-DUDP_DEBUG_DETAIL)
 #add_definitions(-DTCP_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
-
+add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
 set(CMAKE_CXX_STANDARD 14)
 
 IF (WIN32)
@@ -21,15 +22,15 @@ ELSE()
 IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     #include_directories("/Users/mario/Documents/spdlog-1.3.1/include")
 ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    # spdlog include in /usr/local/include
+    include_directories("/root/spdlog-1.3.1/include")
 ENDIF()
 include_directories("/usr/local/include")
 set(CMAKE_CXX_FLAGS '-fPIC')
 set(CMAKE_C_FLAGS '-fPIC')
 ENDIF()
 
-add_library(libsocks2c
-        #main.cpp
+add_executable(libsocks2c
+        main.cpp
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5_protocol.h
@@ -74,7 +75,8 @@ add_library(libsocks2c
         #test/example/runclient.h
         src/utils/singleton.h
         lib/version.h
-		src/net/udp/bufferqueue.h src/utils/macro_def.h)
+		src/net/udp/bufferqueue.h src/utils/macro_def.h src/net/raw/server/server_udp_raw_proxy.h src/net/raw/raw_socket.h src/net/raw/client/client_udp_raw_proxy.h src/net/raw/packetHelper.h
+        src/net/raw/client/client_udp_raw_proxy.cpp)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)
@@ -82,6 +84,9 @@ target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/
 ELSE()
 target_link_libraries(libsocks2c pthread)
 target_link_libraries(libsocks2c "/usr/local/lib/libsodium.a")
+target_link_libraries(libsocks2c "/usr/local/lib/libtins.so")
+target_link_libraries(libsocks2c "/usr/local/lib/libpcap.so")
+
 ENDIF()
 
 set(Boost_USE_STATIC_LIBS ON)

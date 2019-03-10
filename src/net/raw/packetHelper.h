@@ -1,0 +1,8 @@
+//
+// Created by Mario Lau on 2019-03-10.
+//
+
+#ifndef LIBSOCKS2C_PACKETHELPER_H
+#define LIBSOCKS2C_PACKETHELPER_H
+
+#endif //LIBSOCKS2C_PACKETHELPER_H

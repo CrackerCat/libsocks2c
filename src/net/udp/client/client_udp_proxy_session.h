@@ -1,7 +1,5 @@
 #pragma once
 
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
-
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -15,7 +13,7 @@
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
 #include "../../bufferdef.h"
-
+#include "../../raw/client/client_udp_raw_proxy.h"
 
 template <class Protocol>
 class ClientUdpProxySession : public boost::enable_shared_from_this<ClientUdpProxySession<Protocol>>{
@@ -39,13 +37,22 @@ public:
 		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
 		this->remote_socket_.open(remote_ep_.protocol());
 		this->last_update_time = time(nullptr);
-	}
+
+    }
 
 	~ClientUdpProxySession()
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
         assert(bufferqueue_.Empty());
     }
+
+    void EnableRawProxy()
+	{
+        auto praw = ClientUdpRawProxy::GetInstance(this->local_socket_->get_io_context());
+		praw->SetUpSniffer("ens33", "192.168.1.214", "4567");
+		praw->StartProxy(4444);
+        this->enable_udp2raw = true;
+	}
 
     auto& GetLocalEndpoint()
     {
@@ -84,10 +91,12 @@ public:
             {
 
                 auto bytes_read = readFromRemote(yield);
+
                 if (bytes_read == 0)
                 {
                     return;
                 }
+
                 if (!sendToLocal(bytes_read, yield))
                 {
                     this->remote_socket_.cancel(ec);
@@ -139,8 +148,23 @@ public:
 				boost::system::error_code ec;
 
 				auto bufferinfo = bufferqueue_.GetFront();
-				auto bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
-					bufferinfo->remote_ep_, yield[ec]);
+				size_t bytes_send;
+				if (!enable_udp2raw)
+				{
+					bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
+																		 bufferinfo->remote_ep_, yield[ec]);
+				}else{
+
+					//same io context with recv socket
+					auto praw = ClientUdpRawProxy::GetInstance(this->local_socket_->get_io_context());
+
+					if (praw->IsRemoteConnected())
+					    bytes_send = praw->SendPacketViaRaw(bufferinfo->payload_, bufferinfo->size_, yield);
+				    else
+				    	// if remote not connect, we try to send via udp socket
+						bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
+																		bufferinfo->remote_ep_, yield[ec]);
+				}
 
 				if (ec)
 				{
@@ -197,6 +221,8 @@ private:
 	time_t last_update_time = 0;
 
 	bool isDnsReq = false;
+
+	bool enable_udp2raw = false;
 
     void onRemoteSend(const boost::system::error_code &ec, const uint64_t &bytes_send)
     {

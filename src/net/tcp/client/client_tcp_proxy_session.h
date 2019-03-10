@@ -2,7 +2,6 @@
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 #include <boost/asio/spawn.hpp>
 #include "../../../utils/logger.h"
 #include "../../../protocol/socks5_protocol.h"
@@ -20,7 +19,7 @@ template<class Protocol>
 class ClientTcpProxySession : public boost::enable_shared_from_this<ClientTcpProxySession<Protocol>>{
 
     using IO_CONTEXT = boost::asio::io_context;
-    using SOCKET = boost::asio::ip::tcp::socket;
+    using TCP_SOCKET = boost::asio::ip::tcp::socket;
 
     using DNS_RESOLVER = boost::asio::ip::tcp::resolver;
     using PDNS_RESOLVER = std::unique_ptr<DNS_RESOLVER>;
@@ -62,9 +61,7 @@ public:
 
     }
 
-
-
-    SOCKET& GetLocalSocketRef()
+    TCP_SOCKET& GetLocalSocketRef()
     {
         return local_socket_;
     }
@@ -79,8 +76,8 @@ private:
     unsigned char remote_recv_buff_[TCP_REMOTE_RECV_BUFF_SIZE];
 
     //  When a socket is destroyed, it will be closed as-if by socket.close(ec) during the destruction of the socket.
-    SOCKET local_socket_;
-    SOCKET remote_socket_;
+    TCP_SOCKET local_socket_;
+    TCP_SOCKET remote_socket_;
 
     boost::asio::ip::tcp::endpoint remote_ep_;
 
@@ -266,7 +263,7 @@ private:
                 return false;
             }
 
-            TCP_INFO("proxy {}:{}", ip_str, port)
+            TCP_LOG_INFO("proxy {}:{}", ip_str, port)
 
             return true;
 
@@ -283,7 +280,7 @@ private:
                 return false;
             }
 
-            TCP_INFO("proxy {}:{}", domain_str, port)
+            TCP_LOG_INFO("proxy {}:{}", domain_str, port)
 
             if(pdns_resolver_)
             {

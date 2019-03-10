@@ -1,5 +1,4 @@
 #pragma once
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 
 #include "../../../utils/logger.h"
 #include "../../inetwork_proxy.h"
