@@ -13,7 +13,6 @@
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
 #include "../../bufferdef.h"
-#include "../../raw/client/client_udp_raw_proxy.h"
 
 template <class Protocol>
 class ClientUdpProxySession : public boost::enable_shared_from_this<ClientUdpProxySession<Protocol>>{
@@ -45,14 +44,6 @@ public:
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
         assert(bufferqueue_.Empty());
     }
-
-    void EnableRawProxy()
-	{
-        auto praw = ClientUdpRawProxy::GetInstance(this->local_socket_->get_io_context());
-		praw->SetUpSniffer("ens33", "192.168.1.214", "4567");
-		praw->StartProxy(4444);
-        this->enable_udp2raw = true;
-	}
 
     auto& GetLocalEndpoint()
     {
@@ -206,8 +197,6 @@ private:
 	time_t last_update_time = 0;
 
 	bool isDnsReq = false;
-
-	bool enable_udp2raw = false;
 
     void onRemoteSend(const boost::system::error_code &ec, const uint64_t &bytes_send)
     {
