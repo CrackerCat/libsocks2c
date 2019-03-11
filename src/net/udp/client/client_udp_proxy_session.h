@@ -148,23 +148,8 @@ public:
 				boost::system::error_code ec;
 
 				auto bufferinfo = bufferqueue_.GetFront();
-				size_t bytes_send;
-				if (!enable_udp2raw)
-				{
-					bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
-																		 bufferinfo->remote_ep_, yield[ec]);
-				}else{
 
-					//same io context with recv socket
-					auto praw = ClientUdpRawProxy::GetInstance(this->local_socket_->get_io_context());
-
-					if (praw->IsRemoteConnected())
-					    bytes_send = praw->SendPacketViaRaw(bufferinfo->payload_, bufferinfo->size_, yield);
-				    else
-				    	// if remote not connect, we try to send via udp socket
-						bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
-																		bufferinfo->remote_ep_, yield[ec]);
-				}
+				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
 
 				if (ec)
 				{
