@@ -38,6 +38,11 @@ public:
         UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
     }
 
+    auto& GetDefaultIO()
+    {
+        return this->GetIOContext();
+    }
+
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
     {
 

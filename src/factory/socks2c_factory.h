@@ -3,6 +3,7 @@
 #include "../net/udp/client/client_udp_proxy.h"
 #include "../net/tcp/client/client_tcp_proxy.h"
 #include "../net/udp/client/client_udp_proxy_withraw.h"
+#include "../net/raw/server/server_udp_raw_proxy.h"
 
 #if defined(__linux__) && defined(MULTITHREAD_IO)
 #include "../net/tcp/server/server_tcp_proxy_mt.h"
@@ -26,7 +27,7 @@ public:
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
 	// use CreateServerProxyMt() instead on linux which provide better performance
     template<class Protocol>
-    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint64_t timeout = 0)
+    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, bool udp2raw, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
         tcps->SetProxyKey(proxyKey);
@@ -39,6 +40,13 @@ public:
         udps->SetExpireTime(timeout);
         udps->SetProxyInfo(server_ip, server_port);
         udps->StartProxy(server_ip, server_port);
+
+        if (udp2raw)
+        {
+            auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
+            pudp2raw->SetUpSniffer("ens33", "192.168.1.103", "4444");
+            pudp2raw->StartProxy(4567);
+        }
 
         return ServerProxy<Protocol>(tcps, udps);
     }

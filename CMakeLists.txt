@@ -75,8 +75,13 @@ add_executable(libsocks2c
         #test/example/runclient.h
         src/utils/singleton.h
         lib/version.h
-		src/net/udp/bufferqueue.h src/utils/macro_def.h src/net/raw/server/server_udp_raw_proxy.h src/net/raw/raw_socket.h src/net/raw/client/client_udp_raw_proxy.h src/net/raw/packetHelper.h
-        src/net/raw/client/client_udp_raw_proxy.cpp src/net/udp/client/client_udp_proxy_withraw.h)
+		src/net/udp/bufferqueue.h src/utils/macro_def.h
+        src/net/raw/server/server_udp_raw_proxy.h
+        src/net/raw/raw_socket.h
+        src/net/raw/client/client_udp_raw_proxy.h
+        src/net/raw/client/client_udp_raw_proxy.cpp
+        src/net/udp/client/client_udp_proxy_withraw.h
+        src/net/raw/server/server_udp_raw_proxy_session.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)

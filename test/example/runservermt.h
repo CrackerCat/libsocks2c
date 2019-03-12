@@ -3,25 +3,16 @@
 #include <unistd.h>
 void test()
 {
-    /*
-     * Run Server at port ::0:2222 with password "12345678"
-     */
-    LibSocks2c::AsyncRunServer("12345678", "::0", 2222, 3);
+    LibSocks2c::Config config;
+    config.isServer = true;
+    config.proxyKey = "12345678";
+    config.server_ip = "0.0.0.0";
+    config.server_port = 443;
+    config.udp2raw = true;
+    config.timeout = 0;
 
-    /*
-     * Run Server at port ::0:2222 with password "12345678" setting timeout 300s for acceptors
-     */
-    //LibSocks2c::AsyncRunServer("12345678", "::0", 2222, 300);
+    LibSocks2c::StartProxy(config);
 
-    sleep(10);
-
-
-    LibSocks2c::StopProxy(2222);
-
-
-    sleep(10);
-
-    LibSocks2c::AsyncRunServer("12345678", "::0", 2222, 3);
-    sleep(3333);
+    getchar();
 
 }
