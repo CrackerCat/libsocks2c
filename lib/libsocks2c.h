@@ -32,8 +32,8 @@ public:
         std::string socks5_ip;
         uint16_t socks5_port;
         size_t timeout;
-        bool udp2raw;
-        bool resolve_dns;
+        bool udp2raw = false;
+        bool resolve_dns = false;
     };
 
     static int  StartProxy(Config);

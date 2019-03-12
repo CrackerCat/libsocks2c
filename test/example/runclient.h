@@ -18,8 +18,10 @@ void test()
     config.server_port = 443;
     config.socks5_ip = "0.0.0.0";
     config.socks5_port = 5555;
-    config.timeout = 0;
     config.resolve_dns = false;
+    config.udp2raw = true;
+    config.timeout = 0;
+
 
     LibSocks2c::StartProxy(config);
 
