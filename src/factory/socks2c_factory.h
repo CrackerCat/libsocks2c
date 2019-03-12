@@ -2,6 +2,7 @@
 
 #include "../net/udp/client/client_udp_proxy.h"
 #include "../net/tcp/client/client_tcp_proxy.h"
+#include "../net/udp/client/client_udp_proxy_withraw.h"
 
 #if defined(__linux__) && defined(MULTITHREAD_IO)
 #include "../net/tcp/server/server_tcp_proxy_mt.h"
@@ -45,7 +46,7 @@ public:
 	// if defined MULTITHREAD_IO, then ClientTcpProxy would be multithread version
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
     template<class Protocol>
-    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, bool resolve_dns, uint64_t timeout = 0)
+    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, bool resolve_dns, bool udp2raw, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ClientTcpProxy<Protocol>>();
 
@@ -55,10 +56,21 @@ public:
         if (resolve_dns) tcps->EnableDnsResolver();
         tcps->StartProxy();
 
-        auto udps = boost::make_shared<ClientUdpProxy<Protocol>>();
-        udps->SetProxyKey(proxyKey);
-        udps->SetProxyInfo(server_ip, server_port);
-        udps->StartProxy(socks5_ip, socks5_port);
+        boost::shared_ptr<ClientUdpProxy<Protocol>> udps;
+        if (udp2raw)
+        {
+            udps = boost::make_shared<ClientUdpProxyWithRaw<Protocol>>();
+            udps->SetProxyKey(proxyKey);
+            udps->SetProxyInfo(server_ip, server_port);
+            udps->StartProxy(socks5_ip, socks5_port);
+            boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdp2Raw();
+        }else
+        {
+            udps = boost::make_shared<ClientUdpProxy<Protocol>>();
+            udps->SetProxyKey(proxyKey);
+            udps->SetProxyInfo(server_ip, server_port);
+            udps->StartProxy(socks5_ip, socks5_port);
+        }
 
         return ClientProxy<Protocol>(tcps, udps);
     }

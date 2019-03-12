@@ -149,8 +149,8 @@ private:
 
     void TcpHandShake()
     {
+        LOG_INFO("TcpHandShake Start")
         using Tins::TCP;
-
         //start up
         boost::asio::spawn(this->sniffer_socket.get_io_context(), [this](boost::asio::yield_context yield){
 

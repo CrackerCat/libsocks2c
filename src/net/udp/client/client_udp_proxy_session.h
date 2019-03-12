@@ -140,7 +140,7 @@ public:
 
 				auto bufferinfo = bufferqueue_.GetFront();
 
-				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_),
+				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_), bufferinfo->remote_ep_, yield[ec]);
 
 				if (ec)
 				{

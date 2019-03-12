@@ -32,6 +32,7 @@ public:
         std::string socks5_ip;
         uint16_t socks5_port;
         size_t timeout;
+        bool udp2raw;
         bool resolve_dns;
     };
 

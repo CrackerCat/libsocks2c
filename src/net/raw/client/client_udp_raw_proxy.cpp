@@ -14,7 +14,7 @@ void ClientUdpRawProxy::RecvFromRemote()
             this->sniffer_socket.async_wait(boost::asio::posix::descriptor_base::wait_read, yield[ec]);
             if (ec)
             {
-                LOG_INFO("wait err\n");
+                LOG_INFO("wait err --> {}\n", ec.message().c_str());
                 return;
             }
 

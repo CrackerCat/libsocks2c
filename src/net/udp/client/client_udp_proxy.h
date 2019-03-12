@@ -77,7 +77,7 @@ public:
         if (this->ptimer_) this->ptimer_->cancel();
 	}
 
-private:
+protected:
 
     Protocol protocol_;
 
@@ -136,7 +136,6 @@ private:
                     session_map_.insert(std::make_pair(local_ep_, new_session));
 
 					memcpy(new_session->GetLocalBuffer(), local_recv_buff_, bytes_read);
-                    new_session->EnableRawProxy();
                     new_session->sendToRemote(bytes_read);
                     new_session->Start();
                 } else{
