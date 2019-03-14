@@ -1,8 +1,20 @@
-//
-// Created by root on 3/12/19.
-//
+#pragma once
+#include <boost/enable_shared_from_this.hpp>
+#include "../../../utils/ephash.h"
 
-#ifndef LIBSOCKS2C_SERVER_UDP_RAW_PROXY_SESSION_H
-#define LIBSOCKS2C_SERVER_UDP_RAW_PROXY_SESSION_H
+class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession>
+{
 
-#endif //LIBSOCKS2C_SERVER_UDP_RAW_PROXY_SESSION_H
+public:
+
+    ServerUdpRawProxySession(const ep_tuple& tp) : ep_tp(tp)
+    {
+
+    }
+
+private:
+
+    ep_tuple ep_tp;
+
+
+};

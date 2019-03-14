@@ -10,3 +10,28 @@ struct EndPointHash {
         return seed;
     }
 };
+
+struct ep_tuple
+{
+    uint32_t src_ip;
+    uint8_t  src_port;
+    uint32_t dst_ip;
+    uint8_t  dst_port;
+};
+
+struct EndPointTupleHash {
+    size_t operator()(ep_tuple const &ep_tuple) const
+    {
+        size_t seed = 0;
+        //printf("hashing %s:%d\n", ep_in.address().to_string(), ep_in.port());
+        //boost::hash_combine(seed, ep_in.address().to_string());
+        boost::hash_combine(seed, ep_tuple.src_ip);
+        boost::hash_combine(seed, ep_tuple.src_port);
+        boost::hash_combine(seed, ep_tuple.dst_ip);
+        boost::hash_combine(seed, ep_tuple.dst_port);
+
+        return seed;
+    }
+};
+
+

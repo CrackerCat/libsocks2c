@@ -1,4 +1,5 @@
 #pragma once
+#include "../../../utils/ephash.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/singleton.h"
 #include "../raw_socket.h"
@@ -9,6 +10,10 @@
 #include <memory>
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/unordered_map.hpp>
+#include "server_udp_raw_proxy_session.h"
+#include "../../../protocol/socks5_protocol_helper.h"
+
 
 template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
@@ -18,6 +23,8 @@ class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
         SYN_RCVD,
         ESTABLISHED
     };
+
+    using SESSION_MAP = boost::unordered_map<ep_tuple, ServerUdpRawProxySession, EndPointTupleHash>;
 
 public:
 
@@ -114,7 +121,7 @@ private:
     boost::asio::basic_raw_socket<asio::ip::raw> send_socket_stream;
 
     SESSION_STATUS status;
-
+    SESSION_MAP session_map;
     std::string remote_ip;
     std::string local_ip;
 
@@ -210,11 +217,41 @@ private:
             return;
         }
 
+        auto full_data = raw_data->serialize().data();
         // decrypt data
-        auto protocol_hdr = (typename Protocol::ProtocolHeader*)raw_data->serialize().data();
+        auto protocol_hdr = (typename Protocol::ProtocolHeader*)full_data;
         // decrypt packet and get payload length
+        // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
         auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 
+        ep_tuple ep_tp;
+        std::string ip_str;
+        if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(full_data + Protocol::ProtocolHeader::Size() + 4, ip_str, ep_tp.dst_port))
+        {
+            LOG_INFO("unable to parse socks5 udp header")
+            return;
+        }
+        auto ip_dst_bytes = boost::asio::ip::address::from_string(ip_str).to_v4().to_bytes();
+        memcpy(&ep_tp.dst_ip, &ip_dst_bytes[0], 4);
+        memcpy(&ep_tp.src_ip, full_data + Protocol::ProtocolHeader::Size(), 4);
+        memcpy(&ep_tp.src_port, full_data + Protocol::ProtocolHeader::Size() + 4, 2);
+
+
+        auto map_it = session_map_.find(local_ep_);
+        if (map_it == session_map_.end())
+        {
+
+
+
+
+
+        }else
+        {
+
+
+
+
+        }
         // fetch ip src port
 
         // find and new session
