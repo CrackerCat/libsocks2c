@@ -134,6 +134,7 @@ private:
     void RecvFromLocal()
     {
         using Tins::PDU;
+        using Tins::IP;
         using Tins::TCP;
         //recv
         boost::asio::spawn(sniffer_socket.get_io_context(), [this](boost::asio::yield_context yield){
@@ -151,21 +152,27 @@ private:
 
                 std::unique_ptr<PDU> pdu_ptr(this->psniffer->next_packet());
 
+                auto ip = pdu_ptr->find_pdu<IP>();
                 auto tcp = pdu_ptr->find_pdu<TCP>();
-                if (tcp == nullptr) continue;
 
+                if (ip == nullptr || tcp == nullptr) continue;
 
                 // when recv tcp packet from local
                 // find session by src ip port pair
                 udp2raw_session_ep_tuple src_ep;
-                auto map_it = session_map_.find(src_ep);
+                src_ep.src_ip = ip->src_addr().uint32_t();
+                src_ep.src_port = tcp->sport();
 
+                auto map_it = session_map_.find(src_ep);
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
                     auto psession = boost::make_shared<ServerUdpRawProxySession>();
 
+                    psession->HandlePacket(ip, tcp);
 
+
+                }else { // if connection already created
 
 
 
