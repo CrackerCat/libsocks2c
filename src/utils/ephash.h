@@ -11,16 +11,32 @@ struct EndPointHash {
     }
 };
 
-struct ep_tuple
+struct udp2raw_session_ep_tuple
+{
+    uint32_t src_ip;
+    uint8_t  src_port;
+};
+
+struct udp_ep_tuple
 {
     uint32_t src_ip;
     uint8_t  src_port;
     uint32_t dst_ip;
     uint8_t  dst_port;
 };
-
 struct EndPointTupleHash {
-    size_t operator()(ep_tuple const &ep_tuple) const
+    size_t operator()(udp2raw_session_ep_tuple const &ep_tuple) const
+    {
+        size_t seed = 0;
+        //printf("hashing %s:%d\n", ep_in.address().to_string(), ep_in.port());
+        //boost::hash_combine(seed, ep_in.address().to_string());
+        boost::hash_combine(seed, ep_tuple.src_ip);
+        boost::hash_combine(seed, ep_tuple.src_port);
+        return seed;
+    }
+};
+struct EndPointTupleHash {
+    size_t operator()(udp_ep_tuple const &ep_tuple) const
     {
         size_t seed = 0;
         //printf("hashing %s:%d\n", ep_in.address().to_string(), ep_in.port());

@@ -1,5 +1,4 @@
 #pragma once
-#include "../../../utils/ephash.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/singleton.h"
 #include "../raw_socket.h"
@@ -24,7 +23,7 @@ class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
         ESTABLISHED
     };
 
-    using SESSION_MAP = boost::unordered_map<ep_tuple, ServerUdpRawProxySession, EndPointTupleHash>;
+    using SESSION_MAP = boost::unordered_map<udp2raw_session_ep_tuple, ServerUdpRawProxySession, EndPointTupleHash>;
 
 public:
 
@@ -154,6 +153,25 @@ private:
 
                 auto tcp = pdu_ptr->find_pdu<TCP>();
                 if (tcp == nullptr) continue;
+
+
+                // when recv tcp packet from local
+                // find session by src ip port pair
+                udp2raw_session_ep_tuple src_ep;
+                auto map_it = session_map_.find(src_ep);
+
+                // if new connection create session
+                if (map_it == session_map_.end())
+                {
+                    auto psession = boost::make_shared<ServerUdpRawProxySession>();
+
+
+
+
+
+                }
+
+
 
 
                 switch (tcp->flags())
