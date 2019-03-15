@@ -28,7 +28,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
 public:
 
-    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port)
+    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port, SessionMap& map_ref) : session_map(map_ref)
     {
         local_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(local_ip), local_port);
     }

@@ -27,12 +27,9 @@ class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 
 public:
 
-    ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io), send_socket_stream(io)
+    ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io)
     {
-        if (!send_socket_stream.is_open())
-        {
-            send_socket_stream.open();
-        }
+
     }
 
     void SetUpSniffer(std::string ifname, std::string local_ip, std::string local_port)
@@ -82,32 +79,7 @@ public:
 
     }
 
-    size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield, bool shouldcopy = true)
-    {
 
-        unsigned char* copy_data;
-
-        if (shouldcopy){
-            copy_data = new unsigned char[size];
-            memcpy(copy_data, data, size);
-        }
-        copy_data = (unsigned char*)data;
-
-        asio::ip::raw::endpoint ep(boost::asio::ip::address::from_string(remote_ip), remote_port);
-        boost::system::error_code ec;
-
-        auto bytes_send = send_socket_stream.async_send_to(boost::asio::buffer(copy_data, size), ep, yield[ec]);
-
-        if (ec)
-        {
-            LOG_INFO("async_send_to err --> {}", ec.message().c_str())
-            return 0;
-        }
-
-        LOG_INFO("send {} bytes via raw socket", bytes_send)
-
-        return bytes_send;
-    }
 
 private:
     Protocol protocol_;
@@ -117,12 +89,9 @@ private:
     Tins::SnifferConfiguration config;
     bool isSnifferInit = false;
     bool isProxyRunning = false;
-    boost::asio::basic_raw_socket<asio::ip::raw> send_socket_stream;
 
-    SESSION_STATUS status;
-    SESSION_MAP session_map;
-    std::string remote_ip;
-    std::string local_ip;
+    SESSION_MAP session_map_;
+
 
     unsigned short remote_port = 4444;
 
@@ -167,64 +136,18 @@ private:
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    auto psession = boost::make_shared<ServerUdpRawProxySession>();
+                    auto psession = boost::make_shared<ServerUdpRawProxySession>(ip->src_addr().uint32_t(), tcp->sport());
 
                     psession->HandlePacket(ip, tcp);
 
+
+                    //session_map_.insert()
 
                 }else { // if connection already created
 
 
 
                 }
-
-
-
-
-                switch (tcp->flags())
-                {
-                    case (TCP::SYN):
-                    {
-                        LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
-                        auto ip = pdu_ptr->find_pdu<Tins::IP>();
-                        remote_ip = ip->src_addr().to_string();
-                        remote_port = tcp->sport();
-                        handshakeReply(tcp->seq(), tcp->ack_seq(), yield);
-                        continue;
-                    }
-                        // without data
-                    case TCP::ACK :
-                    {
-                        LOG_INFO("get ack seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-
-                        if (this->status != ESTABLISHED) {
-                            LOG_INFO("ESTABLISHED")
-                            this->status = ESTABLISHED;
-                        }
-                        break;
-                    }
-                        // with data
-                    case (TCP::PSH | TCP::ACK) :
-                    {
-                        LOG_INFO("get psh | ack seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                        ackReply(tcp->seq(), tcp->ack_seq(), tcp->inner_pdu()->size(), yield);
-
-                        proxyUdp(tcp->inner_pdu());
-                        break;
-                    }
-                    case TCP::RST :
-                    {
-                        LOG_INFO("rst")
-                        break;
-                    }
-                    default:
-                    {
-                        LOG_INFO("default")
-                        continue;
-                    }
-                }
-
-                //LOG_INFO("read {} bytes\n", pdu_ptr->size())
             }
 
         });
@@ -233,107 +156,75 @@ private:
     }
 
 
-    void proxyUdp(Tins::PDU* raw_data)
-    {
-
-        if (raw_data == nullptr)
-        {
-            LOG_INFO("null raw_data")
-            return;
-        }
-
-        auto full_data = raw_data->serialize().data();
-        // decrypt data
-        auto protocol_hdr = (typename Protocol::ProtocolHeader*)full_data;
-        // decrypt packet and get payload length
-        // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
-        auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
-
-        ep_tuple ep_tp;
-        std::string ip_str;
-        if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(full_data + Protocol::ProtocolHeader::Size() + 4, ip_str, ep_tp.dst_port))
-        {
-            LOG_INFO("unable to parse socks5 udp header")
-            return;
-        }
-        auto ip_dst_bytes = boost::asio::ip::address::from_string(ip_str).to_v4().to_bytes();
-        memcpy(&ep_tp.dst_ip, &ip_dst_bytes[0], 4);
-        memcpy(&ep_tp.src_ip, full_data + Protocol::ProtocolHeader::Size(), 4);
-        memcpy(&ep_tp.src_port, full_data + Protocol::ProtocolHeader::Size() + 4, 2);
-
-
-        auto map_it = session_map_.find(local_ep_);
-        if (map_it == session_map_.end())
-        {
-
-
-
-
-
-        }else
-        {
-
-
-
-
-        }
-        // fetch ip src port
-
-        // find and new session
-
-        // send data and recv session
-
-        //
-
-
-
-
-
-
-    }
-
-
-
-    void handshakeReply(uint32_t remote_seq, uint32_t remote_ack, boost::asio::yield_context yield)
-    {
-        using Tins::TCP;
-        static time_t last_send_time = time(nullptr) - 22;
-
-        auto now = time(nullptr);
-
-        auto diff = now - last_send_time;
-        if (diff < 1)
-        {
-            LOG_INFO("time short \n");
-            return;
-        }
-
-        auto tcp = TCP(remote_port, local_port);
-        tcp.flags(TCP::ACK | TCP::SYN);
-        tcp.ack_seq(remote_seq + 1);
-        tcp.seq(local_seq);
-
-        LOG_INFO("send syn ack back, seq: {}, ack: {}", local_seq, remote_seq + 1);
-
-        sendPacket(tcp.serialize().data(), tcp.size(), yield);
-        last_send_time = time(nullptr);
-
-        this->last_ack = remote_seq;
-        this->status = SYN_RCVD;
-    }
-
-    void ackReply(uint32_t remote_seq, uint32_t remote_ack, uint32_t packet_size, boost::asio::yield_context yield)
-    {
-        using Tins::TCP;
-        auto tcp = TCP(remote_port, local_port);
-        tcp.flags(TCP::ACK);
-        // we always reply the latest seq as ack reply
-        tcp.ack_seq(remote_seq + packet_size);
-        tcp.seq(local_seq);
-        LOG_INFO("ack reply")
-        sendPacket(tcp.serialize().data(), tcp.size(), yield);
-        this->last_ack = remote_seq;
-    }
+//    void proxyUdp(Tins::PDU* raw_data)
+//    {
+//
+//        if (raw_data == nullptr)
+//        {
+//            LOG_INFO("null raw_data")
+//            return;
+//        }
+//
+//        auto full_data = raw_data->serialize().data();
+//        // decrypt data
+//        auto protocol_hdr = (typename Protocol::ProtocolHeader*)full_data;
+//        // decrypt packet and get payload length
+//        // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
+//        auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
+//
+//        ep_tuple ep_tp;
+//        std::string ip_str;
+//        if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(full_data + Protocol::ProtocolHeader::Size() + 4, ip_str, ep_tp.dst_port))
+//        {
+//            LOG_INFO("unable to parse socks5 udp header")
+//            return;
+//        }
+//        auto ip_dst_bytes = boost::asio::ip::address::from_string(ip_str).to_v4().to_bytes();
+//        memcpy(&ep_tp.dst_ip, &ip_dst_bytes[0], 4);
+//        memcpy(&ep_tp.src_ip, full_data + Protocol::ProtocolHeader::Size(), 4);
+//        memcpy(&ep_tp.src_port, full_data + Protocol::ProtocolHeader::Size() + 4, 2);
+//
+//
+//        auto map_it = session_map_.find(local_ep_);
+//        if (map_it == session_map_.end())
+//        {
+//
+//
+//
+//
+//
+//        }else
+//        {
+//
+//
+//
+//
+//        }
+//        // fetch ip src port
+//
+//        // find and new session
+//
+//        // send data and recv session
+//
+//        //
+//
+//
+//    }
+//
+//
+//
+//    void ackReply(uint32_t remote_seq, uint32_t remote_ack, uint32_t packet_size, boost::asio::yield_context yield)
+//    {
+//        using Tins::TCP;
+//        auto tcp = TCP(remote_port, local_port);
+//        tcp.flags(TCP::ACK);
+//        // we always reply the latest seq as ack reply
+//        tcp.ack_seq(remote_seq + packet_size);
+//        tcp.seq(local_seq);
+//        LOG_INFO("ack reply")
+//        sendPacket(tcp.serialize().data(), tcp.size(), yield);
+//        this->last_ack = remote_seq;
+//    }
 
 
 };
