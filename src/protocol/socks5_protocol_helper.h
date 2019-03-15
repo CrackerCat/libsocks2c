@@ -79,12 +79,10 @@ public:
 
     }
 
-
-    static bool parseIpPortFromSocks5UdpPacket(socks5::UDP_RELAY_PACKET *packet, std::string &ip_out, uint16_t &port_out)
+    static bool parseIpPortFromSocks5UdpPacket(void *data, std::string &ip_out, uint16_t &port_out)
     {
-
+        auto packet = (socks5::UDP_RELAY_PACKET *)data;
         return parseIpPortFromSocks5Request(reinterpret_cast<socks5::SOCKS_REQ*>(packet), ip_out, port_out);
-
     }
 
 	static bool isDnsPacket(socks5::UDP_RELAY_PACKET *packet)

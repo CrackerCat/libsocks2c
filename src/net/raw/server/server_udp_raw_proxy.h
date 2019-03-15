@@ -11,13 +11,13 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/unordered_map.hpp>
 #include "server_udp_raw_proxy_session.h"
-#include "../../../protocol/socks5_protocol_helper.h"
 
 
 template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 {
 
+    using SessionMap = boost::unordered_map<tcp_session_src_tuple, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, TCPSrcTupleHash, TCPSrcTupleEQ>;
 
 public:
 
@@ -47,7 +47,6 @@ public:
     }
 
 private:
-    Protocol protocol_;
 
     boost::asio::posix::stream_descriptor sniffer_socket;
     std::unique_ptr<Tins::Sniffer> psniffer;
@@ -100,7 +99,7 @@ private:
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    auto psession = boost::make_shared<ServerUdpRawProxySession>(ip->src_addr().to_string(), src_ep.src_port, session_map_);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(ip->src_addr().to_string(), src_ep.src_port, session_map_);
 
                     psession->HandlePacket(ip, tcp);
 

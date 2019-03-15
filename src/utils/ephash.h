@@ -20,9 +20,9 @@ struct tcp_session_src_tuple
 struct udp_ep_tuple
 {
     uint32_t src_ip;
-    uint8_t  src_port;
+    uint16_t  src_port;
     uint32_t dst_ip;
-    uint8_t  dst_port;
+    uint16_t  dst_port;
 };
 struct TCPSrcTupleHash {
     size_t operator()(tcp_session_src_tuple const &ep_tuple) const
