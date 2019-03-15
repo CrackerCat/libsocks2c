@@ -21,10 +21,7 @@ class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 
 public:
 
-    ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io)
-    {
-
-    }
+    ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io) {}
 
     void SetUpSniffer(std::string ifname, std::string server_ip, std::string server_port)
     {
@@ -44,9 +41,8 @@ public:
     }
 
 
-    void StartProxy(uint16_t local_port)
+    void StartProxy()
     {
-        this->local_port = local_port;
         RecvFromLocal();
     }
 
@@ -72,6 +68,7 @@ private:
         using Tins::PDU;
         using Tins::IP;
         using Tins::TCP;
+
         //recv
         boost::asio::spawn(sniffer_socket.get_io_context(), [this](boost::asio::yield_context yield){
 
@@ -95,7 +92,7 @@ private:
 
                 // when recv tcp packet from local
                 // find session by src ip port pair
-                tcp_session_src_tuple src_ep;
+                tcp_session_src_tuple src_ep = {};
                 src_ep.src_ip = inet_addr(ip->src_addr().to_string().c_str());
                 src_ep.src_port = tcp->sport();
 
@@ -103,15 +100,17 @@ private:
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-//                    auto psession = boost::make_shared<ServerUdpRawProxySession>(src_ep.src_ip, src_ep.src_port, session_map_);
-//
-//                    psession->HandlePacket(ip, tcp);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession>(ip->src_addr().to_string(), src_ep.src_port, session_map_);
 
+                    psession->HandlePacket(ip, tcp);
 
-                    //session_map_.insert()
+                    session_map_.insert({src_ep, psession});
 
                 }else { // if connection already created
 
+
+                    auto psession = map_it->second;
+                    psession->HandlePacket(ip, tcp);
 
 
                 }

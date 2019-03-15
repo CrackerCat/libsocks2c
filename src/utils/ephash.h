@@ -14,7 +14,7 @@ struct EndPointHash {
 struct tcp_session_src_tuple
 {
     uint32_t src_ip;
-    uint8_t  src_port;
+    uint16_t  src_port;
 };
 
 struct udp_ep_tuple

@@ -7,7 +7,7 @@
 #include "../raw_socket.h"
 
 class ServerUdpRawProxySession;
-using SessionMap = boost::unordered_map<tcp_session_src_tuple, ServerUdpRawProxySession, TCPSrcTupleHash, TCPSrcTupleEQ>;
+using SessionMap = boost::unordered_map<tcp_session_src_tuple, boost::shared_ptr<ServerUdpRawProxySession>, TCPSrcTupleHash, TCPSrcTupleEQ>;
 
 class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession>
 {
@@ -39,6 +39,8 @@ public:
         prawsender_socket = std::make_unique<RawSenderSocket>(io);
         prawsender_socket->open();
     }
+
+
     // ip && tcp always vaild
     bool HandlePacket(Tins::IP* ip, Tins::TCP* tcp)
     {
@@ -48,7 +50,7 @@ public:
         {
             // client start syn process
             // send syn | ack reply back base on client's seq number
-            // turn status to SYN_RECV
+            // turn status to SYN_RCVD
             // client may send multiple syn req
             // we send reply back for each syn
             case (TCP::SYN):
@@ -56,20 +58,25 @@ public:
                 LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
                 // clone tcp cause we have to start new coroutine context
                 handshakeReply(tcp);
+                this->status = SYN_RCVD;
                 return true;
             }
-                // without data
+
+            // if client send ack which ack match the init seq + 1,
+            // which means the connection is established
+            // set status to ESTABLISHED
             case TCP::ACK :
             {
-                LOG_INFO("get ack seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
+                LOG_INFO("GET ACK, seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
 
                 if (this->status != ESTABLISHED) {
                     LOG_INFO("ESTABLISHED")
                     this->status = ESTABLISHED;
                 }
+
                 break;
             }
-                // with data
+            // with data
             case (TCP::PSH | TCP::ACK) :
             {
                 LOG_INFO("get psh | ack seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
@@ -132,20 +139,20 @@ private:
         sendPacket(tcp_reply);
         last_send_time = time(nullptr);
 
-        //this->last_ack = remote_seq;
-        this->status = SYN_RCVD;
     }
 
 
 
+    //data will be copy
     void sendPacket(Tins::TCP& tcp_to_send)
     {
 
         auto self(this->shared_from_this());
-        boost::asio::spawn([this, self, &tcp_to_send](boost::asio::yield_context yield){
+        auto tcp_copy = tcp_to_send.clone();
+        boost::asio::spawn([this, self, tcp_copy](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
-            auto raw_data = tcp_to_send.serialize();
+            auto raw_data = tcp_copy->serialize();
             auto bytes_send = prawsender_socket->async_send_to(boost::asio::buffer(raw_data.data(), raw_data.size()), local_ep, yield[ec]);
 
             if (ec)
