@@ -56,11 +56,22 @@ struct UdpEndPointTupleHash {
         //boost::hash_combine(seed, ep_in.address().to_string());
         boost::hash_combine(seed, ep_tuple.src_ip);
         boost::hash_combine(seed, ep_tuple.src_port);
-        boost::hash_combine(seed, ep_tuple.dst_ip);
-        boost::hash_combine(seed, ep_tuple.dst_port);
+        //boost::hash_combine(seed, ep_tuple.dst_ip);
+        //boost::hash_combine(seed, ep_tuple.dst_port);
 
         return seed;
     }
 };
 
+class UdpEndPointTupleEQ
+{
+public:
+    bool operator() (udp_ep_tuple const& t1, udp_ep_tuple const& t2) const
+    {
+
+        bool res = (t1.src_port == t2.src_port) && (t1.src_ip == t2.src_ip);
+
+        return res;
+    }
+};
 

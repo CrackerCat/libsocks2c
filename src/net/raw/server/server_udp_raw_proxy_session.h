@@ -6,6 +6,8 @@
 #include <tins/tcp.h>
 #include "../raw_socket.h"
 #include "../../../protocol/socks5_protocol_helper.h"
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/udp.hpp>
 
 template <class Protocol>
 class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession<Protocol>>
@@ -17,16 +19,26 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         ESTABLISHED
     };
 
-    class udp_session
-    {
-
-    };
     using SessionMap = boost::unordered_map<tcp_session_src_tuple, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, TCPSrcTupleHash, TCPSrcTupleEQ>;
-
-    using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_session, UdpEndPointTupleHash>;
 
     using RawSenderSocket = boost::asio::basic_raw_socket<asio::ip::raw>;
     using PRawSenderSocket = std::unique_ptr<RawSenderSocket>;
+
+
+    class udp_proxy_session : public boost::enable_shared_from_this<udp_proxy_session>
+    {
+
+        using UdpSocket = boost::asio::ip::udp::socket;
+    public:
+
+
+
+    private:
+
+    };
+    using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_proxy_session, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
+
+    using UdpSocketMap = boost::unordered_map<udp_ep_tuple, std::unique_ptr<boost::asio::ip::udp::socket>, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
 
 public:
 
@@ -107,6 +119,8 @@ private:
 
     SessionMap& session_map;
     UdpSessionMap udpsession_map;
+    UdpSocketMap udpsocket_map;
+
     SESSION_STATUS status;
 
     // store client's tcp src ip src port
@@ -184,18 +198,40 @@ private:
 
             udp_ep_tuple udp_ep;
 
-
             udp_ep.src_ip = *(uint32_t*)&full_data.at(Protocol::ProtocolHeader::Size());
             udp_ep.src_port = *(uint16_t*)&full_data.at(Protocol::ProtocolHeader::Size() + 4);
 
-            std::string ip_str;
-            if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(full_data.data() + Protocol::ProtocolHeader::Size() + 4 + 2, ip_str, udp_ep.dst_port))
+            std::string ip_dst;
+            if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(full_data.data() + Protocol::ProtocolHeader::Size() + 4 + 2, ip_dst, udp_ep.dst_port))
             {
                 LOG_INFO("unable to parse socks5 udp header")
                 return;
             }
 
 
+            auto udp_map_it = udpsocket_map.find(udp_ep);
+
+            // if new udp proxy
+            if (udp_map_it == udpsocket_map.end())
+            {
+
+                auto pudpsocket = std::make_unique<boost::asio::ip::udp::socket>(this->prawsender_socket->get_io_context());
+
+                boost::asio::ip::udp::endpoint remote_ep(boost::asio::ip::address::from_string(ip_dst), udp_ep.dst_port);
+
+                boost::system::error_code ec;
+                int header_size = Protocol::ProtocolHeader::Size() + 4 + 2 + 10;
+                auto bytes_send = pudpsocket->async_send_to(boost::asio::buffer(&full_data.at(header_size), full_data.size() - header_size), remote_ep, yield[ec]);
+                if (ec)
+                {
+                    return;
+                }
+                udpsocket_map.insert({udp_ep, std::move(pudpsocket)});
+
+            } else
+            {
+
+            }
 
 
         });
