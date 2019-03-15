@@ -30,22 +30,74 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
 
     public:
-        udp_proxy_session(boost::shared_ptr<ServerUdpRawProxySession<Protocol>> server, boost::asio::io_context& io) : pserver(server), io_context_(io), udpsocket(io), timer(io)
+        udp_proxy_session(boost::shared_ptr<ServerUdpRawProxySession<Protocol>> server, boost::asio::io_context& io) : pserver(server), io_context_(io), remote_socket_(io), timer(io)
         {
             last_active_time = time(nullptr);
         }
 
+        // copy data, start coroutine and send it
         void SendToRemote(void* data, size_t size)
         {
-            
+
+            auto self(this->shared_from_this());
+            boost::asio::spawn([this, self](boost::asio::yield_context yield){
+
+
+
+            });
+        }
+
+        void Start()
+        {
+            readFromRemote();
+            runTimer();
         }
 
     private:
         boost::asio::io_context& io_context_;
         boost::shared_ptr<ServerUdpRawProxySession<Protocol>> pserver;
-        boost::asio::ip::udp::socket udpsocket;
+        boost::asio::ip::udp::socket remote_socket_;
+        boost::asio::ip::udp::endpoint remote_recv_ep_;
         boost::asio::deadline_timer timer;
         size_t last_active_time;
+
+        unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
+
+        void readFromRemote()
+        {
+            auto self(this->shared_from_this());
+            boost::asio::spawn([this, self](boost::asio::yield_context yield){
+
+                while (1)
+                {
+                    boost::system::error_code ec;
+
+                    // 10 extra bytes reserved for socks5 udp header
+                    uint64_t bytes_read = this->remote_socket_.async_receive_from(boost::asio::buffer(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6 + 10, UDP_REMOTE_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 6 - 10), remote_recv_ep_, yield[ec]);
+
+                    if (ec)
+                    {
+                        UDP_DEBUG("Udp readFromRemote err --> {}", ec.message().c_str())
+                        return 0;
+                    }
+
+
+                    this->pserver->sendPacket()
+                }
+
+
+            });
+        }
+
+        void runTimer()
+        {
+            auto self(this->shared_from_this());
+            boost::asio::spawn([this, self](boost::asio::yield_context yield){
+
+
+
+            });
+        }
     };
     using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_proxy_session, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
 
@@ -177,7 +229,8 @@ private:
 
     }
 
-    //data will be copy
+    // data will be copy
+    // use this method to send TCP data
     void sendPacket(void* data, size_t size)
     {
 
@@ -214,11 +267,6 @@ private:
             LOG_INFO("TCP DATA SIZE {}", data_copy->size());
 
             auto full_data = data_copy->serialize();
-
-            for (auto i : full_data)
-            {
-                printf("%x ", i);
-            }
 
             // decrypt data
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)&full_data[0];
