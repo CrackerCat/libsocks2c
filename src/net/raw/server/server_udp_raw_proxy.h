@@ -40,6 +40,11 @@ public:
         //this->local_port = boost::lexical_cast<unsigned short>(local_port);
     }
 
+    void SetProxyKey(std::string key)
+    {
+        bzero(this->proxyKey_, 32U);
+        memcpy(this->proxyKey_, key.c_str(), key.size() < 32 ? key.size() : 32);
+    }
 
     void StartProxy()
     {
@@ -54,6 +59,7 @@ private:
 
     SessionMap session_map_;
 
+    unsigned char proxyKey_[32U];
 
     unsigned short remote_port = 4444;
 
@@ -95,14 +101,16 @@ private:
                 src_ep.src_ip = inet_addr(ip->src_addr().to_string().c_str());
                 src_ep.src_port = tcp->sport();
 
+
                 auto map_it = session_map_.find(src_ep);
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(ip->src_addr().to_string(), src_ep.src_port, session_map_);
-
+                    in_addr src_ip_addr = {src_ep.src_ip};
+                    std::string dst_ip = inet_ntoa(src_ip_addr);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(dst_ip, src_ep.src_port, session_map_, this->proxyKey_);
+                    psession->InitRawSocket(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);
-
                     session_map_.insert({src_ep, psession});
 
                 }else { // if connection already created

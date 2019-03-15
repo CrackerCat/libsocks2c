@@ -28,26 +28,38 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
     class udp_proxy_session : public boost::enable_shared_from_this<udp_proxy_session>
     {
 
-        using UdpSocket = boost::asio::ip::udp::socket;
+
     public:
+        udp_proxy_session(boost::shared_ptr<ServerUdpRawProxySession<Protocol>> server, boost::asio::io_context& io) : pserver(server), io_context_(io), udpsocket(io), timer(io)
+        {
+            last_active_time = time(nullptr);
+        }
 
-
+        void SendToRemote(void* data, size_t size)
+        {
+            
+        }
 
     private:
-
+        boost::asio::io_context& io_context_;
+        boost::shared_ptr<ServerUdpRawProxySession<Protocol>> pserver;
+        boost::asio::ip::udp::socket udpsocket;
+        boost::asio::deadline_timer timer;
+        size_t last_active_time;
     };
     using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_proxy_session, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
 
-    using UdpSocketMap = boost::unordered_map<udp_ep_tuple, std::unique_ptr<boost::asio::ip::udp::socket>, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
+    using UdpSocketMap = boost::unordered_map<udp_ep_tuple, boost::shared_ptr<boost::asio::ip::udp::socket>, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
 
 public:
 
-    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port, SessionMap& map_ref) : session_map(map_ref)
+    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port, SessionMap& map_ref, unsigned char key[32U]) : session_map(map_ref)
     {
+        this->protocol_.SetKey(key);
         local_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(local_ip), local_port);
     }
 
-    void InitRawSocket(boost::asio::io_context io)
+    void InitRawSocket(boost::asio::io_context& io)
     {
         prawsender_socket = std::make_unique<RawSenderSocket>(io);
         prawsender_socket->open();
@@ -92,10 +104,18 @@ public:
             // decrypt first
             case (TCP::PSH | TCP::ACK) :
             {
-                LOG_INFO("get psh | ack seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                //ackReply(tcp->seq(), tcp->ack_seq(), tcp->inner_pdu()->size(), yield);
 
+                //send rst back if not connect
+//                if (this->status != ESTABLISHED)
+//                {
+//                    sendRst(tcp);
+//                    return false;
+//                }
+
+                LOG_INFO("GET PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
+                ackReply(tcp);
                 proxyUdp(tcp->inner_pdu());
+
                 break;
             }
             case TCP::RST :
@@ -128,7 +148,7 @@ private:
 
     PRawSenderSocket prawsender_socket;
 
-    uint32_t server_seq = 0;
+    uint32_t server_seq = 10000;
     uint32_t server_ack;
 
     void handshakeReply(Tins::TCP* local_tcp)
@@ -146,28 +166,30 @@ private:
 
         // swap src port and dst port
         auto tcp_reply = Tins::TCP(local_tcp->sport(), local_tcp->dport());
-        local_tcp->flags(Tins::TCP::ACK | Tins::TCP::SYN);
-        local_tcp->ack_seq(local_tcp->seq() + 1); // +1 client's seq
-        local_tcp->seq(server_seq);
+        tcp_reply.flags(Tins::TCP::ACK | Tins::TCP::SYN);
+        tcp_reply.ack_seq(local_tcp->seq() + 1); // +1 client's seq
+        tcp_reply.seq(server_seq++);
 
-        LOG_INFO("send syn ack back, seq: {}, ack: {}", local_tcp->seq(), local_tcp->ack_seq());
+        LOG_INFO("send syn ack back, seq: {}, ack: {}", tcp_reply.seq(), tcp_reply.ack_seq());
 
-        sendPacket(tcp_reply);
+        sendPacket(tcp_reply.serialize().data(), tcp_reply.serialize().size());
         last_send_time = time(nullptr);
 
     }
 
     //data will be copy
-    void sendPacket(Tins::TCP& tcp_to_send)
+    void sendPacket(void* data, size_t size)
     {
 
         auto self(this->shared_from_this());
-        auto tcp_copy = tcp_to_send.clone();
-        boost::asio::spawn([this, self, tcp_copy](boost::asio::yield_context yield){
+
+        std::unique_ptr<char[]> copy_data(new char[size]);
+        memcpy(copy_data.get(), data, size);
+
+        boost::asio::spawn([this, self, copy_data{std::move(copy_data)}, size](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
-            auto raw_data = tcp_copy->serialize();
-            auto bytes_send = prawsender_socket->async_send_to(boost::asio::buffer(raw_data.data(), raw_data.size()), local_ep, yield[ec]);
+            auto bytes_send = prawsender_socket->async_send_to(boost::asio::buffer(copy_data.get(), size), local_ep, yield[ec]);
 
             if (ec)
             {
@@ -189,14 +211,22 @@ private:
         auto self(this->shared_from_this());
         boost::asio::spawn([this, self, data_copy](boost::asio::yield_context yield){
 
+            LOG_INFO("TCP DATA SIZE {}", data_copy->size());
+
             auto full_data = data_copy->serialize();
+
+            for (auto i : full_data)
+            {
+                printf("%x ", i);
+            }
+
             // decrypt data
-            auto protocol_hdr = (typename Protocol::ProtocolHeader*)full_data.data();
+            auto protocol_hdr = (typename Protocol::ProtocolHeader*)&full_data[0];
             // decrypt packet and get payload length
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
             auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 
-            udp_ep_tuple udp_ep;
+            udp_ep_tuple udp_ep = {0};
 
             udp_ep.src_ip = *(uint32_t*)&full_data.at(Protocol::ProtocolHeader::Size());
             udp_ep.src_port = *(uint16_t*)&full_data.at(Protocol::ProtocolHeader::Size() + 4);
@@ -208,14 +238,16 @@ private:
                 return;
             }
 
+            std::string src_ip_str = inet_ntoa(in_addr({udp_ep.src_ip}));
+            LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, 0, 0)
 
-            auto udp_map_it = udpsocket_map.find(udp_ep);
-
+            auto udp_socketmap_it = udpsocket_map.find(udp_ep);
+            auto ps = boost::make_shared<udp_proxy_session>(this->shared_from_this(), this->prawsender_socket->get_io_context());
             // if new udp proxy
-            if (udp_map_it == udpsocket_map.end())
+            if (udp_socketmap_it == udpsocket_map.end())
             {
 
-                auto pudpsocket = std::make_unique<boost::asio::ip::udp::socket>(this->prawsender_socket->get_io_context());
+                auto pudpsocket = boost::make_shared<boost::asio::ip::udp::socket>(this->prawsender_socket->get_io_context());
 
                 boost::asio::ip::udp::endpoint remote_ep(boost::asio::ip::address::from_string(ip_dst), udp_ep.dst_port);
 
@@ -226,10 +258,21 @@ private:
                 {
                     return;
                 }
-                udpsocket_map.insert({udp_ep, std::move(pudpsocket)});
+                udpsocket_map.insert({udp_ep, pudpsocket});
+
+                auto self(this->shared_from_this());
+                boost::asio::spawn([this, self, pudpsocket](boost::asio::yield_context yield){
+
+                });
+                boost::asio::spawn([this, self, pudpsocket](boost::asio::yield_context yield){
+
+                });
 
             } else
             {
+
+                //udp_socketmap_it->second->
+
 
             }
 
@@ -239,8 +282,28 @@ private:
     }
 
 
+    //call only when recv data
+    void ackReply(Tins::TCP* local_tcp)
+    {
+        using Tins::TCP;
+
+        auto tcp = TCP(local_tcp->sport(), local_tcp->dport());
+        tcp.flags(TCP::ACK);
+        tcp.ack_seq(local_tcp->seq() + 1);
+        tcp.seq(server_seq);
+        sendPacket(tcp.serialize().data(), tcp.size());
+    }
 
 
+    void sendRst(Tins::TCP* local_tcp)
+    {
+        using Tins::TCP;
 
+        auto tcp = TCP(local_tcp->sport(), local_tcp->dport());
+        tcp.flags(TCP::RST);
+        tcp.ack_seq(local_tcp->seq() + 1);
+        tcp.seq(server_seq + local_tcp->inner_pdu()->size());
+        sendPacket(tcp.serialize().data(), tcp.size());
+    }
 
 };

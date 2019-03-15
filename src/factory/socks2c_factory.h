@@ -44,7 +44,8 @@ public:
         if (udp2raw)
         {
             auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
-            pudp2raw->SetUpSniffer("ens33", "192.168.0.103", "4567");
+            pudp2raw->SetUpSniffer("wlp2s0", "192.168.0.107", "4567");
+            pudp2raw->SetProxyKey(proxyKey);
             pudp2raw->StartProxy();
         }
 
