@@ -11,7 +11,7 @@ struct EndPointHash {
     }
 };
 
-struct udp2raw_session_ep_tuple
+struct tcp_session_src_tuple
 {
     uint32_t src_ip;
     uint8_t  src_port;
@@ -24,8 +24,8 @@ struct udp_ep_tuple
     uint32_t dst_ip;
     uint8_t  dst_port;
 };
-struct EndPointTupleHash {
-    size_t operator()(udp2raw_session_ep_tuple const &ep_tuple) const
+struct TCPSrcTupleHash {
+    size_t operator()(tcp_session_src_tuple const &ep_tuple) const
     {
         size_t seed = 0;
         //printf("hashing %s:%d\n", ep_in.address().to_string(), ep_in.port());
@@ -35,7 +35,20 @@ struct EndPointTupleHash {
         return seed;
     }
 };
-struct EndPointTupleHash {
+class TCPSrcTupleEQ
+{
+public:
+    bool operator() (tcp_session_src_tuple const& t1, tcp_session_src_tuple const& t2) const
+    {
+
+        bool res = (t1.src_port == t2.src_port) && (t1.src_ip == t2.src_ip);
+
+        return res;
+    }
+};
+
+
+struct UdpEndPointTupleHash {
     size_t operator()(udp_ep_tuple const &ep_tuple) const
     {
         size_t seed = 0;

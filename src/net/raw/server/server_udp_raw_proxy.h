@@ -17,13 +17,7 @@
 template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 {
-    enum SESSION_STATUS
-    {
-        SYN_RCVD,
-        ESTABLISHED
-    };
 
-    using SESSION_MAP = boost::unordered_map<udp2raw_session_ep_tuple, ServerUdpRawProxySession, EndPointTupleHash>;
 
 public:
 
@@ -32,54 +26,29 @@ public:
 
     }
 
-    void SetUpSniffer(std::string ifname, std::string local_ip, std::string local_port)
+    void SetUpSniffer(std::string ifname, std::string server_ip, std::string server_port)
     {
-        if (isSnifferInit) return;
 
-        config.set_filter("ip src "+ local_ip + " and src port " + local_port);
+        config.set_filter("ip dst "+ server_ip + " and dst port " + server_port);
         config.set_immediate_mode(true);
         psniffer = std::make_unique<Tins::Sniffer>(ifname, config);
         char errbuf[PCAP_ERRBUF_SIZE];
         pcap_setnonblock(psniffer->get_pcap_handle(), 1, errbuf);
         sniffer_socket.assign(psniffer->get_fd());
 
-        std::string filewall_rule_blocking_rst = "iptables -A OUTPUT -p tcp --tcp-flags RST RST -s " + local_ip + " -j DROP";
+        std::string filewall_rule_blocking_rst = "iptables -A OUTPUT -p tcp --tcp-flags RST RST -s " + server_ip + " -j DROP";
         system(filewall_rule_blocking_rst.c_str());
 
-        this->local_ip = local_ip;
-        this->local_port = boost::lexical_cast<unsigned short>(local_port);
-
-        isSnifferInit = true;
+        //this->local_ip = local_ip;
+        //this->local_port = boost::lexical_cast<unsigned short>(local_port);
     }
 
 
     void StartProxy(uint16_t local_port)
     {
-        if (isProxyRunning) return;
         this->local_port = local_port;
         RecvFromLocal();
-        isProxyRunning = true;
     }
-
-    size_t SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
-    {
-        using Tins::TCP;
-        auto tcp = TCP(remote_port, local_port);
-        tcp.flags(TCP::PSH | TCP::ACK);
-        //local_seq += size;
-        tcp.seq(local_seq);
-        tcp.ack_seq(last_ack + 1);
-
-        auto payload = Tins::RawPDU((uint8_t*)data, size);
-
-        tcp = tcp / payload;
-
-        LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
-        return sendPacket(tcp.serialize().data(), tcp.size(), yield);
-
-    }
-
-
 
 private:
     Protocol protocol_;
@@ -87,10 +56,8 @@ private:
     boost::asio::posix::stream_descriptor sniffer_socket;
     std::unique_ptr<Tins::Sniffer> psniffer;
     Tins::SnifferConfiguration config;
-    bool isSnifferInit = false;
-    bool isProxyRunning = false;
 
-    SESSION_MAP session_map_;
+    SessionMap session_map_;
 
 
     unsigned short remote_port = 4444;
@@ -128,17 +95,17 @@ private:
 
                 // when recv tcp packet from local
                 // find session by src ip port pair
-                udp2raw_session_ep_tuple src_ep;
-                src_ep.src_ip = ip->src_addr().uint32_t();
+                tcp_session_src_tuple src_ep;
+                src_ep.src_ip = inet_addr(ip->src_addr().to_string().c_str());
                 src_ep.src_port = tcp->sport();
 
                 auto map_it = session_map_.find(src_ep);
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    auto psession = boost::make_shared<ServerUdpRawProxySession>(ip->src_addr().uint32_t(), tcp->sport());
-
-                    psession->HandlePacket(ip, tcp);
+//                    auto psession = boost::make_shared<ServerUdpRawProxySession>(src_ep.src_ip, src_ep.src_port, session_map_);
+//
+//                    psession->HandlePacket(ip, tcp);
 
 
                     //session_map_.insert()

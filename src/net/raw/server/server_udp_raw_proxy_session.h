@@ -6,6 +6,9 @@
 #include <tins/tcp.h>
 #include "../raw_socket.h"
 
+class ServerUdpRawProxySession;
+using SessionMap = boost::unordered_map<tcp_session_src_tuple, ServerUdpRawProxySession, TCPSrcTupleHash, TCPSrcTupleEQ>;
+
 class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession>
 {
     enum SESSION_STATUS
@@ -15,13 +18,11 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         ESTABLISHED
     };
 
-
     class udp_session
     {
 
     };
-    using SessionMap = boost::unordered_map<udp2raw_session_ep_tuple, ServerUdpRawProxySession, EndPointTupleHash>;
-    using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_session, EndPointTupleHash>;
+    using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_session, UdpEndPointTupleHash>;
 
     using RawSenderSocket = boost::asio::basic_raw_socket<asio::ip::raw>;
     using PRawSenderSocket = std::unique_ptr<RawSenderSocket>;
@@ -42,6 +43,7 @@ public:
     bool HandlePacket(Tins::IP* ip, Tins::TCP* tcp)
     {
 
+        using Tins::TCP;
         switch (tcp->flags())
         {
             // client start syn process
@@ -54,7 +56,7 @@ public:
                 LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
                 // clone tcp cause we have to start new coroutine context
                 handshakeReply(tcp);
-                continue;
+                return true;
             }
                 // without data
             case TCP::ACK :
@@ -71,9 +73,9 @@ public:
             case (TCP::PSH | TCP::ACK) :
             {
                 LOG_INFO("get psh | ack seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                ackReply(tcp->seq(), tcp->ack_seq(), tcp->inner_pdu()->size(), yield);
+                //ackReply(tcp->seq(), tcp->ack_seq(), tcp->inner_pdu()->size(), yield);
 
-                proxyUdp(tcp->inner_pdu());
+                //proxyUdp(tcp->inner_pdu());
                 break;
             }
             case TCP::RST :
@@ -84,7 +86,6 @@ public:
             default:
             {
                 LOG_INFO("default")
-                continue;
             }
         }
 
@@ -122,16 +123,16 @@ private:
 
         // swap src port and dst port
         auto tcp_reply = Tins::TCP(local_tcp->sport(), local_tcp->dport());
-        tcp.flags(TCP::ACK | TCP::SYN);
-        tcp.ack_seq(local_tcp->seq() + 1); // +1 client's seq
-        tcp.seq(server_seq);
+        local_tcp->flags(Tins::TCP::ACK | Tins::TCP::SYN);
+        local_tcp->ack_seq(local_tcp->seq() + 1); // +1 client's seq
+        local_tcp->seq(server_seq);
 
-        LOG_INFO("send syn ack back, seq: {}, ack: {}", local_tcp->seq(), local_tcp->seq_ack());
+        LOG_INFO("send syn ack back, seq: {}, ack: {}", local_tcp->seq(), local_tcp->ack_seq());
 
         sendPacket(tcp_reply);
         last_send_time = time(nullptr);
 
-        this->last_ack = remote_seq;
+        //this->last_ack = remote_seq;
         this->status = SYN_RCVD;
     }
 
@@ -141,10 +142,10 @@ private:
     {
 
         auto self(this->shared_from_this());
-        boost::asio::spawn([this, self, tcp_to_send](boost::asio::yield_context yield){
+        boost::asio::spawn([this, self, &tcp_to_send](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
-            auto raw_data = tcp_to_send->serialize();
+            auto raw_data = tcp_to_send.serialize();
             auto bytes_send = prawsender_socket->async_send_to(boost::asio::buffer(raw_data.data(), raw_data.size()), local_ep, yield[ec]);
 
             if (ec)
