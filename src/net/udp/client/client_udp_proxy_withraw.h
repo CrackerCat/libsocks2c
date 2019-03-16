@@ -10,8 +10,8 @@ public:
 
     void InitUdp2Raw()
     {
-        pudp2raw = ClientUdpRawProxy::GetInstance(this->pacceptor_->get_io_context());
-        pudp2raw->SetUpSniffer("ens33", "192.168.1.214", "4567");
+        pudp2raw = ClientUdpRawProxy<Protocol>::GetInstance(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
+        pudp2raw->SetUpSniffer("ens33", "192.168.0.107", "4567");
         pudp2raw->StartProxy(4444);
     }
 
@@ -40,20 +40,31 @@ private:
                     continue;
                 }
 
-                LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local ", bytes_read))
+                LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep_.address().to_string(), local_ep_.port()))
+
+                for (int i = 0; i < bytes_read; i++)
+                {
+                    printf("%x ", this->local_recv_buff_[Protocol::ProtocolHeader::Size() + 4 + 2 + i]);
+                }
 
                 this->last_active_time = time(nullptr);
 
                 //place local ep in buff
                 memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), local_ep_.address().to_v4().to_bytes().data(), 4);
                 auto local_port = local_ep_.port();
-                memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 2, &local_port, 2);
+                memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &local_port, 2);
 
                 auto protocol_hdr = (typename Protocol::ProtocolHeader*)this->local_recv_buff_;
                 //with ip + port 6 bytes totally
                 protocol_hdr->PAYLOAD_LENGTH = bytes_read + 4 + 2;
                 //encrypt packet
                 auto bytes_tosend = this->protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
+
+//                for (int i = 0; i < bytes_tosend; i++)
+//                {
+//                    printf("%x ", this->local_recv_buff_[i]);
+//                    fflush(stdout);
+//                }
 
                 //if (!Socks5ProtocolHelper::IsUdpSocks5PacketValid(new_session->GetLocalBuffer())) continue;
                 pudp2raw->SendPacketViaRaw(this->local_recv_buff_, bytes_tosend, yield);
@@ -64,5 +75,5 @@ private:
         });
     }
 
-    ClientUdpRawProxy* pudp2raw;
+    ClientUdpRawProxy<Protocol>* pudp2raw;
 };

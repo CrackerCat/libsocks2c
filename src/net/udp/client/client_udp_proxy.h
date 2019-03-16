@@ -42,6 +42,12 @@ public:
         auto ep = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(local_address),local_port);
 
         pacceptor_->open(ep.protocol());
+
+        int opt = 1;
+
+        setsockopt(pacceptor_->native_handle(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        setsockopt(pacceptor_->native_handle(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
         pacceptor_->bind(ep);
 
 		this->protocol_.SetKey(this->proxyKey_);

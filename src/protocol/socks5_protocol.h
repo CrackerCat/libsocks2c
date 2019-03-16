@@ -114,7 +114,6 @@ namespace socks5 {
         //DST.ADDR
         //DST.PORT
         //DATA
-
     };
 
 

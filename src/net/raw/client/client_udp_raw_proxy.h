@@ -9,9 +9,12 @@
 #include <memory>
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/asio/ip/udp.hpp>
+#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../utils/ephash.h"
 
 
-#define MAX_HANDSHAKE_TRY 10
+#define MAX_HANDSHAKE_TRY 122220
 
 /*
  * ClientUdpProxySession run in single thread mode
@@ -24,7 +27,8 @@
  *
  * when sending packet to remote
  */
-class ClientUdpRawProxy : public Singleton<ClientUdpRawProxy>
+template <class Protocol>
+class ClientUdpRawProxy : public Singleton<ClientUdpRawProxy<Protocol>>
 {
     enum SESSION_STATUS
     {
@@ -34,7 +38,7 @@ class ClientUdpRawProxy : public Singleton<ClientUdpRawProxy>
 
 public:
 
-    ClientUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io), send_socket_stream(io)
+    ClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : protocol_(prot), sniffer_socket(io), plocal_socket(pls), send_socket_stream(io)
     {
         if (!send_socket_stream.is_open())
         {
@@ -69,6 +73,16 @@ public:
         this->local_port = local_port;
         RecvFromRemote();
         TcpHandShake();
+
+        //boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string("127.0.0.1"), this->local_port);
+
+//        this->local_socket.open(local_ep.protocol());
+//        int opt = 1;
+//
+//        setsockopt(this->local_socket.native_handle(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+//        setsockopt(this->local_socket.native_handle(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+//
+//        this->local_socket.bind(local_ep);
         isProxyRunning = true;
     }
 
@@ -83,7 +97,7 @@ public:
         tcp.flags(TCP::PSH | TCP::ACK);
         //local_seq += size;
         tcp.seq(local_seq);
-        tcp.ack_seq(last_ack + 1);
+        tcp.ack_seq(last_ack);
 
         auto payload = Tins::RawPDU((uint8_t*)data, size);
 
@@ -124,8 +138,11 @@ public:
     }
 
 private:
+    Protocol& protocol_;
 
     boost::asio::posix::stream_descriptor sniffer_socket;
+    boost::asio::ip::udp::endpoint local_ep;
+    boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
     std::unique_ptr<Tins::Sniffer> psniffer;
     Tins::SnifferConfiguration config;
     bool isSnifferInit = false;
@@ -197,7 +214,8 @@ private:
                     case (TCP::PSH | TCP::ACK) :
                     {
                         LOG_INFO("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                        ackReply(tcp->seq(), tcp->ack_seq());
+                        ackReply(tcp, yield);
+                        sendToLocal(tcp->inner_pdu());
                         break;
                     }
                     case TCP::RST :
@@ -266,7 +284,7 @@ private:
         tcp.flags(TCP::ACK);
         tcp.ack_seq(remote_seq + 1);
         tcp.seq(++local_seq);
-        LOG_INFO("send handshake ACK back, seq: {}, ack: {}", local_seq, remote_seq + 1);
+        LOG_INFO("send handshake ACK back, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
         sendPacket(tcp.serialize().data(), tcp.size(), yield);
         this->status = ESTABLISHED;
         last_send_time = time(nullptr);
@@ -275,17 +293,64 @@ private:
         this->last_ack = remote_seq;
     }
 
-    void ackReply(uint32_t remote_seq, uint32_t remote_ack)
+    void ackReply(Tins::TCP* remote_tcp, boost::asio::yield_context yield)
     {
         using Tins::TCP;
+        this->last_ack = remote_tcp->seq() + remote_tcp->inner_pdu()->size();
 
-        auto tcp = TCP(remote_port, local_port);
+        auto tcp = TCP(remote_tcp->sport(), remote_tcp->dport());
         tcp.flags(TCP::ACK);
-        tcp.ack_seq(remote_seq + 1);
+
+        tcp.ack_seq(this->last_ack);
         tcp.seq(local_seq);
-        //sendPacket(tcp.serialize().data(), tcp.size());
-        this->last_ack = remote_seq;
+        LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
+
+        sendPacket(tcp.serialize().data(), tcp.size(), yield);
     }
 
+    void sendToLocal(Tins::PDU* raw_data)
+    {
+
+        std::unique_ptr<unsigned char[]> data_copy(new unsigned char[raw_data->size()]);
+        memcpy(data_copy.get(), raw_data->serialize().data(), raw_data->size());
+        boost::asio::spawn([this, data_copy {std::move(data_copy)}](boost::asio::yield_context yield){
+
+            // decrypt data
+            auto protocol_hdr = (typename Protocol::ProtocolHeader*)data_copy.get();
+
+            // decrypt packet and get payload length
+            // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
+            auto bytes_read = protocol_.OnUdpPayloadReadFromClientRemote(protocol_hdr);
+//
+//            for (int i = 0; i < bytes_read; i++)
+//            {
+//                printf("%x ", data_copy[Protocol::ProtocolHeader::Size() + i]);
+//            }
+
+            char buff[6];
+            uint32_t src_ip;
+            uint16_t src_port;
+            memcpy(&src_ip, &data_copy[Protocol::ProtocolHeader::Size()], 4);
+            memcpy(&src_port, &data_copy[Protocol::ProtocolHeader::Size() + 4], 2);
+
+            boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string(inet_ntoa(in_addr({src_ip}))), src_port);
+
+            boost::system::error_code ec;
+
+            LOG_INFO("send udp back to local {} : {}", local_ep.address().to_string(), local_ep.port())
+
+            auto bytes_send = this->plocal_socket->async_send_to(boost::asio::buffer(data_copy.get() + Protocol::ProtocolHeader::Size() + 6, bytes_read - 6), local_ep, yield[ec]);
+
+            if (ec)
+            {
+                LOG_INFO("async_send_to err --> {}", ec.message().c_str())
+                return;
+            }
+
+            LOG_INFO("send {} bytes via raw socket", bytes_send)
+
+        });
+
+    }
 
 };

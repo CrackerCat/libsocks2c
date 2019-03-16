@@ -14,14 +14,13 @@ void test()
     LibSocks2c::Config config;
     config.isServer = false;
     config.proxyKey = "12345678";
-    config.server_ip = "9.108.59.115";
+    config.server_ip = "192.168.0.107";
     config.server_port = 443;
     config.socks5_ip = "0.0.0.0";
     config.socks5_port = 5555;
     config.resolve_dns = false;
-    config.udp2raw = true;
+    config.udp2raw = false;
     config.timeout = 0;
-
 
     LibSocks2c::StartProxy(config);
 
