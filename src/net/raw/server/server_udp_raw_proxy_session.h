@@ -33,16 +33,38 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         udp_proxy_session(boost::shared_ptr<ServerUdpRawProxySession<Protocol>> server, boost::asio::io_context& io) : pserver(server), io_context_(io), remote_socket_(io), timer(io)
         {
             last_active_time = time(nullptr);
+            this->remote_socket_.open(remote_recv_ep_.protocol());
+        }
+
+
+        void SaveSrcEndpoint(udp_ep_tuple src)
+        {
+            src_ep = src;
         }
 
         // copy data, start coroutine and send it
-        void SendToRemote(void* data, size_t size)
+        void SendToRemote(void* data, size_t size, const boost::asio::ip::udp::endpoint& remote_ep)
         {
 
             auto self(this->shared_from_this());
-            boost::asio::spawn([this, self](boost::asio::yield_context yield){
 
+            std::unique_ptr<char[]> copy_data(new char[size]);
+            memcpy(copy_data.get(), data, size);
 
+            boost::asio::spawn([this, self, copy_data { std::move(copy_data) }, size, remote_ep { std::move(remote_ep) }](boost::asio::yield_context yield){
+
+                boost::system::error_code ec;
+
+                auto bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(copy_data.get(), size),
+                                                                     remote_ep, yield[ec]);
+
+                if (ec)
+                {
+                    UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
+                    return;
+                }
+
+                LOG_INFO("send {} bytes udp data to remote", bytes_send)
 
             });
         }
@@ -54,6 +76,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         }
 
     private:
+
         boost::asio::io_context& io_context_;
         boost::shared_ptr<ServerUdpRawProxySession<Protocol>> pserver;
         boost::asio::ip::udp::socket remote_socket_;
@@ -61,7 +84,11 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         boost::asio::deadline_timer timer;
         size_t last_active_time;
 
+        udp_ep_tuple src_ep;
+
+        unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
         unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
+
 
         void readFromRemote()
         {
@@ -81,8 +108,19 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
                         return 0;
                     }
 
+                    LOG_INFO("recv {} bytes udp data from remote", bytes_read)
 
-                    this->pserver->sendPacket()
+                    auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;
+                    Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, remote_recv_ep_.address().to_string(), remote_recv_ep_.port());
+                    // paddle the socks5 udp header
+                    LOG_INFO("encrypting payload size {}", bytes_read + 10 + 6)
+
+                    protocol_hdr->PAYLOAD_LENGTH = bytes_read + 10 + 6;
+
+                    auto bytes_tosend = pserver->GetProtocol().OnUdpPayloadReadFromServerRemote(protocol_hdr);
+
+                    pserver->SendPacketViaRaw(remote_recv_buff_, bytes_tosend);
+
                 }
 
 
@@ -91,15 +129,10 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
         void runTimer()
         {
-            auto self(this->shared_from_this());
-            boost::asio::spawn([this, self](boost::asio::yield_context yield){
 
-
-
-            });
         }
     };
-    using UdpSessionMap = boost::unordered_map<udp_ep_tuple, udp_proxy_session, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
+    using UdpSessionMap = boost::unordered_map<udp_ep_tuple, boost::shared_ptr<udp_proxy_session>, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
 
     using UdpSocketMap = boost::unordered_map<udp_ep_tuple, boost::shared_ptr<boost::asio::ip::udp::socket>, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
 
@@ -117,6 +150,16 @@ public:
         prawsender_socket->open();
     }
 
+    void SaveOriginalTcpEp(uint16_t sport, uint16_t dport)
+    {
+        this->tcp_sport = sport;
+        this->tcp_dport = dport;
+    }
+
+    Protocol& GetProtocol()
+    {
+        return this->protocol_;
+    }
 
     // ip && tcp always vaild
     bool HandlePacket(Tins::IP* ip, Tins::TCP* tcp)
@@ -185,6 +228,24 @@ public:
     }
 
 
+    void SendPacketViaRaw(void* data, size_t size)
+    {
+        using Tins::TCP;
+        // swap sport and dport here cause we are sending data back
+        auto tcp = TCP(tcp_sport, tcp_dport);
+        tcp.flags(TCP::PSH | TCP::ACK);
+        //local_seq += size;
+        tcp.seq(server_seq);
+        tcp.ack_seq(server_ack + 1);
+
+        auto payload = Tins::RawPDU((uint8_t*)data, size);
+
+        tcp = tcp / payload;
+
+        LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
+        sendPacket(tcp.serialize().data(), tcp.size());
+    }
+
 
 private:
     Protocol protocol_;
@@ -198,10 +259,13 @@ private:
     // store client's tcp src ip src port
     asio::ip::raw::endpoint local_ep;
 
+    uint16_t tcp_sport;
+    uint16_t tcp_dport;
+
     PRawSenderSocket prawsender_socket;
 
     uint32_t server_seq = 10000;
-    uint32_t server_ack;
+    uint32_t server_ack = 0;
 
     void handshakeReply(Tins::TCP* local_tcp)
     {
@@ -287,34 +351,22 @@ private:
             }
 
             std::string src_ip_str = inet_ntoa(in_addr({udp_ep.src_ip}));
-            LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, 0, 0)
+            LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, ip_dst, udp_ep.dst_port)
 
-            auto udp_socketmap_it = udpsocket_map.find(udp_ep);
-            auto ps = boost::make_shared<udp_proxy_session>(this->shared_from_this(), this->prawsender_socket->get_io_context());
+            auto udpsession_it = udpsession_map.find(udp_ep);
             // if new udp proxy
-            if (udp_socketmap_it == udpsocket_map.end())
+            if (udpsession_it == udpsession_map.end())
             {
 
-                auto pudpsocket = boost::make_shared<boost::asio::ip::udp::socket>(this->prawsender_socket->get_io_context());
+                auto psession = boost::make_shared<udp_proxy_session>(this->shared_from_this(), this->prawsender_socket->get_io_context());
 
                 boost::asio::ip::udp::endpoint remote_ep(boost::asio::ip::address::from_string(ip_dst), udp_ep.dst_port);
 
-                boost::system::error_code ec;
-                int header_size = Protocol::ProtocolHeader::Size() + 4 + 2 + 10;
-                auto bytes_send = pudpsocket->async_send_to(boost::asio::buffer(&full_data.at(header_size), full_data.size() - header_size), remote_ep, yield[ec]);
-                if (ec)
-                {
-                    return;
-                }
-                udpsocket_map.insert({udp_ep, pudpsocket});
+                size_t header_size = Protocol::ProtocolHeader::Size() + 4 + 2 + 10;
 
-                auto self(this->shared_from_this());
-                boost::asio::spawn([this, self, pudpsocket](boost::asio::yield_context yield){
-
-                });
-                boost::asio::spawn([this, self, pudpsocket](boost::asio::yield_context yield){
-
-                });
+                udpsession_map.insert({udp_ep, psession});
+                psession->Start();
+                psession->SendToRemote(&full_data.at(header_size), bytes_read - 6 - 10, remote_ep);
 
             } else
             {

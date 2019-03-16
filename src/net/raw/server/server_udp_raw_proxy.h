@@ -109,6 +109,7 @@ private:
                     in_addr src_ip_addr = {src_ep.src_ip};
                     std::string dst_ip = inet_ntoa(src_ip_addr);
                     auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(dst_ip, src_ep.src_port, session_map_, this->proxyKey_);
+                    psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
                     psession->InitRawSocket(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);
                     session_map_.insert({src_ep, psession});
