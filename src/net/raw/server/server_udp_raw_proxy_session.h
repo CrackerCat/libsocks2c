@@ -110,10 +110,23 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
                     LOG_INFO("recv {} bytes udp data from remote", bytes_read)
 
+                    for (int i = 0; i < bytes_read; i++)
+                    {
+                        printf("%x ", remote_recv_buff_[Protocol::ProtocolHeader::Size() + 6 + 10 + i]);
+                    }
+
                     auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;
                     Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, remote_recv_ep_.address().to_string(), remote_recv_ep_.port());
                     // paddle the socks5 udp header
                     LOG_INFO("encrypting payload size {}", bytes_read + 10 + 6)
+
+                    memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size(), &this->src_ep.src_ip, 4);
+                    memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &this->src_ep.src_port, 2);
+
+                    for (int i = 0; i < bytes_read + 10 + 6; i++)
+                    {
+                        printf("%x ", remote_recv_buff_[Protocol::ProtocolHeader::Size() + i]);
+                    }
 
                     protocol_hdr->PAYLOAD_LENGTH = bytes_read + 10 + 6;
 
@@ -193,6 +206,11 @@ public:
                     this->status = ESTABLISHED;
                 }
 
+                if(tcp->ack_seq() > this->server_seq)
+                {
+                    this->server_seq = tcp->ack_seq();
+                }
+
                 break;
             }
             // when recv data
@@ -236,7 +254,7 @@ public:
         tcp.flags(TCP::PSH | TCP::ACK);
         //local_seq += size;
         tcp.seq(server_seq);
-        tcp.ack_seq(server_ack + 1);
+        tcp.ack_seq(server_ack);
 
         auto payload = Tins::RawPDU((uint8_t*)data, size);
 
@@ -290,7 +308,7 @@ private:
 
         sendPacket(tcp_reply.serialize().data(), tcp_reply.serialize().size());
         last_send_time = time(nullptr);
-
+        //this->server_ack = local_tcp->seq() + 1;
     }
 
     // data will be copy
@@ -365,6 +383,7 @@ private:
                 size_t header_size = Protocol::ProtocolHeader::Size() + 4 + 2 + 10;
 
                 udpsession_map.insert({udp_ep, psession});
+                psession->SaveSrcEndpoint(udp_ep);
                 psession->Start();
                 psession->SendToRemote(&full_data.at(header_size), bytes_read - 6 - 10, remote_ep);
 
@@ -389,8 +408,18 @@ private:
 
         auto tcp = TCP(local_tcp->sport(), local_tcp->dport());
         tcp.flags(TCP::ACK);
-        tcp.ack_seq(local_tcp->seq() + 1);
         tcp.seq(server_seq);
+
+        if (local_tcp->seq() >= this->server_ack)
+        {
+            //save server_ack
+            //cause we have to know what ack to send when recv udp packet from remote
+            this->server_ack = local_tcp->seq() + local_tcp->inner_pdu()->size();
+        }
+        tcp.ack_seq(this->server_ack);
+
+        LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
+
         sendPacket(tcp.serialize().data(), tcp.size());
     }
 
