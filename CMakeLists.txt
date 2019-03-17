@@ -81,7 +81,7 @@ add_executable(libsocks2c
         src/net/raw/client/client_udp_raw_proxy.h
         src/net/raw/client/client_udp_raw_proxy.cpp
         src/net/udp/client/client_udp_proxy_withraw.h
-        src/net/raw/server/server_udp_raw_proxy_session.h)
+        src/net/raw/server/server_udp_raw_proxy_session.h src/net/raw/raw_proxy_helper/interface_helper.h src/net/raw/raw_proxy_helper/firewall_helper.h src/net/raw/raw_proxy_helper/firewall_helper.cpp src/net/raw/raw_proxy_helper/interface_helper.cpp src/utils/system/system_exec.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)

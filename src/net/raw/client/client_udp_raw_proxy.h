@@ -12,7 +12,8 @@
 #include <boost/asio/ip/udp.hpp>
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
-
+#include "../raw_proxy_helper/interface_helper.h"
+#include "../raw_proxy_helper/firewall_helper.h"
 
 #define MAX_HANDSHAKE_TRY 122220
 
@@ -46,24 +47,27 @@ public:
         }
     }
 
-    void SetUpSniffer(std::string ifname, std::string remote_ip, std::string remote_port)
+    void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string ifname = "")
     {
-        if (isSnifferInit) return;
+
+        //Get Default if ifname is not set
+        if (ifname.empty())
+            ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
 
         config.set_filter("ip src "+ remote_ip + " and src port " + remote_port);
         config.set_immediate_mode(true);
         psniffer = std::make_unique<Tins::Sniffer>(ifname, config);
+
         char errbuf[PCAP_ERRBUF_SIZE];
         pcap_setnonblock(psniffer->get_pcap_handle(), 1, errbuf);
         sniffer_socket.assign(psniffer->get_fd());
 
-        std::string filewall_rule_blocking_rst = "iptables -A OUTPUT -p tcp --tcp-flags RST RST -s " + remote_ip + " -j DROP";
-        system(filewall_rule_blocking_rst.c_str());
+
+        FirewallHelper::GetInstance()->BlockRst(remote_ip);
 
         this->remote_ip = remote_ip;
         this->remote_port = boost::lexical_cast<unsigned short>(remote_port);
 
-        isSnifferInit = true;
     }
 
 
@@ -73,16 +77,6 @@ public:
         this->local_port = local_port;
         RecvFromRemote();
         TcpHandShake();
-
-        //boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string("127.0.0.1"), this->local_port);
-
-//        this->local_socket.open(local_ep.protocol());
-//        int opt = 1;
-//
-//        setsockopt(this->local_socket.native_handle(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-//        setsockopt(this->local_socket.native_handle(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
-//
-//        this->local_socket.bind(local_ep);
         isProxyRunning = true;
     }
 

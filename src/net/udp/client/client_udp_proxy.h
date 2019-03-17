@@ -18,8 +18,8 @@
 template <class Protocol>
 class ClientUdpProxy : public INetworkProxy, public boost::enable_shared_from_this<ClientUdpProxy<Protocol>>{
 
-    using ACCEPTOR = boost::asio::ip::udp::socket;
-    using PACCEPTOR = boost::shared_ptr<ACCEPTOR>;
+    using Acceptor = boost::asio::ip::udp::socket;
+    using PAcceptor = boost::shared_ptr<Acceptor>;
 
     using SESSION_MAP = boost::unordered_map<boost::asio::ip::udp::endpoint, boost::shared_ptr<ClientUdpProxySession<Protocol>>, EndPointHash>;
 
@@ -35,7 +35,7 @@ public:
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
     {
-        pacceptor_ = boost::make_shared<ACCEPTOR>(this->GetIOContext());
+        pacceptor_ = boost::make_shared<Acceptor>(this->GetIOContext());
 
 		Socks5ProtocolHelper::SetUdpSocks5ReplyEndpoint("127.0.0.1", local_port);
 
@@ -43,10 +43,9 @@ public:
 
         pacceptor_->open(ep.protocol());
 
-        int opt = 1;
-
-        setsockopt(pacceptor_->native_handle(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        setsockopt(pacceptor_->native_handle(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+//        int opt = 1;
+//        setsockopt(pAcceptor_->native_handle(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+//        setsockopt(pAcceptor_->native_handle(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
 
         pacceptor_->bind(ep);
 
@@ -73,7 +72,6 @@ public:
 	{
         for (auto it = session_map_.begin(); it != session_map_.end(); )
         {
-
             it->second->ForceCancel();
             it = session_map_.erase(it);
         }
@@ -87,7 +85,7 @@ protected:
 
     Protocol protocol_;
 
-    PACCEPTOR pacceptor_;
+    PAcceptor pacceptor_;
 
     SESSION_MAP session_map_;
 
@@ -157,8 +155,6 @@ protected:
 
         });
     }
-
-
 
     void onTimeExpire(const boost::system::error_code &ec)
     {
