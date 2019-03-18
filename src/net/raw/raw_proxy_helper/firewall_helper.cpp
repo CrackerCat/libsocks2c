@@ -4,6 +4,8 @@
 #ifdef __APPLE__
 void FirewallHelper::BlockRst(std::string dst_ip)
 {
+    std::string filewall_rule = "    block drop proto tcp from " + dst_ip + " to any flags R/R";
+
 
 }
 #elif __linux__

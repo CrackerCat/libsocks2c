@@ -94,9 +94,14 @@ target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/
 ELSE()
 target_link_libraries(libsocks2c pthread)
 target_link_libraries(libsocks2c "/usr/local/lib/libsodium.a")
-target_link_libraries(libsocks2c "/usr/local/lib/libtins.so")
-target_link_libraries(libsocks2c "/usr/local/lib/libpcap.so")
 
+IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    target_link_libraries(libsocks2c "/usr/local/lib/libtins.dylib")
+    target_link_libraries(libsocks2c "/usr/local/lib/libpcap.dylib")
+ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(libsocks2c "/usr/local/lib/libtins.so")
+    target_link_libraries(libsocks2c "/usr/local/lib/libpcap.so")
+ENDIF()
 ENDIF()
 
 set(Boost_USE_STATIC_LIBS ON)
