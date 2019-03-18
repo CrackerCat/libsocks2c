@@ -8,11 +8,12 @@ class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 
 public:
 
-    void InitUdp2Raw()
+    void InitUdp2Raw(std::string server_ip, std::string server_raw_port, std::string local_raw_port)
     {
+        LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
         pudp2raw = ClientUdpRawProxy<Protocol>::GetInstance(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
-        pudp2raw->SetUpSniffer("ens33", "192.168.0.107", "4567");
-        pudp2raw->StartProxy(4444);
+        pudp2raw->SetUpSniffer(server_ip, server_raw_port);
+        pudp2raw->StartProxy(local_raw_port);
     }
 
 
@@ -23,7 +24,7 @@ private:
         auto self(this->shared_from_this());
         boost::asio::spawn(this->GetIOContext(),[this, self](boost::asio::yield_context yield) {
 
-            boost::asio::ip::udp::endpoint local_ep_;
+            boost::asio::ip::udp::endpoint local_ep;
 
             while (1)
             {
@@ -31,7 +32,7 @@ private:
 
                 //async recv
                 // we have to reserve 4 + 2 bytes for local ip + local port info
-                uint64_t bytes_read = this->pacceptor_->async_receive_from(boost::asio::buffer(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4 + 2, UDP_LOCAL_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 10 - 4 - 2), local_ep_, yield[ec]);
+                uint64_t bytes_read = this->pacceptor_->async_receive_from(boost::asio::buffer(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4 + 2, UDP_LOCAL_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 10 - 4 - 2), local_ep, yield[ec]);
 
                 if (ec || bytes_read == 0)
                 {
@@ -40,40 +41,42 @@ private:
                     continue;
                 }
 
-                LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep_.address().to_string(), local_ep_.port()))
-
-                for (int i = 0; i < bytes_read; i++)
-                {
-                    printf("%x ", this->local_recv_buff_[Protocol::ProtocolHeader::Size() + 4 + 2 + i]);
-                }
+                LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port()))
 
                 this->last_active_time = time(nullptr);
 
-                //place local ep in buff
-                memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), local_ep_.address().to_v4().to_bytes().data(), 4);
-                auto local_port = local_ep_.port();
-                memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &local_port, 2);
-
-                auto protocol_hdr = (typename Protocol::ProtocolHeader*)this->local_recv_buff_;
-                //with ip + port 6 bytes totally
-                protocol_hdr->PAYLOAD_LENGTH = bytes_read + 4 + 2;
-                //encrypt packet
-                auto bytes_tosend = this->protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
-
-//                for (int i = 0; i < bytes_tosend; i++)
-//                {
-//                    printf("%x ", this->local_recv_buff_[i]);
-//                    fflush(stdout);
-//                }
-
-                //if (!Socks5ProtocolHelper::IsUdpSocks5PacketValid(new_session->GetLocalBuffer())) continue;
-                pudp2raw->SendPacketViaRaw(this->local_recv_buff_, bytes_tosend, yield);
+                // send via raw if raw tcp connected
+                if (pudp2raw->IsRemoteConnected())
+                {
+                    handleLocalPacketViaRaw(local_ep, bytes_read, yield);
+                } else // or fallback to udp
+                {
+                    this->handleLocalPacket(local_ep, bytes_read);
+                }
 
             }
 
-
         });
     }
+
+    void handleLocalPacketViaRaw(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::asio::yield_context yield)
+    {
+        //place local ep in buff
+        memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), local_ep.address().to_v4().to_bytes().data(), 4);
+        auto local_port = local_ep.port();
+        memcpy(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &local_port, 2);
+
+        auto protocol_hdr = (typename Protocol::ProtocolHeader*)this->local_recv_buff_;
+        //with ip + port 6 bytes totally
+        protocol_hdr->PAYLOAD_LENGTH = bytes_read + 4 + 2;
+        //encrypt packet
+        auto bytes_tosend = this->protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
+
+        pudp2raw->SendPacketViaRaw(this->local_recv_buff_, bytes_tosend, yield);
+
+    }
+
+
 
     ClientUdpRawProxy<Protocol>* pudp2raw;
 };

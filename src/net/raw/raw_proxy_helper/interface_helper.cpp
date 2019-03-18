@@ -10,10 +10,14 @@ std::string InterfaceHelper::GetDefaultInterface()
 }
 #elif __linux__
 #include "../../../utils/system/system_exec.h"
+#include <algorithm>
 std::string InterfaceHelper::GetDefaultInterface()
 {
     const std::string default_if_str = "ip route | awk '/default/ { print $5 }'";
+    auto res = ExecAndGetRes(default_if_str.c_str());
 
-    return ExecAndGetRes(default_if_str.c_str());
+    res.erase(std::remove(res.begin(), res.end(), '\n'), res.end());
+
+    return res;
 }
 #endif

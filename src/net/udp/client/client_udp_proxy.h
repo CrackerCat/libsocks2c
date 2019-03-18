@@ -96,14 +96,14 @@ protected:
         auto self(this->shared_from_this());
         boost::asio::spawn(this->GetIOContext(),[this, self](boost::asio::yield_context yield) {
 
-			boost::asio::ip::udp::endpoint local_ep_;
+			boost::asio::ip::udp::endpoint local_ep;
 
             while (1)
             {
                 boost::system::error_code ec;
 
                 //async recv
-                uint64_t bytes_read = pacceptor_->async_receive_from(boost::asio::buffer(local_recv_buff_ + Protocol::ProtocolHeader::Size(), UDP_LOCAL_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 10), local_ep_, yield[ec]);
+                uint64_t bytes_read = pacceptor_->async_receive_from(boost::asio::buffer(local_recv_buff_ + Protocol::ProtocolHeader::Size(), UDP_LOCAL_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 10), local_ep, yield[ec]);
 
                 if (ec || bytes_read == 0)
                 {
@@ -113,48 +113,54 @@ protected:
                 }
 
 				LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local ", bytes_read))
-
-				bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket((socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size()));
                 last_active_time = time(nullptr);
 
-
-                //encrypt packet
-                auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
-                protocol_hdr->PAYLOAD_LENGTH = bytes_read;
-                //get payload length
-                bytes_read = protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
-
-                //if (!Socks5ProtocolHelper::IsUdpSocks5PacketValid(new_session->GetLocalBuffer())) continue;
-
-                auto map_it = session_map_.find(local_ep_);
-
-                if (map_it == session_map_.end())
-                {
-
-					auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext());
-					
-					UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep_.address().to_string().c_str(), local_ep_.port());
-
-					if (isDnsPacket) new_session->SetDnsPacket();
-					new_session->GetLocalEndPoint() = local_ep_;
-                    session_map_.insert(std::make_pair(local_ep_, new_session));
-
-					memcpy(new_session->GetLocalBuffer(), local_recv_buff_, bytes_read);
-                    new_session->sendToRemote(bytes_read);
-                    new_session->Start();
-                } else{
-					UDP_DEBUG("old session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
-
-					memcpy(map_it->second->GetLocalBuffer(), local_recv_buff_, bytes_read);
-                    map_it->second->sendToRemote(bytes_read);
-
-                }
+                handleLocalPacket(local_ep, bytes_read);
 
             }
 
 
         });
     }
+
+
+    void handleLocalPacket(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read)
+    {
+        bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket((socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size()));
+
+        //encrypt packet
+        auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
+        protocol_hdr->PAYLOAD_LENGTH = bytes_read;
+        //get payload length
+        bytes_read = protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
+
+        //if (!Socks5ProtocolHelper::IsUdpSocks5PacketValid(new_session->GetLocalBuffer())) continue;
+
+        auto map_it = session_map_.find(local_ep);
+
+        if (map_it == session_map_.end())
+        {
+
+            auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext());
+
+            UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep.address().to_string().c_str(), local_ep.port());
+
+            if (isDnsPacket) new_session->SetDnsPacket();
+            new_session->GetLocalEndPoint() = local_ep;
+            session_map_.insert(std::make_pair(local_ep, new_session));
+
+            memcpy(new_session->GetLocalBuffer(), local_recv_buff_, bytes_read);
+            new_session->sendToRemote(bytes_read);
+            new_session->Start();
+        } else{
+            UDP_DEBUG("old session from {}:{}", local_ep.address().to_string().c_str(), local_ep.port())
+
+            memcpy(map_it->second->GetLocalBuffer(), local_recv_buff_, bytes_read);
+            map_it->second->sendToRemote(bytes_read);
+
+        }
+    }
+
 
     void onTimeExpire(const boost::system::error_code &ec)
     {

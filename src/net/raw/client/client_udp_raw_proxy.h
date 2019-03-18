@@ -15,7 +15,7 @@
 #include "../raw_proxy_helper/interface_helper.h"
 #include "../raw_proxy_helper/firewall_helper.h"
 
-#define MAX_HANDSHAKE_TRY 122220
+#define MAX_HANDSHAKE_TRY 10
 
 /*
  * ClientUdpProxySession run in single thread mode
@@ -42,54 +42,51 @@ public:
     ClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : protocol_(prot), sniffer_socket(io), plocal_socket(pls), send_socket_stream(io)
     {
         if (!send_socket_stream.is_open())
-        {
             send_socket_stream.open();
-        }
     }
 
-    void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string ifname = "")
+    void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string ifname = std::string())
     {
 
         //Get Default if ifname is not set
-        if (ifname = "")
+        if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
 
+        LOG_INFO("Find Default Interface {}", ifname)
+
+        //setup sniffer
         config.set_filter("ip src "+ remote_ip + " and src port " + remote_port);
         config.set_immediate_mode(true);
         psniffer = std::make_unique<Tins::Sniffer>(ifname, config);
-
         char errbuf[PCAP_ERRBUF_SIZE];
         pcap_setnonblock(psniffer->get_pcap_handle(), 1, errbuf);
         sniffer_socket.assign(psniffer->get_fd());
 
-
+        //block tcp rst
         FirewallHelper::GetInstance()->BlockRst(remote_ip);
 
+        //save server endpoint
         this->remote_ip = remote_ip;
         this->remote_port = boost::lexical_cast<unsigned short>(remote_port);
-
     }
 
 
-    void StartProxy(uint16_t local_port)
+    // we use local_port as the tcp src port to connect remote
+    void StartProxy(std::string local_raw_port)
     {
-        if (isProxyRunning) return;
-        this->local_port = local_port;
+        this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
         RecvFromRemote();
         TcpHandShake();
-        isProxyRunning = true;
     }
 
 
     bool IsRemoteConnected() { return this->status == ESTABLISHED; }
-
 
     size_t SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
     {
         using Tins::TCP;
         auto tcp = TCP(remote_port, local_port);
         tcp.flags(TCP::PSH | TCP::ACK);
-        //local_seq += size;
         tcp.seq(local_seq);
         tcp.ack_seq(last_ack);
 
@@ -134,13 +131,12 @@ public:
 private:
     Protocol& protocol_;
 
-    boost::asio::posix::stream_descriptor sniffer_socket;
-    boost::asio::ip::udp::endpoint local_ep;
     boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
-    std::unique_ptr<Tins::Sniffer> psniffer;
+
     Tins::SnifferConfiguration config;
-    bool isSnifferInit = false;
-    bool isProxyRunning = false;
+    std::unique_ptr<Tins::Sniffer> psniffer;
+    boost::asio::posix::stream_descriptor sniffer_socket;
+
     boost::asio::basic_raw_socket<asio::ip::raw> send_socket_stream;
 
     SESSION_STATUS status;
@@ -258,7 +254,7 @@ private:
                     return;
                 }
             }
-
+            LOG_INFO("Raw Tcp handshake failed")
         });
 
     }
