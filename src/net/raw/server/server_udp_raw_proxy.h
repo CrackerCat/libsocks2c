@@ -44,7 +44,7 @@ public:
         sniffer_socket.assign(psniffer->get_fd());
 
         //block tcp rst
-        FirewallHelper::GetInstance()->BlockRst(server_ip);
+        FirewallHelper::GetInstance()->BlockRst(server_ip, server_port);
 
         //this->local_ip = local_ip;
         //this->local_port = boost::lexical_cast<unsigned short>(local_port);

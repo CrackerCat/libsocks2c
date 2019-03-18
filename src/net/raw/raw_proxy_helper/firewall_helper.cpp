@@ -2,11 +2,24 @@
 #include "../../../utils/logger.h"
 
 #ifdef __APPLE__
+#include <boost/filesystem.hpp>
 void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
 {
-    //TODO add ip port filter
-    std::string filewall_rule = "block drop proto tcp from " + dst_ip + " to any flags R/R";
+    boost::filesystem::path full_path {"/etc/pf.conf"};
+    boost::filesystem::path bak_path {"/etc/pf.conf.bak"};
+
+    if (boost::filesystem::exists(full_path)){
+        boost::system::error_code ec;
+        boost::filesystem::copy_file(full_path, bak_path, boost::filesystem::copy_option::fail_if_exists, ec);
+        boost::filesystem::remove(full_path);
+    }
+
+    boost::filesystem::ofstream ofs {full_path};
+    std::string filewall_rule = "block drop proto tcp from " + dst_ip + " to any flags R/R\n";
     LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
+
+    ofs << filewall_rule;
+    ofs.close();
 
 }
 #elif __linux__
