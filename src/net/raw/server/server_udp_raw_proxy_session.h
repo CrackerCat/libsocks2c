@@ -49,6 +49,8 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         void SendToRemote(void* data, size_t size, const boost::asio::ip::udp::endpoint& remote_ep)
         {
 
+            last_active_time = time(nullptr);
+
             auto self(this->shared_from_this());
 
             std::unique_ptr<char[]> copy_data(new char[size]);
@@ -113,6 +115,8 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
                         UDP_DEBUG("Udp readFromRemote err --> {}", ec.message().c_str())
                         return 0;
                     }
+                    
+                    last_active_time = time(nullptr);
 
                     LOG_INFO("recv {} bytes udp data from remote", bytes_read)
 

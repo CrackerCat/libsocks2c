@@ -8,6 +8,7 @@ class InterfaceHelper : public Singleton<InterfaceHelper>
 public:
 
     std::string GetDefaultInterface();
+    std::string GetDefaultNetIp();
 
 private:
 

@@ -20,4 +20,14 @@ std::string InterfaceHelper::GetDefaultInterface()
 
     return res;
 }
+std::string InterfaceHelper::GetDefaultNetIp()
+{
+    const std::string default_if_str = "ip route | awk '/default/ { print $9 }'";
+    auto res = ExecAndGetRes(default_if_str.c_str());
+
+    res.erase(std::remove(res.begin(), res.end(), '\n'), res.end());
+
+    return res;
+}
+
 #endif

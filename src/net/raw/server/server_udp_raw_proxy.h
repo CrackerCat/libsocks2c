@@ -11,6 +11,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/unordered_map.hpp>
 #include "server_udp_raw_proxy_session.h"
+#include "../raw_proxy_helper/interface_helper.h"
+#include "../raw_proxy_helper/firewall_helper.h"
 
 
 template <class Protocol>
@@ -23,8 +25,16 @@ public:
 
     ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io) {}
 
-    void SetUpSniffer(std::string ifname, std::string server_ip, std::string server_port)
+    void SetUpSniffer(std::string server_port, std::string server_ip = std::string(), std::string ifname = std::string())
     {
+        if (ifname.empty())
+            ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
+
+        if (server_ip.empty())
+            server_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+
+
+        LOG_INFO("Find Default Interface {}", ifname)
 
         config.set_filter("ip dst "+ server_ip + " and dst port " + server_port);
         config.set_immediate_mode(true);
@@ -33,8 +43,8 @@ public:
         pcap_setnonblock(psniffer->get_pcap_handle(), 1, errbuf);
         sniffer_socket.assign(psniffer->get_fd());
 
-        std::string filewall_rule_blocking_rst = "iptables -A OUTPUT -p tcp --tcp-flags RST RST -s " + server_ip + " -j DROP";
-        system(filewall_rule_blocking_rst.c_str());
+        //block tcp rst
+        FirewallHelper::GetInstance()->BlockRst(server_ip);
 
         //this->local_ip = local_ip;
         //this->local_port = boost::lexical_cast<unsigned short>(local_port);
