@@ -47,12 +47,12 @@ public:
         }
     }
 
-    void SetUpSniffer(std::string remote_ip, std::string remote_port, char* ifname = nullptr)
+    void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string ifname = "")
     {
 
         //Get Default if ifname is not set
-        if (!ifname)
-            ifname = InterfaceHelper::GetInstance()->GetDefaultInterface().c_str();
+        if (ifname = "")
+            ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
 
         config.set_filter("ip src "+ remote_ip + " and src port " + remote_port);
         config.set_immediate_mode(true);
