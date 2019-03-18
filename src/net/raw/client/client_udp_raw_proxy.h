@@ -64,7 +64,7 @@ public:
         sniffer_socket.assign(psniffer->get_fd());
 
         //block tcp rst
-        FirewallHelper::GetInstance()->BlockRst(remote_ip);
+        FirewallHelper::GetInstance()->BlockRst(remote_ip, remote_port);
 
         //save server endpoint
         this->remote_ip = remote_ip;
