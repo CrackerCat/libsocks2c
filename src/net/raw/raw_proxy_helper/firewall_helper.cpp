@@ -1,11 +1,12 @@
 #include "firewall_helper.h"
+#include "../../../utils/logger.h"
 
 #ifdef __APPLE__
 void FirewallHelper::BlockRst(std::string dst_ip)
 {
 
 }
-#elseif __linux__
+#elif __linux__
 void FirewallHelper::BlockRst(std::string dst_ip)
 {
     std::string filewall_rule = "iptables -A OUTPUT -p tcp --tcp-flags RST RST -s " + dst_ip + " -j DROP";

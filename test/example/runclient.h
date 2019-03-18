@@ -19,7 +19,7 @@ void test()
     config.socks5_ip = "0.0.0.0";
     config.socks5_port = 5555;
     config.resolve_dns = false;
-    config.udp2raw = false;
+    config.udp2raw = true;
     config.timeout = 0;
 
     LibSocks2c::StartProxy(config);
