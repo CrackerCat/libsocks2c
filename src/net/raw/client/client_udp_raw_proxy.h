@@ -265,8 +265,11 @@ private:
                     return;
                 }
             }
-            LOG_INFO("Raw Tcp handshake failed")
-            handshake_failed = true;
+            if (this->status != ESTABLISHED) {
+                LOG_INFO("Raw Tcp handshake failed")
+                handshake_failed = true;
+            }
+
         });
 
     }
