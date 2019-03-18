@@ -10,6 +10,6 @@ class FirewallHelper : public Singleton<FirewallHelper>
 
 public:
 
-    void BlockRst(std::string dst_ip);
+    void BlockRst(std::string dst_ip, std::string dst_port);
 
 };
