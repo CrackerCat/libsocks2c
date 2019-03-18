@@ -115,12 +115,8 @@ private:
                     session_map_.insert({src_ep, psession});
 
                 }else { // if connection already created
-
-
                     auto psession = map_it->second;
                     psession->HandlePacket(ip, tcp);
-
-
                 }
             }
 

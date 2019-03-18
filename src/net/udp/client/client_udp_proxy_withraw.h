@@ -52,6 +52,7 @@ private:
                 } else // or fallback to udp
                 {
                     this->handleLocalPacket(local_ep, bytes_read);
+                    pudp2raw->TryConnect();
                 }
 
             }

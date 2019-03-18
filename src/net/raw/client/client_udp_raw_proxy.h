@@ -34,7 +34,8 @@ class ClientUdpRawProxy : public Singleton<ClientUdpRawProxy<Protocol>>
     enum SESSION_STATUS
     {
         SYN_SENT,
-        ESTABLISHED
+        ESTABLISHED,
+        DISCONNECT
     };
 
 public:
@@ -81,6 +82,13 @@ public:
 
 
     bool IsRemoteConnected() { return this->status == ESTABLISHED; }
+
+    void TryConnect()
+    {
+        if (handshake_failed)
+            TcpHandShake();
+        return;
+    }
 
     size_t SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
     {
@@ -150,6 +158,8 @@ private:
     unsigned int init_seq = 20000;
 
     unsigned int last_ack = 0;
+
+    bool handshake_failed = false;
 
     void RecvFromRemote()
     {
@@ -228,6 +238,7 @@ private:
     void TcpHandShake()
     {
         LOG_INFO("TcpHandShake Start")
+        handshake_failed = false;
         static size_t handshake_count = 0;
         using Tins::TCP;
         //start up
@@ -255,6 +266,7 @@ private:
                 }
             }
             LOG_INFO("Raw Tcp handshake failed")
+            handshake_failed = true;
         });
 
     }
@@ -311,11 +323,6 @@ private:
             // decrypt packet and get payload length
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
             auto bytes_read = protocol_.OnUdpPayloadReadFromClientRemote(protocol_hdr);
-//
-//            for (int i = 0; i < bytes_read; i++)
-//            {
-//                printf("%x ", data_copy[Protocol::ProtocolHeader::Size() + i]);
-//            }
 
             char buff[6];
             uint32_t src_ip;
