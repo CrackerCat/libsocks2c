@@ -8,6 +8,13 @@ std::string InterfaceHelper::GetDefaultInterface()
 
     return ExecAndGetRes(default_if_str.c_str());
 }
+std::string InterfaceHelper::GetDefaultNetIp()
+{
+    std::string default_ip_str = "ipconfig getifaddr ";
+    default_ip_str += GetDefaultInterface();
+    auto res = ExecAndGetRes(default_ip_str.c_str());
+    return res;
+}
 #elif __linux__
 #include "../../../utils/system/system_exec.h"
 #include <algorithm>

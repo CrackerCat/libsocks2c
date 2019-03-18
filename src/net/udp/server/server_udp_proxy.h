@@ -1,6 +1,4 @@
 #pragma once
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
-
 #include "../../../utils/logger.h"
 #include "../../inetwork_proxy.h"
 #include "../../../protocol/socks5_protocol_helper.h"
@@ -48,6 +46,11 @@ public:
 	}
 	~ServerUdpProxy() {
 		UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
+	}
+
+	auto& GetDefaultIO()
+	{
+		return this->GetIOContext();
 	}
 
 	virtual void StartProxy(std::string local_address, uint16_t local_port) override
