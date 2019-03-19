@@ -46,6 +46,7 @@ public:
         if (!send_socket_stream.is_open())
             send_socket_stream.open();
         init_seq = time(nullptr);
+        this->local_seq = init_seq;
     }
 
     void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string())
@@ -174,8 +175,8 @@ private:
     unsigned short local_port = 4567;
     unsigned short remote_port = 80;
 
-    unsigned int local_seq = 20000;
-    unsigned int init_seq = 20000;
+    unsigned int local_seq;
+    unsigned int init_seq;
 
     unsigned int last_ack = 0;
 
