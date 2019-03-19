@@ -8,11 +8,11 @@ class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 
 public:
 
-    void InitUdp2Raw(std::string server_ip, std::string server_raw_port, std::string local_raw_port)
+    void InitUdp2Raw(std::string local_ip, std::string server_ip, std::string server_raw_port, std::string local_raw_port)
     {
         LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
         pudp2raw = ClientUdpRawProxy<Protocol>::GetInstance(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
-        pudp2raw->SetUpSniffer(server_ip, server_raw_port);
+        pudp2raw->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
         pudp2raw->StartProxy(local_raw_port);
     }
 

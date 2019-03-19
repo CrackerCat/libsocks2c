@@ -47,14 +47,21 @@ public:
             send_socket_stream.open();
     }
 
-    void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string ifname = std::string())
+    void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string())
     {
+
+        this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
 
         //Get Default if ifname is not set
         if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
-
-        local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+        if (local_ip.empty())
+        {
+            local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+        }else
+        {
+            this->local_ip = local_ip;
+        }
 
         LOG_INFO("Find Default Interface {}", ifname)
 
@@ -67,7 +74,7 @@ public:
         sniffer_socket.assign(psniffer->get_fd());
 
         //block tcp rst
-        FirewallHelper::GetInstance()->BlockRst(remote_ip, remote_port);
+        FirewallHelper::GetInstance()->BlockRst(local_ip, local_raw_port);
 
         //save server endpoint
         this->remote_ip = remote_ip;
@@ -78,7 +85,6 @@ public:
     // we use local_port as the tcp src port to connect remote
     void StartProxy(std::string local_raw_port)
     {
-        this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
         RecvFromRemote();
         TcpHandShake();
     }
@@ -116,7 +122,7 @@ public:
         CalTcpChecksum(ip, ip_data);
         sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
 
-        local_seq += tcp.size();
+        local_seq += (tcp.size() - tcp.header_size());
     }
 
 
@@ -343,7 +349,7 @@ private:
         auto tcp = TCP(remote_tcp->sport(), remote_tcp->dport());
         tcp.flags(TCP::ACK);
 
-        tcp.ack_seq(this->last_ack);
+        tcp.ack_seq(remote_tcp->seq() + remote_tcp->size() - remote_tcp->header_size());
         tcp.seq(local_seq);
         LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
