@@ -63,6 +63,13 @@
 
 #ifndef _NETINET_TCP_H_
 #define _NETINET_TCP_H_
+
+typedef unsigned char u_int8_t;
+typedef unsigned short u_int16_t;
+typedef unsigned int u_int32_t;
+typedef unsigned int __uint32_t;
+typedef size_t u_int64_t;
+
 #if defined( __linux__) || defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/appleapiopts.h>
@@ -86,11 +93,11 @@ struct tcphdr {
     unsigned short	th_dport;	/* destination port */
     tcp_seq	th_seq;			/* sequence number */
     tcp_seq	th_ack;			/* acknowledgement number */
-#if __DARWIN_BYTE_ORDER == __DARWIN_LITTLE_ENDIAN
-    unsigned int	th_x2:4,	/* (unused) */
+#if BYTE_ORDER == LITTLE_ENDIAN
+	unsigned int	th_x2:4,	/* (unused) */
             th_off:4;	/* data offset */
 #endif
-#if __DARWIN_BYTE_ORDER == __DARWIN_BIG_ENDIAN
+#if BYTE_ORDER == BIG_ENDIAN
     unsigned int	th_off:4,	/* data offset */
 			th_x2:4;	/* (unused) */
 #endif
@@ -231,55 +238,6 @@ struct tcphdr {
 
 #define	TCP_NOTSENT_LOWAT	0x201	/* Low water mark for TCP unsent data */
 
-
-struct tcp_connection_info {
-    u_int8_t	tcpi_state;     /* connection state */
-    u_int8_t	tcpi_snd_wscale; /* Window scale for send window */
-    u_int8_t	tcpi_rcv_wscale; /* Window scale for receive window */
-    u_int8_t	__pad1;
-    u_int32_t	tcpi_options;   /* TCP options supported */
-#define TCPCI_OPT_TIMESTAMPS	0x00000001 /* Timestamps enabled */
-#define TCPCI_OPT_SACK		0x00000002 /* SACK enabled */
-#define TCPCI_OPT_WSCALE	0x00000004 /* Window scaling enabled */
-#define TCPCI_OPT_ECN		0x00000008 /* ECN enabled */
-    u_int32_t	tcpi_flags;     /* flags */
-#define TCPCI_FLAG_LOSSRECOVERY 0x00000001
-#define TCPCI_FLAG_REORDERING_DETECTED  0x00000002
-    u_int32_t	tcpi_rto;       /* retransmit timeout in ms */
-    u_int32_t	tcpi_maxseg;    /* maximum segment size supported */
-    u_int32_t	tcpi_snd_ssthresh; /* slow start threshold in bytes */
-    u_int32_t	tcpi_snd_cwnd;  /* send congestion window in bytes */
-    u_int32_t	tcpi_snd_wnd;   /* send widnow in bytes */
-    u_int32_t	tcpi_snd_sbbytes; /* bytes in send socket buffer, including in-flight data */
-    u_int32_t	tcpi_rcv_wnd;   /* receive window in bytes*/
-    u_int32_t	tcpi_rttcur;    /* most recent RTT in ms */
-    u_int32_t	tcpi_srtt;      /* average RTT in ms */
-    u_int32_t	tcpi_rttvar;    /* RTT variance */
-    u_int32_t
-            tcpi_tfo_cookie_req:1, /* Cookie requested? */
-            tcpi_tfo_cookie_rcv:1, /* Cookie received? */
-            tcpi_tfo_syn_loss:1,   /* Fallback to reg. TCP after SYN-loss */
-            tcpi_tfo_syn_data_sent:1, /* SYN+data has been sent out */
-            tcpi_tfo_syn_data_acked:1, /* SYN+data has been fully acknowledged */
-            tcpi_tfo_syn_data_rcv:1, /* Server received SYN+data with a valid cookie */
-            tcpi_tfo_cookie_req_rcv:1, /* Server received cookie-request */
-            tcpi_tfo_cookie_sent:1, /* Server announced cookie */
-            tcpi_tfo_cookie_invalid:1, /* Server received an invalid cookie */
-            tcpi_tfo_cookie_wrong:1, /* Our sent cookie was wrong */
-            tcpi_tfo_no_cookie_rcv:1, /* We did not receive a cookie upon our request */
-            tcpi_tfo_heuristics_disable:1, /* TFO-heuristics disabled it */
-            tcpi_tfo_send_blackhole:1, /* A sending-blackhole got detected */
-            tcpi_tfo_recv_blackhole:1, /* A receiver-blackhole got detected */
-            tcpi_tfo_onebyte_proxy:1, /* A proxy acknowledges all but one byte of the SYN */
-            __pad2:17;
-    u_int64_t	tcpi_txpackets __attribute__((aligned(8)));
-    u_int64_t	tcpi_txbytes __attribute__((aligned(8)));
-    u_int64_t	tcpi_txretransmitbytes __attribute__((aligned(8)));
-    u_int64_t	tcpi_rxpackets __attribute__((aligned(8)));
-    u_int64_t	tcpi_rxbytes __attribute__((aligned(8)));
-    u_int64_t	tcpi_rxoutoforderbytes __attribute__((aligned(8)));
-    u_int64_t	tcpi_txretransmitpackets __attribute__((aligned(8)));
-};
 #endif /* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE) */
 
 #endif

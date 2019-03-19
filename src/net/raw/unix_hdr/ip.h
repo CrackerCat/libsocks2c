@@ -60,6 +60,8 @@
  *	@(#)ip.h	8.2 (Berkeley) 6/1/94
  * $FreeBSD: src/sys/netinet/ip.h,v 1.17 1999/12/22 19:13:20 shin Exp $
  */
+#define BYTE_ORDER 1
+#define LITTLE_ENDIAN 1
 
 #ifndef _NETINET_IP_H_
 #define _NETINET_IP_H_
@@ -183,29 +185,29 @@ struct ip {
 #define IPOPT_OFFSET		2		/* offset within option */
 #define	IPOPT_MINOFF		4		/* min value of above */
 
-/*
- * Time stamp option structure.
- */
-struct	ip_timestamp {
-    u_char	ipt_code;		/* IPOPT_TS */
-    u_char	ipt_len;		/* size of structure (variable) */
-    u_char	ipt_ptr;		/* index of current entry */
-#if BYTE_ORDER == LITTLE_ENDIAN
-    u_int	ipt_flg:4,		/* flags, see below */
-            ipt_oflw:4;		/* overflow counter */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-    u_int	ipt_oflw:4,		/* overflow counter */
-		ipt_flg:4;		/* flags, see below */
-#endif
-    union ipt_timestamp {
-        n_long	ipt_time[1];
-        struct	ipt_ta {
-            struct in_addr ipt_addr;
-            n_long ipt_time;
-        } ipt_ta[1];
-    } ipt_timestamp;
-};
+///*
+// * Time stamp option structure.
+// */
+//struct	ip_timestamp {
+//    u_char	ipt_code;		/* IPOPT_TS */
+//    u_char	ipt_len;		/* size of structure (variable) */
+//    u_char	ipt_ptr;		/* index of current entry */
+//#if BYTE_ORDER == LITTLE_ENDIAN
+//    u_int	ipt_flg:4,		/* flags, see below */
+//            ipt_oflw:4;		/* overflow counter */
+//#endif
+//#if BYTE_ORDER == BIG_ENDIAN
+//    u_int	ipt_oflw:4,		/* overflow counter */
+//		ipt_flg:4;		/* flags, see below */
+//#endif
+//    union ipt_timestamp {
+//        n_long	ipt_time[1];
+//        struct	ipt_ta {
+//            struct in_addr ipt_addr;
+//            n_long ipt_time;
+//        } ipt_ta[1];
+//    } ipt_timestamp;
+//};
 
 /* flag bits for ipt_flg */
 #define	IPOPT_TS_TSONLY		0		/* timestamps only */

@@ -3,7 +3,6 @@
 #include "../../../utils/singleton.h"
 #include "../raw_socket.h"
 #include <tins/tins.h>
-#include <boost/asio/posix/stream_descriptor.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio/spawn.hpp>
 #include <memory>
@@ -15,6 +14,7 @@
 #include "../raw_proxy_helper/interface_helper.h"
 #include "../raw_proxy_helper/firewall_helper.h"
 #include "../raw_proxy_helper/tcp_checksum_helper.h"
+#include "../sniffer_def.h"
 
 #define MAX_HANDSHAKE_TRY 10
 
@@ -163,7 +163,7 @@ private:
 
     Tins::SnifferConfiguration config;
     std::unique_ptr<Tins::Sniffer> psniffer;
-    boost::asio::posix::stream_descriptor sniffer_socket;
+	SnifferSocket sniffer_socket;
 
     boost::asio::basic_raw_socket<asio::ip::raw> send_socket_stream;
 

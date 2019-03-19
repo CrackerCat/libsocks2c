@@ -13,6 +13,7 @@
 #include "server_udp_raw_proxy_session.h"
 #include "../raw_proxy_helper/interface_helper.h"
 #include "../raw_proxy_helper/firewall_helper.h"
+#include "../sniffer_def.h"
 
 
 template <class Protocol>
@@ -39,8 +40,10 @@ public:
         config.set_filter("ip dst "+ server_ip + " and dst port " + server_port);
         config.set_immediate_mode(true);
         psniffer = std::make_unique<Tins::Sniffer>(ifname, config);
+
         char errbuf[PCAP_ERRBUF_SIZE];
         pcap_setnonblock(psniffer->get_pcap_handle(), 1, errbuf);
+
         sniffer_socket.assign(psniffer->get_fd());
 
         //block tcp rst
@@ -63,7 +66,7 @@ public:
 
 private:
 
-    boost::asio::posix::stream_descriptor sniffer_socket;
+	SnifferSocket sniffer_socket;
     std::unique_ptr<Tins::Sniffer> psniffer;
     Tins::SnifferConfiguration config;
 
@@ -73,8 +76,6 @@ private:
     unsigned short server_port;
 
     unsigned char proxyKey_[32U];
-
-    unsigned short remote_port = 4444;
 
     void RecvFromLocal()
     {
