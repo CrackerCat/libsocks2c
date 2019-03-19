@@ -72,7 +72,7 @@ public:
             udps->SetProxyKey(proxyKey);
             udps->SetProxyInfo(server_ip, server_port);
             udps->StartProxy(socks5_ip, socks5_port);
-            boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdp2Raw(server_ip, "4567", "4444");
+            boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdp2Raw("192.168.1.214", server_ip, "4567", "4444");
         }else
         {
             udps = boost::make_shared<ClientUdpProxy<Protocol>>();

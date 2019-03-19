@@ -14,7 +14,7 @@ void test()
     LibSocks2c::Config config;
     config.isServer = false;
     config.proxyKey = "12345678";
-    config.server_ip = "192.168.1.100";
+    config.server_ip = "192.168.1.193";
     config.server_port = 443;
     config.socks5_ip = "0.0.0.0";
     config.socks5_port = 5555;

@@ -28,7 +28,7 @@ void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
 #elif __linux__
 void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
 {
-    std::string filewall_rule = "iptables -A OUTPUT -p tcp --dport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
+    std::string filewall_rule = "iptables -A OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
     LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
     system(filewall_rule.c_str());
 }
