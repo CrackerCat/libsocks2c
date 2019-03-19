@@ -236,10 +236,8 @@ public:
                     this->status = ESTABLISHED;
                 }
 
-//                if(tcp->ack_seq() > this->server_seq)
-//                {
-//                    this->server_seq = tcp->ack_seq();
-//                }
+                if (tcp->inner_pdu() != nullptr)
+                    proxyUdp(tcp->inner_pdu());
 
                 break;
             }
@@ -304,7 +302,7 @@ public:
         sendPacket(ip_data + ip.header_size(), tcp.size());
         LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
 
-        server_seq += tcp.size();
+        server_seq += (tcp.size() - tcp.header_size());
     }
 
 
