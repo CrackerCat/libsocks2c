@@ -134,7 +134,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
                     memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size(), &this->src_ep.src_ip, 4);
                     memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &this->src_ep.src_port, 2);
-                    
+
                     protocol_hdr->PAYLOAD_LENGTH = bytes_read + 10 + 6;
 
                     auto bytes_tosend = pserver->GetProtocol().OnUdpPayloadReadFromServerRemote(protocol_hdr);
@@ -236,10 +236,10 @@ public:
                     this->status = ESTABLISHED;
                 }
 
-                if(tcp->ack_seq() > this->server_seq)
-                {
-                    this->server_seq = tcp->ack_seq();
-                }
+//                if(tcp->ack_seq() > this->server_seq)
+//                {
+//                    this->server_seq = tcp->ack_seq();
+//                }
 
                 break;
             }
@@ -303,6 +303,8 @@ public:
         // we send tcp only, ip hdr is for checksum cal only
         sendPacket(ip_data + ip.header_size(), tcp.size());
         LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
+
+        server_seq += tcp.size();
     }
 
 

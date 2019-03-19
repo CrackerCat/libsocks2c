@@ -90,7 +90,7 @@ public:
         return;
     }
 
-    size_t SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
+    void SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
     {
         using Tins::TCP;
         auto tcp = TCP(remote_port, local_port);
@@ -103,8 +103,9 @@ public:
         tcp = tcp / payload;
 
         LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
-        return sendPacket(tcp.serialize().data(), tcp.size(), yield);
+        sendPacket(tcp.serialize().data(), tcp.size(), yield);
 
+        local_seq += tcp.size();
     }
 
 
@@ -204,10 +205,10 @@ private:
                     case TCP::ACK :
                     {
                         LOG_INFO("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                        if (tcp->ack_seq() > local_seq)
-                        {
-                            local_seq = tcp->ack_seq();
-                        }
+//                        if (tcp->ack_seq() > local_seq)
+//                        {
+//                            local_seq = tcp->ack_seq();
+//                        }
                         break;
                     }
                         // with data
