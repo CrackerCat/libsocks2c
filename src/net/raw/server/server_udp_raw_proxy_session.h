@@ -182,10 +182,12 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
 public:
 
-    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port, SessionMap& map_ref, unsigned char key[32U]) : session_map(map_ref)
+    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port, std::string server_ip, uint16_t server_port, SessionMap& map_ref, unsigned char key[32U]) : session_map(map_ref)
     {
         this->protocol_.SetKey(key);
         local_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(local_ip), local_port);
+        server_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
+
     }
 
     void InitRawSocket(boost::asio::io_context& io)
@@ -279,7 +281,11 @@ public:
 
     void SendPacketViaRaw(void* data, size_t size)
     {
+        using Tins::IP;
         using Tins::TCP;
+
+        ip = IP(local_ep.address().to_string(), )
+
         // swap sport and dport here cause we are sending data back
         auto tcp = TCP(tcp_sport, tcp_dport);
         tcp.flags(TCP::PSH | TCP::ACK);
@@ -306,6 +312,7 @@ private:
 
     // store client's tcp src ip src port
     asio::ip::raw::endpoint local_ep;
+    asio::ip::raw::endpoint server_ep;
 
     uint16_t tcp_sport;
     uint16_t tcp_dport;

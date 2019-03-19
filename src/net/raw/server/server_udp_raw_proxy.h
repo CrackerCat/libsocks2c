@@ -69,15 +69,13 @@ private:
 
     SessionMap session_map_;
 
+    std::string server_ip;
+    unsigned short server_port;
+
     unsigned char proxyKey_[32U];
 
     unsigned short remote_port = 4444;
-
-    unsigned short local_port = 4567;
-
-    unsigned int local_seq = 10000;
-    unsigned int last_ack = 0;
-
+    
     void RecvFromLocal()
     {
         using Tins::PDU;
@@ -117,8 +115,8 @@ private:
                 if (map_it == session_map_.end())
                 {
                     in_addr src_ip_addr = {src_ep.src_ip};
-                    std::string dst_ip = inet_ntoa(src_ip_addr);
-                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(dst_ip, src_ep.src_port, session_map_, this->proxyKey_);
+                    std::string src_ip = inet_ntoa(src_ip_addr);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(src_ip, src_ep.src_port, session_map_, this->proxyKey_);
                     psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
                     psession->InitRawSocket(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);

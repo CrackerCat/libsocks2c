@@ -8,6 +8,7 @@ void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
     boost::filesystem::path full_path {"/etc/pf.conf"};
     boost::filesystem::path bak_path {"/etc/pf.conf.bak"};
 
+    // no copy if bak file exists
     if (boost::filesystem::exists(full_path)){
         boost::system::error_code ec;
         boost::filesystem::copy_file(full_path, bak_path, boost::filesystem::copy_option::fail_if_exists, ec);
@@ -20,6 +21,8 @@ void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
 
     ofs << filewall_rule;
     ofs.close();
+
+    system ("pfctl -evf /etc/pf.conf");
 
 }
 #elif __linux__
