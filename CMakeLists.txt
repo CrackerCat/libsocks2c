@@ -86,7 +86,7 @@ add_executable(libsocks2c
         src/net/raw/raw_proxy_helper/firewall_helper.h
         src/net/raw/raw_proxy_helper/firewall_helper.cpp
         src/net/raw/raw_proxy_helper/interface_helper.cpp
-        src/utils/system/system_exec.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp)
+        src/utils/system/system_exec.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp src/net/raw/unix_hdr/tcp.h src/net/raw/unix_hdr/ip.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)
