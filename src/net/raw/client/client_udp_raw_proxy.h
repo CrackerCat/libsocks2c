@@ -14,6 +14,7 @@
 #include "../../../utils/ephash.h"
 #include "../raw_proxy_helper/interface_helper.h"
 #include "../raw_proxy_helper/firewall_helper.h"
+#include "../raw_proxy_helper/tcp_checksum_helper.h"
 
 #define MAX_HANDSHAKE_TRY 10
 
@@ -52,6 +53,8 @@ public:
         //Get Default if ifname is not set
         if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
+
+        local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
 
         LOG_INFO("Find Default Interface {}", ifname)
 
@@ -93,6 +96,8 @@ public:
     void SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
     {
         using Tins::TCP;
+        using Tins::IP;
+        auto ip = IP(remote_ip, local_ip);
         auto tcp = TCP(remote_port, local_port);
         tcp.flags(TCP::PSH | TCP::ACK);
         tcp.seq(local_seq);
@@ -103,7 +108,13 @@ public:
         tcp = tcp / payload;
 
         LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
-        sendPacket(tcp.serialize().data(), tcp.size(), yield);
+
+        ip = ip / tcp;
+
+        auto vip_data = ip.serialize();
+        auto ip_data = vip_data.data();
+        CalTcpChecksum(ip, ip_data);
+        sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
 
         local_seq += tcp.size();
     }
@@ -151,6 +162,7 @@ private:
     SESSION_STATUS status;
 
     std::string remote_ip;
+    std::string local_ip;
 
     unsigned short local_port = 4567;
     unsigned short remote_port = 80;
@@ -242,6 +254,8 @@ private:
         handshake_failed = false;
         static size_t handshake_count = 0;
         using Tins::TCP;
+        using Tins::IP;
+
         //start up
         boost::asio::spawn(this->sniffer_socket.get_io_context(), [this](boost::asio::yield_context yield){
 
@@ -250,13 +264,23 @@ private:
 
             while(this->status != ESTABLISHED && handshake_count++ < MAX_HANDSHAKE_TRY)
             {
+
+                auto ip = IP(remote_ip, local_ip);
+
                 auto tcp = TCP(remote_port, local_port);
                 tcp.flags(TCP::SYN);
                 tcp.seq(init_seq);
 
                 LOG_INFO("send SYN seq: {}, ack: {}", tcp.seq(), tcp.ack_seq())
 
-                auto bytes_send = sendPacket(tcp.serialize().data(), tcp.size(), yield);
+                ip = ip / tcp;
+
+                auto vip_data = ip.serialize();
+                auto ip_data = vip_data.data();
+                CalTcpChecksum(ip, ip_data);
+
+                // we send tcp only, ip hdr is for checksum cal only
+                auto bytes_send = sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
 
                 timer.expires_from_now(boost::posix_time::seconds(2));
                 timer.async_wait(yield[ec]);
@@ -278,6 +302,7 @@ private:
     void handshakeReply(uint32_t remote_seq, uint32_t remote_ack, boost::asio::yield_context yield)
     {
         using Tins::TCP;
+        using Tins::IP;
         static time_t last_send_time = time(nullptr) - 1;
 
         if (time(nullptr) - last_send_time < 1)
@@ -286,12 +311,21 @@ private:
             return;
         }
 
+        auto ip = IP(remote_ip, local_ip);
         auto tcp = TCP(remote_port, local_port);
         tcp.flags(TCP::ACK);
         tcp.ack_seq(remote_seq + 1);
         tcp.seq(++local_seq);
         LOG_INFO("send handshake ACK back, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
-        sendPacket(tcp.serialize().data(), tcp.size(), yield);
+
+        ip = ip / tcp;
+
+        auto vip_data = ip.serialize();
+        auto ip_data = vip_data.data();
+        CalTcpChecksum(ip, ip_data);
+
+        sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
+
         this->status = ESTABLISHED;
         last_send_time = time(nullptr);
 
@@ -302,8 +336,10 @@ private:
     void ackReply(Tins::TCP* remote_tcp, boost::asio::yield_context yield)
     {
         using Tins::TCP;
+        using Tins::IP;
         this->last_ack = remote_tcp->seq() + remote_tcp->inner_pdu()->size();
 
+        auto ip = IP(remote_ip, local_ip);
         auto tcp = TCP(remote_tcp->sport(), remote_tcp->dport());
         tcp.flags(TCP::ACK);
 
@@ -311,7 +347,13 @@ private:
         tcp.seq(local_seq);
         LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
-        sendPacket(tcp.serialize().data(), tcp.size(), yield);
+        ip = ip / tcp;
+
+        auto vip_data = ip.serialize();
+        auto ip_data = vip_data.data();
+        CalTcpChecksum(ip, ip_data);
+        sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
+
     }
 
     void sendToLocal(Tins::PDU* raw_data)
