@@ -63,10 +63,12 @@
 
 #ifndef _NETINET_TCP_H_
 #define _NETINET_TCP_H_
+#if defined( __linux__) || defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/appleapiopts.h>
 #include <machine/endian.h>
 #include <machine/types.h> /* __uint32_t */
+#endif
 
 #if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)
 typedef	__uint32_t tcp_seq;

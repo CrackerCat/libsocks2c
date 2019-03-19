@@ -1,7 +1,11 @@
 #include "tcp_checksum_helper.h"
 #include <tins/tcp.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
+#ifdef _WIN32
+#include <WinSock2.h>
+#endif // _WIN32
+
+#include "../unix_hdr/ip.h"
+#include "../unix_hdr/tcp.h"
 
 struct psd_header
 {
@@ -36,8 +40,6 @@ inline u_short getChecksum(unsigned short* addr, size_t count)
 
     return ~sum;
 }
-
-
 
 int CalTcpChecksum(Tins::IP ip_including_tcp, unsigned char* ip_data_with_tcp)
 {

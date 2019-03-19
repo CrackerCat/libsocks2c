@@ -16,8 +16,8 @@ IF (WIN32)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-DSODIUM_STATIC)
   add_definitions(-DBUILD_DLL)
-  include_directories("C:/Users/mario/Documents/spdlog-1.3.1/include")
-  include_directories("C:/Users/mario/Documents/libsodium-1.0.16/src/libsodium/include")
+  include_directories("C:/WpdPack/Include")
+  include_directories("C:/include")
 ELSE()
 IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     #include_directories("/Users/mario/Documents/spdlog-1.3.1/include")
@@ -86,11 +86,13 @@ add_executable(libsocks2c
         src/net/raw/raw_proxy_helper/firewall_helper.h
         src/net/raw/raw_proxy_helper/firewall_helper.cpp
         src/net/raw/raw_proxy_helper/interface_helper.cpp
-        src/utils/system/system_exec.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp src/net/raw/unix_hdr/tcp.h src/net/raw/unix_hdr/ip.h)
+        src/utils/system/system_exec.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.h src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)
-target_link_libraries(libsocks2c "C:/Users/mario/Documents/libsodium-1.0.16/bin/x64/Release/v141/static/libsodium.lib")
+target_link_libraries(libsocks2c "C:/lib/libsodium.lib")
+target_link_libraries(libsocks2c "C:/lib/Packet.lib")
+target_link_libraries(libsocks2c "C:/lib/wpcap.lib")
 ELSE()
 target_link_libraries(libsocks2c pthread)
 target_link_libraries(libsocks2c "/usr/local/lib/libsodium.a")

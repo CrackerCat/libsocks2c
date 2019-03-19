@@ -63,11 +63,12 @@
 
 #ifndef _NETINET_IP_H_
 #define _NETINET_IP_H_
+#if defined( __linux__) || defined(__APPLE__)
 #include <sys/appleapiopts.h>
 #include <sys/types.h>		/* XXX temporary hack to get u_ types */
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-
+#endif // __linux__) || defined(__APPLE__)
 
 /*
  * Definitions for internet protocol version 4.
