@@ -45,6 +45,7 @@ public:
     {
         if (!send_socket_stream.is_open())
             send_socket_stream.open();
+        init_seq = time(nullptr);
     }
 
     void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string())
