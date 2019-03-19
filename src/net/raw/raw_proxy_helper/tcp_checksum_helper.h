@@ -1,3 +1,3 @@
 #pragma once
-
-int CalChecksum(void* tcp_hdr, int tcp_data_size_including_tcp_hdr);
+#include <tins/ip.h>
+int CalTcpChecksum(Tins::IP ip_including_tcp, unsigned char* ip_data_with_tcp);

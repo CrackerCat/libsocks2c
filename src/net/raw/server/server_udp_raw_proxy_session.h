@@ -9,6 +9,8 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/udp.hpp>
 
+#include "../raw_proxy_helper/tcp_checksum_helper.h"
+
 #define UDP_PROXY_SESSION_TIMEOUT 60
 
 template <class Protocol>
@@ -132,12 +134,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
                     memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size(), &this->src_ep.src_ip, 4);
                     memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &this->src_ep.src_port, 2);
-
-//                    for (int i = 0; i < bytes_read + 10 + 6; i++)
-//                    {
-//                        printf("%x ", remote_recv_buff_[Protocol::ProtocolHeader::Size() + i]);
-//                    }
-
+                    
                     protocol_hdr->PAYLOAD_LENGTH = bytes_read + 10 + 6;
 
                     auto bytes_tosend = pserver->GetProtocol().OnUdpPayloadReadFromServerRemote(protocol_hdr);
@@ -284,7 +281,7 @@ public:
         using Tins::IP;
         using Tins::TCP;
 
-        ip = IP(local_ep.address().to_string(), )
+        auto ip = IP(local_ep.address().to_string(), server_ep.address().to_string());
 
         // swap sport and dport here cause we are sending data back
         auto tcp = TCP(tcp_sport, tcp_dport);
@@ -297,8 +294,15 @@ public:
 
         tcp = tcp / payload;
 
+        ip = ip / tcp;
+
+        auto vip_data = ip.serialize();
+        auto ip_data = vip_data.data();
+        CalTcpChecksum(ip, ip_data);
+
+        // we send tcp only, ip hdr is for checksum cal only
+        sendPacket(ip_data + ip.header_size(), tcp.size());
         LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
-        sendPacket(tcp.serialize().data(), tcp.size());
     }
 
 
@@ -343,7 +347,34 @@ private:
 
         LOG_INFO("send syn ack back, seq: {}, ack: {}", tcp_reply.seq(), tcp_reply.ack_seq());
 
-        sendPacket(tcp_reply.serialize().data(), tcp_reply.serialize().size());
+        auto ip = Tins::IP(local_ep.address().to_string(), server_ep.address().to_string());
+
+        ip = ip / tcp_reply;
+
+        LOG_INFO("cal checksum")
+        auto bytes_tosend = tcp_reply.serialize().size();
+
+        auto vip_data = ip.serialize();
+        auto ip_data = vip_data.data();
+//        printf("before cal\n");
+//        for (int i = 0; i < bytes_tosend; i++)
+//        {
+//            printf("%x ", ip_data[ip.header_size() + i]);
+//            fflush(stdout);
+//        }
+        //printf("\n");
+        CalTcpChecksum(ip, ip_data);
+//        printf("after cal\n");
+//        for (int i = 0; i < bytes_tosend; i++)
+//        {
+//            printf("%x ", ip_data + ip.header_size() + i);
+//            fflush(stdout);
+//        }
+//        printf("\n");
+
+        // we send tcp only, ip hdr is for checksum cal only
+        LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
+        sendPacket(ip_data + ip.header_size(), bytes_tosend);
         last_send_time = time(nullptr);
         //this->server_ack = local_tcp->seq() + 1;
     }
@@ -354,13 +385,20 @@ private:
     {
 
         auto self(this->shared_from_this());
-
-        std::unique_ptr<char[]> copy_data(new char[size]);
+        std::unique_ptr<unsigned char[]> copy_data(new unsigned char[size]);
         memcpy(copy_data.get(), data, size);
 
         boost::asio::spawn([this, self, copy_data{std::move(copy_data)}, size](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
+
+            for (int i = 0; i < size; i++)
+            {
+                printf("%x ", copy_data[i]);
+                fflush(stdout);
+            }
+            printf("\n");
+            fflush(stdout);
             auto bytes_send = prawsender_socket->async_send_to(boost::asio::buffer(copy_data.get(), size), local_ep, yield[ec]);
 
             if (ec)
@@ -392,6 +430,12 @@ private:
             // decrypt packet and get payload length
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
             auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
+
+            if (bytes_read == 0 || bytes_read > UDP_LOCAL_RECV_BUFF_SIZE)
+            {
+                LOG_INFO("decrypt err")
+                return;
+            }
 
             udp_ep_tuple udp_ep = {0};
 
@@ -439,6 +483,7 @@ private:
     void ackReply(Tins::TCP* local_tcp)
     {
         using Tins::TCP;
+        auto ip = Tins::IP(local_ep.address().to_string(), server_ep.address().to_string());
 
         auto tcp = TCP(local_tcp->sport(), local_tcp->dport());
         tcp.flags(TCP::ACK);
@@ -452,9 +497,16 @@ private:
         }
         tcp.ack_seq(this->server_ack);
 
+        ip = ip / tcp;
+
         LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
-        sendPacket(tcp.serialize().data(), tcp.size());
+        auto vip_data = ip.serialize();
+        auto ip_data = vip_data.data();
+        CalTcpChecksum(ip, ip_data);
+
+        // we send tcp only, ip hdr is for checksum cal only
+        sendPacket(ip_data + ip.header_size(), tcp.size());
     }
 
 

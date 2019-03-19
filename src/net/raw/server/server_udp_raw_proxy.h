@@ -46,8 +46,8 @@ public:
         //block tcp rst
         FirewallHelper::GetInstance()->BlockRst(server_ip, server_port);
 
-        //this->local_ip = local_ip;
-        //this->local_port = boost::lexical_cast<unsigned short>(local_port);
+        this->server_ip = server_ip;
+        this->server_port = boost::lexical_cast<unsigned short>(server_port);
     }
 
     void SetProxyKey(std::string key)
@@ -75,7 +75,7 @@ private:
     unsigned char proxyKey_[32U];
 
     unsigned short remote_port = 4444;
-    
+
     void RecvFromLocal()
     {
         using Tins::PDU;
@@ -116,7 +116,7 @@ private:
                 {
                     in_addr src_ip_addr = {src_ep.src_ip};
                     std::string src_ip = inet_ntoa(src_ip_addr);
-                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(src_ip, src_ep.src_port, session_map_, this->proxyKey_);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(src_ip, src_ep.src_port, server_ip, server_port, session_map_, this->proxyKey_);
                     psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
                     psession->InitRawSocket(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);
