@@ -8,7 +8,7 @@
 #include "../../../protocol/socks5_protocol_helper.h"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/udp.hpp>
-
+#include <random>
 #include "../raw_proxy_helper/tcp_checksum_helper.h"
 
 #define UDP_PROXY_SESSION_TIMEOUT 60
@@ -185,6 +185,8 @@ public:
         local_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(local_ip), local_port);
         server_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
 
+        this->init_seq = time(nullptr);
+        this->server_seq = init_seq;
     }
 
     void InitRawSocket(boost::asio::io_context& io)
@@ -284,7 +286,6 @@ public:
         // swap sport and dport here cause we are sending data back
         auto tcp = TCP(tcp_sport, tcp_dport);
         tcp.flags(TCP::PSH | TCP::ACK);
-        //local_seq += size;
         tcp.seq(server_seq);
         tcp.ack_seq(server_ack);
 
@@ -323,7 +324,8 @@ private:
 
     PRawSenderSocket prawsender_socket;
 
-    uint32_t server_seq = 10000;
+    uint32_t server_seq;
+    uint32_t init_seq;
     uint32_t server_ack = 0;
 
     void handshakeReply(Tins::TCP* local_tcp)
@@ -343,7 +345,7 @@ private:
         auto tcp_reply = Tins::TCP(local_tcp->sport(), local_tcp->dport());
         tcp_reply.flags(Tins::TCP::ACK | Tins::TCP::SYN);
         tcp_reply.ack_seq(local_tcp->seq() + 1); // +1 client's seq
-        tcp_reply.seq(server_seq++);
+        tcp_reply.seq(init_seq++);
 
         LOG_INFO("send syn ack back, seq: {}, ack: {}", tcp_reply.seq(), tcp_reply.ack_seq());
 
