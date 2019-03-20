@@ -66,7 +66,7 @@
 #if defined( __linux__) || defined(__APPLE__)
 #include <netinet/in.h>
 #else
-#include <Winsocks2.h>
+#include <WinSock2.h>
 #define BYTE_ORDER 1
 #define LITTLE_ENDIAN 1
 #endif // __linux__) || defined(__APPLE__)

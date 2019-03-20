@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../lib/libsocks2c.h"
-#include <unistd.h>
 
 void test()
 {

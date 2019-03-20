@@ -18,8 +18,6 @@
 
 #include "basic_client_udp_raw_proxy.h"
 
-#define MAX_HANDSHAKE_TRY 10
-
 /*
  * ClientUdpProxySession run in single thread mode
  * only client_udp_proxy_session will interact with this class when sending packet
@@ -91,21 +89,13 @@ public:
     }
 
 
-    virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield, bool shouldcopy = true) override
+    virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield) override
     {
-
-        unsigned char* copy_data;
-
-        if (shouldcopy){
-            copy_data = new unsigned char[size];
-            memcpy(copy_data, data, size);
-        }
-        copy_data = (unsigned char*)data;
 
         asio::ip::raw::endpoint ep(boost::asio::ip::address::from_string(this->remote_ip), this->remote_port);
         boost::system::error_code ec;
 
-        auto bytes_send = send_socket_stream.async_send_to(boost::asio::buffer(copy_data, size), ep, yield[ec]);
+        auto bytes_send = send_socket_stream.async_send_to(boost::asio::buffer(data, size), ep, yield[ec]);
 
         if (ec)
         {

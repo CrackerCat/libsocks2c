@@ -17,7 +17,7 @@
 #include "../sniffer_def.h"
 #include <random>
 
-#define MAX_HANDSHAKE_TRY 10
+#define MAX_HANDSHAKE_TRY 10222
 
 /*
  * ClientUdpProxySession run in single thread mode
@@ -82,12 +82,7 @@ public:
 
         LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
 
-        ip = ip / tcp;
-
-        auto vip_data = ip.serialize();
-        auto ip_data = vip_data.data();
-        CalTcpChecksum(ip, ip_data);
-        sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
+		constructAndSend(ip, tcp, yield);
 
         local_seq += (tcp.size() - tcp.header_size());
     }
@@ -216,14 +211,8 @@ protected:
 
                 LOG_INFO("send SYN seq: {}, ack: {}", tcp.seq(), tcp.ack_seq())
 
-                ip = ip / tcp;
-
-                auto vip_data = ip.serialize();
-                auto ip_data = vip_data.data();
-                CalTcpChecksum(ip, ip_data);
-
                 // we send tcp only, ip hdr is for checksum cal only
-                auto bytes_send = sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
+                auto bytes_send = constructAndSend(ip, tcp, yield);
 
                 if (bytes_send == 0)
                 {
@@ -239,22 +228,22 @@ protected:
                 }
             }
 
-            if (this->status != this->ESTABLISHED) {
-                LOG_INFO("Raw Tcp handshake failed")
-                this->handshake_failed = true;
-            }
+			if (this->status != this->ESTABLISHED) {
+				LOG_INFO("Raw Tcp handshake failed")
+					this->handshake_failed = true;
+			}
         });
 
     }
 
-    virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield, bool shouldcopy = true) = 0;
+    virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield) = 0;
 
     void sendToLocal(Tins::PDU* raw_data)
     {
 
         std::unique_ptr<unsigned char[]> data_copy(new unsigned char[raw_data->size()]);
         memcpy(data_copy.get(), raw_data->serialize().data(), raw_data->size());
-        boost::asio::spawn([this, data_copy {std::move(data_copy)}](boost::asio::yield_context yield){
+        boost::asio::spawn( [this, data_copy {std::move(data_copy)}] (boost::asio::yield_context yield){
 
             // decrypt data
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)data_copy.get();
@@ -269,7 +258,9 @@ protected:
             memcpy(&src_ip, &data_copy[Protocol::ProtocolHeader::Size()], 4);
             memcpy(&src_port, &data_copy[Protocol::ProtocolHeader::Size() + 4], 2);
 
-            boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string(inet_ntoa(in_addr({src_ip}))), src_port);
+			in_addr addr;
+			memcpy(&addr, &src_ip, 4);
+            boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string(inet_ntoa(addr)), src_port);
 
             boost::system::error_code ec;
 
@@ -308,13 +299,7 @@ protected:
         tcp.seq(++local_seq);
         LOG_INFO("send handshake ACK back, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
-        ip = ip / tcp;
-
-        auto vip_data = ip.serialize();
-        auto ip_data = vip_data.data();
-        CalTcpChecksum(ip, ip_data);
-
-        sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
+		constructAndSend(ip, tcp, yield);
 
         this->status = ESTABLISHED;
         last_send_time = time(nullptr);
@@ -337,13 +322,20 @@ protected:
         tcp.seq(local_seq);
         LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
-        ip = ip / tcp;
-
-        auto vip_data = ip.serialize();
-        auto ip_data = vip_data.data();
-        CalTcpChecksum(ip, ip_data);
-        sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
-
+		constructAndSend(ip, tcp, yield);
     }
 
+
+	size_t constructAndSend(Tins::IP& ip, Tins::TCP& tcp, boost::asio::yield_context& yield)
+	{
+		ip = ip / tcp;
+		auto vip_data = ip.serialize();
+		auto ip_data = vip_data.data();
+#ifdef _WIN32
+		return sendPacket(ip_data, ip.size(), yield);
+#else
+		CalTcpChecksum(ip, ip_data);
+		return sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
+#endif
+	}
 };

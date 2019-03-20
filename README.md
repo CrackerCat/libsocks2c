@@ -52,3 +52,4 @@ on Linux || OSX you also need
 on Win64 you need 
 1. libtins v4.2 
 2. WpdPack 4.1.2
+3. WinDivert-1.4.3-A
