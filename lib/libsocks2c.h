@@ -17,8 +17,6 @@ namespace boost
     }
 }
 
-
-
 class OS_Dll_API LibSocks2c {
 
 public:
@@ -39,9 +37,10 @@ public:
     static int  StartProxy(Config);
     static bool StopProxy(int);
 
+    //not impl yet
     static void StartProxyWithContext(Config, boost::asio::io_context&);
 
-    static std::string GetVersion();
+    static std::string Version();
 };
 
 

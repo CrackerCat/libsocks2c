@@ -97,12 +97,11 @@ void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &i
     }
     //Socks2cFactory::CreateClientProxyWithContext<Protocol>(&io_context, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
 
-
 }
 
 #include "version.h"
-std::string LibSocks2c::GetVersion()
+std::string LibSocks2c::Version()
 {
-    return Libsocks2cVersion;
+    return version;
 }
 

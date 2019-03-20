@@ -341,7 +341,7 @@ private:
         auto diff = now - last_send_time;
         if (diff < 1)
         {
-            LOG_INFO("time short \n");
+            LOG_INFO("time short");
             return;
         }
 
@@ -357,7 +357,6 @@ private:
 
         ip = ip / tcp_reply;
 
-        LOG_INFO("cal checksum")
         auto bytes_tosend = tcp_reply.serialize().size();
 
         auto vip_data = ip.serialize();
