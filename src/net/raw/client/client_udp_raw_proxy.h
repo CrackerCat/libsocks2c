@@ -54,10 +54,10 @@ public:
 		{
 			std::random_device rd;
 			std::mt19937 eng(rd());
-			std::uniform_int_distribution<unsigned short> distr;
-			local_raw_port = distr(eng);
+			std::uniform_int_distribution<unsigned short> distr(10000, 65535);
+			this->local_port = distr(eng);
 		}
-        this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
+		else this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
 
         //Get Default if ifname is not set
         if (ifname.empty())
