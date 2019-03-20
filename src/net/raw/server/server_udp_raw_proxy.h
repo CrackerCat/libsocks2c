@@ -15,7 +15,6 @@
 #include "../raw_proxy_helper/firewall_helper.h"
 #include "../sniffer_def.h"
 
-
 template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 {
@@ -33,7 +32,6 @@ public:
 
         if (server_ip.empty())
             server_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
-
 
         LOG_INFO("Find Default Interface {}", ifname)
 

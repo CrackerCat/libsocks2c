@@ -185,7 +185,11 @@ public:
         local_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(local_ip), local_port);
         server_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
 
-        this->init_seq = time(nullptr);
+        std::random_device rd;
+        std::mt19937 eng(rd());
+        std::uniform_int_distribution<unsigned int> distr;
+
+        this->init_seq = distr(eng);
         this->server_seq = init_seq;
     }
 
@@ -394,13 +398,6 @@ private:
 
             boost::system::error_code ec;
 
-            for (int i = 0; i < size; i++)
-            {
-                printf("%x ", copy_data[i]);
-                fflush(stdout);
-            }
-            printf("\n");
-            fflush(stdout);
             auto bytes_send = prawsender_socket->async_send_to(boost::asio::buffer(copy_data.get(), size), local_ep, yield[ec]);
 
             if (ec)

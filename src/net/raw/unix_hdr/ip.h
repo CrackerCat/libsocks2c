@@ -60,16 +60,15 @@
  *	@(#)ip.h	8.2 (Berkeley) 6/1/94
  * $FreeBSD: src/sys/netinet/ip.h,v 1.17 1999/12/22 19:13:20 shin Exp $
  */
-#define BYTE_ORDER 1
-#define LITTLE_ENDIAN 1
 
 #ifndef _NETINET_IP_H_
 #define _NETINET_IP_H_
 #if defined( __linux__) || defined(__APPLE__)
-#include <sys/appleapiopts.h>
-#include <sys/types.h>		/* XXX temporary hack to get u_ types */
 #include <netinet/in.h>
-#include <netinet/in_systm.h>
+#else
+#include <Winsocks2.h>
+#define BYTE_ORDER 1
+#define LITTLE_ENDIAN 1
 #endif // __linux__) || defined(__APPLE__)
 
 /*

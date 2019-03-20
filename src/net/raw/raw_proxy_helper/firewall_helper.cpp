@@ -9,14 +9,14 @@ void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
     boost::filesystem::path bak_path {"/etc/pf.conf.bak"};
 
     // no copy if bak file exists
-    if (boost::filesystem::exists(full_path)){
+    if (!boost::filesystem::exists(full_path)){
         boost::system::error_code ec;
         boost::filesystem::copy_file(full_path, bak_path, boost::filesystem::copy_option::fail_if_exists, ec);
         boost::filesystem::remove(full_path);
     }
 
     boost::filesystem::ofstream ofs {full_path};
-    std::string filewall_rule = "block drop proto tcp from " + dst_ip + " to any flags R/R\n";
+    std::string filewall_rule = "block drop proto tcp from " + dst_ip + " port " + dst_port + " to any flags R/R\n";
     LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
 
     ofs << filewall_rule;

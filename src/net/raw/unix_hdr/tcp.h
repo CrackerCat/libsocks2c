@@ -68,7 +68,6 @@ typedef unsigned char u_int8_t;
 typedef unsigned short u_int16_t;
 typedef unsigned int u_int32_t;
 typedef unsigned int __uint32_t;
-typedef size_t u_int64_t;
 
 #if defined( __linux__) || defined(__APPLE__)
 #include <sys/types.h>

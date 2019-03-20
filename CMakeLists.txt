@@ -79,7 +79,6 @@ add_executable(libsocks2c
         src/net/raw/server/server_udp_raw_proxy.h
         src/net/raw/raw_socket.h
         src/net/raw/client/client_udp_raw_proxy.h
-        src/net/raw/client/client_udp_raw_proxy.cpp
         src/net/udp/client/client_udp_proxy_withraw.h
         src/net/raw/server/server_udp_raw_proxy_session.h
         src/net/raw/raw_proxy_helper/interface_helper.h
@@ -90,7 +89,7 @@ add_executable(libsocks2c
 		src/net/raw/raw_proxy_helper/tcp_checksum_helper.h
 		src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp
 		src/net/raw/sniffer_def.h
-		)
+        src/net/raw/client/basic_client_udp_raw_proxy.h src/net/raw/client/client_udp_raw_proxy_win32.h)
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 IF (WIN32)

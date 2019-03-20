@@ -79,5 +79,5 @@ private:
 
 
 
-    ClientUdpRawProxy<Protocol>* pudp2raw;
+    BasicClientUdpRawProxy<Protocol>* pudp2raw;
 };
