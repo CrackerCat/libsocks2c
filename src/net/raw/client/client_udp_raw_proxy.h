@@ -48,9 +48,15 @@ public:
 
     }
 
-    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override
     {
-
+		if (local_raw_port.empty())
+		{
+			std::random_device rd;
+			std::mt19937 eng(rd());
+			std::uniform_int_distribution<unsigned short> distr;
+			local_raw_port = distr(eng);
+		}
         this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
 
         //Get Default if ifname is not set

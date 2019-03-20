@@ -11,7 +11,7 @@ class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 
 public:
 
-    void InitUdpOverUTcp(std::string local_ip, std::string server_ip, std::string server_raw_port, std::string local_raw_port)
+    void InitUdpOverUTcp(std::string local_ip, std::string server_ip, std::string server_raw_port, std::string local_raw_port = std::string())
     {
         LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
         pudp2raw = ClientUdpRawProxy<Protocol>::GetInstance(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
@@ -21,7 +21,7 @@ public:
             LOG_INFO("ClientRawUdpProxy init failed, fallback to udp proxy")
             return;
         }
-        pudp2raw->StartProxy(local_raw_port);
+        pudp2raw->StartProxy();
         uout_init = true;
     }
 

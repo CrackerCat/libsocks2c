@@ -46,9 +46,17 @@ public:
 
 	}
 
-    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override
     {
-		this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
+		if (local_raw_port.empty())
+		{
+			std::random_device rd;
+			std::mt19937 eng(rd());
+			std::uniform_int_distribution<unsigned short> distr(10000, 65535);
+			this->local_port = distr(eng);
+		}
+		else this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
+
 		this->local_ip = local_ip;
 
         //save server endpoint
@@ -58,34 +66,9 @@ public:
 		bool init_handles_res = initHandles();
 
 		if (!init_handles_res) return false;
-		
-		WINDIVERT_ADDRESS addr; // Packet address
-		char packet[1500];    // Packet buffer
-		UINT packetLen;
 
-		// Main capture-modify-inject loop:
-		//while (TRUE)
-		//{
-		//	if (!WinDivertRecv(rst_handle, packet, sizeof(packet), &addr, &packetLen))
-		//	{
-		//		// Handle recv error
-		//		continue;
-		//	}
+		LOG_INFO("UOUT init, local ep {}:{}", local_ip, local_port)
 
-		//	LOG_INFO("Recv Rst Drop")
-		//		continue;
-		//	// Modify packet.
-
-		//	WinDivertHelperCalcChecksums(packet, packetLen, &addr, 0);
-		//	if (!WinDivertSend(recv_handle, packet, packetLen, &addr, NULL))
-		//	{
-		//		// Handle send error
-		//		continue;
-		//	}
-		//}
-
-
-        
 		return true;
     }
 
