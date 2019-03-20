@@ -1,6 +1,9 @@
 #include "client_udp_proxy.h"
+#ifdef _WIN32
+#include "../../raw/client/client_udp_raw_proxy_win32.h"
+#else
 #include "../../raw/client/client_udp_raw_proxy.h"
-
+#endif
 template<class Protocol>
 class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 {

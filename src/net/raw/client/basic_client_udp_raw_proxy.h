@@ -36,7 +36,7 @@ class BasicClientUdpRawProxy
 
 public:
 
-    BasicClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot) : io_context_(io), protocol_(prot)
+    BasicClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : io_context_(io), protocol_(prot), plocal_socket(pls)
     {
         std::random_device rd;
         std::mt19937 eng(rd());
@@ -104,6 +104,8 @@ protected:
     Protocol& protocol_;
 
     boost::asio::io_context& io_context_;
+
+	boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
 
     SESSION_STATUS status;
 
@@ -247,8 +249,6 @@ protected:
 
     virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield, bool shouldcopy = true) = 0;
 
-    virtual bool sendToLocal_(void* data, size_t size, boost::asio::ip::udp::endpoint local_ep, boost::asio::yield_context yield) = 0;
-
     void sendToLocal(Tins::PDU* raw_data)
     {
 
@@ -275,7 +275,17 @@ protected:
 
             LOG_INFO("send udp back to local {} : {}", local_ep.address().to_string(), local_ep.port())
 
-            sendToLocal_(data_copy.get() + Protocol::ProtocolHeader::Size() + 6, bytes_read - 6, local_ep, yield);
+			boost::system::error_code ec;
+
+			auto bytes_send = this->plocal_socket->async_send_to(boost::asio::buffer(data_copy.get() + Protocol::ProtocolHeader::Size() + 6, bytes_read - 6), local_ep, yield[ec]);
+
+			if (ec)
+			{
+				LOG_INFO("async_send_to err --> {}", ec.message().c_str())
+					return false;
+			}
+
+			LOG_INFO("send {} bytes via raw socket", bytes_send)
 
         });
 

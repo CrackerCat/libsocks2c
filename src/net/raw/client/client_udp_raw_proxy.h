@@ -38,8 +38,8 @@ class ClientUdpRawProxy : public BasicClientUdpRawProxy<Protocol>, public Single
 public:
 
     ClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : \
-        BasicClientUdpRawProxy<Protocol>(io, prot),
-        protocol_(prot), sniffer_socket(io), plocal_socket(pls), send_socket_stream(io)
+        BasicClientUdpRawProxy<Protocol>(io, prot, pls),
+        protocol_(prot), sniffer_socket(io), send_socket_stream(io)
     {
         if (!send_socket_stream.is_open())
             send_socket_stream.open();
@@ -115,8 +115,6 @@ public:
 private:
     Protocol& protocol_;
 
-    boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
-
     Tins::SnifferConfiguration config;
     std::unique_ptr<Tins::Sniffer> psniffer;
 	SnifferSocket sniffer_socket;
@@ -139,25 +137,5 @@ private:
         return pdu_ptr;
     }
 
-
-
-    virtual bool sendToLocal_(void* data, size_t size, boost::asio::ip::udp::endpoint local_ep, boost::asio::yield_context yield) override
-    {
-        boost::system::error_code ec;
-
-        LOG_INFO("send udp back to local {} : {}", local_ep.address().to_string(), local_ep.port())
-
-        auto bytes_send = this->plocal_socket->async_send_to(boost::asio::buffer(data, size), local_ep, yield[ec]);
-
-        if (ec)
-        {
-            LOG_INFO("async_send_to err --> {}", ec.message().c_str())
-            return false;
-        }
-
-        LOG_INFO("send {} bytes via raw socket", bytes_send)
-
-        return true;
-    }
 
 };
