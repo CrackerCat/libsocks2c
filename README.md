@@ -1,6 +1,6 @@
 # libsocks2c is a multithreaded socks5 proxy
 
-#Macro:
+***Macro***
 
 1. **LOG_DEBUG_DETAIL**     more detail log
 2. **DISABLE_DEBUG_LOG**    disable all debug log
@@ -11,7 +11,7 @@
 6. **UDP_OVER_UTCP**        build with utcp support
 ---
 
-#Encryption:
+***Encryption:***
 
 There are three enctyption methods avaliable
 
