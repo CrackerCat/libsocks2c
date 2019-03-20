@@ -2,9 +2,13 @@
 
 #include "../net/udp/client/client_udp_proxy.h"
 #include "../net/tcp/client/client_tcp_proxy.h"
-#include "../net/udp/client/client_udp_proxy_withraw.h"
-#include "../net/raw/server/server_udp_raw_proxy.h"
 
+#ifdef UDP_OVER_UTCP
+#include "../net/udp/client/client_udp_proxy_withraw.h"
+#ifndef _WIN32
+#include "../net/raw/server/server_udp_raw_proxy.h"
+#endif
+#endif
 
 #if defined(__linux__) && defined(MULTITHREAD_IO)
 #include "../net/tcp/server/server_tcp_proxy_mt.h"
@@ -42,6 +46,8 @@ public:
         udps->SetProxyInfo(server_ip, server_port);
         udps->StartProxy(server_ip, server_port);
 
+#ifndef _WIN32
+#ifdef UDP_OVER_UTCP
         if (udp2raw)
         {
             auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
@@ -49,7 +55,8 @@ public:
             pudp2raw->SetProxyKey(proxyKey);
             pudp2raw->StartProxy();
         }
-
+#endif
+#endif
         return ServerProxy<Protocol>(tcps, udps);
     }
 
@@ -67,6 +74,7 @@ public:
         tcps->StartProxy();
 
         boost::shared_ptr<ClientUdpProxy<Protocol>> udps;
+#ifdef UDP_OVER_UTCP
         if (udp2raw)
         {
             udps = boost::make_shared<ClientUdpProxyWithRaw<Protocol>>();
@@ -74,13 +82,13 @@ public:
             udps->SetProxyInfo(server_ip, server_port);
             udps->StartProxy(socks5_ip, socks5_port);
             boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdp2Raw("192.168.1.214", server_ip, "4567", "4444");
-        }else
-        {
-            udps = boost::make_shared<ClientUdpProxy<Protocol>>();
-            udps->SetProxyKey(proxyKey);
-            udps->SetProxyInfo(server_ip, server_port);
-            udps->StartProxy(socks5_ip, socks5_port);
+            return ClientProxy<Protocol>(tcps, udps);
         }
+#endif
+        udps = boost::make_shared<ClientUdpProxy<Protocol>>();
+        udps->SetProxyKey(proxyKey);
+        udps->SetProxyInfo(server_ip, server_port);
+        udps->StartProxy(socks5_ip, socks5_port);
 
         return ClientProxy<Protocol>(tcps, udps);
     }

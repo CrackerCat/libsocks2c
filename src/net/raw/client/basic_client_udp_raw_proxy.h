@@ -275,8 +275,6 @@ protected:
 
             LOG_INFO("send udp back to local {} : {}", local_ep.address().to_string(), local_ep.port())
 
-			boost::system::error_code ec;
-
 			auto bytes_send = this->plocal_socket->async_send_to(boost::asio::buffer(data_copy.get() + Protocol::ProtocolHeader::Size() + 6, bytes_read - 6), local_ep, yield[ec]);
 
 			if (ec)
