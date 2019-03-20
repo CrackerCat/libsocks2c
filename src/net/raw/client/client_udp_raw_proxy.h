@@ -50,7 +50,7 @@ public:
 
     }
 
-    virtual void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
     {
 
         this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
@@ -58,12 +58,16 @@ public:
         //Get Default if ifname is not set
         if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
+
         if (local_ip.empty())
-        {
             local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
-        }else
-        {
+        else
             this->local_ip = local_ip;
+
+        if (ifname.empty() || local_ip.empty())
+        {
+            LOG_INFO("can not find default interface or ip")
+            return false;
         }
 
         LOG_INFO("Find Default Interface {}", ifname)
@@ -82,6 +86,8 @@ public:
         //save server endpoint
         this->remote_ip = remote_ip;
         this->remote_port = boost::lexical_cast<unsigned short>(remote_port);
+
+        return true;
     }
 
 

@@ -403,7 +403,7 @@ private:
             if (ec)
             {
                 LOG_INFO("async_send_to err --> {}", ec.message().c_str())
-                return 0;
+                return;
             }
 
             LOG_INFO("send {} bytes via raw socket", bytes_send)

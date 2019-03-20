@@ -11,16 +11,24 @@ class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 
 public:
 
-    void InitUdp2Raw(std::string local_ip, std::string server_ip, std::string server_raw_port, std::string local_raw_port)
+    void InitUdpOverUTcp(std::string local_ip, std::string server_ip, std::string server_raw_port, std::string local_raw_port)
     {
         LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
         pudp2raw = ClientUdpRawProxy<Protocol>::GetInstance(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
-        pudp2raw->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
+        auto setup_res = pudp2raw->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
+        if (!setup_res)
+        {
+            LOG_INFO("ClientRawUdpProxy init failed, fallback to udp proxy")
+            return;
+        }
         pudp2raw->StartProxy(local_raw_port);
+        uout_init = true;
     }
 
 
 private:
+
+    bool uout_init = false;
 
     virtual void startAcceptorCoroutine() override
     {
@@ -47,6 +55,13 @@ private:
                 LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port()))
 
                 this->last_active_time = time(nullptr);
+
+                // if
+                if (!uout_init)
+                {
+                    this->handleLocalPacket(local_ep, bytes_read);
+                    continue;
+                }
 
                 // send via raw if raw tcp connected
                 if (pudp2raw->IsRemoteConnected())

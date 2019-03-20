@@ -51,9 +51,12 @@ public:
         if (udp2raw)
         {
             auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
-            pudp2raw->SetUpSniffer("4567");
-            pudp2raw->SetProxyKey(proxyKey);
-            pudp2raw->StartProxy();
+            auto init_res = pudp2raw->SetUpSniffer("4567");
+            if (init_res)
+            {
+                pudp2raw->SetProxyKey(proxyKey);
+                pudp2raw->StartProxy();
+            }
         }
 #endif
 #endif
@@ -81,7 +84,7 @@ public:
             udps->SetProxyKey(proxyKey);
             udps->SetProxyInfo(server_ip, server_port);
             udps->StartProxy(socks5_ip, socks5_port);
-            boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdp2Raw("192.168.1.214", server_ip, "4567", "4444");
+            boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdpOverUTcp("192.168.1.214", server_ip, "4567", "4444");
             return ClientProxy<Protocol>(tcps, udps);
         }
 #endif

@@ -46,7 +46,7 @@ public:
         this->local_seq = init_seq;
     }
 
-    virtual void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) {}
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) = 0;
 
     // we use local_port as the tcp src port to connect remote
     void StartProxy(std::string local_raw_port)
@@ -122,7 +122,7 @@ protected:
 
     bool handshake_failed = false;
 
-    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield) {}
+    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield) = 0;
 
     void RecvFromRemote()
     {
@@ -280,7 +280,7 @@ protected:
 			if (ec)
 			{
 				LOG_INFO("async_send_to err --> {}", ec.message().c_str())
-					return false;
+				return;
 			}
 
 			LOG_INFO("send {} bytes via raw socket", bytes_send)

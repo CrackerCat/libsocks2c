@@ -25,13 +25,22 @@ public:
 
     ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io) {}
 
-    void SetUpSniffer(std::string server_port, std::string server_ip = std::string(), std::string ifname = std::string())
+    bool SetUpSniffer(std::string server_port, std::string server_ip = std::string(), std::string ifname = std::string())
     {
+        //Get Default if ifname is not set
         if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
 
         if (server_ip.empty())
             server_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+        else
+            this->server_ip = server_ip;
+
+        if (ifname.empty() || server_ip.empty())
+        {
+            LOG_INFO("can not find default interface or ip")
+            return false;
+        }
 
         LOG_INFO("Find Default Interface {}", ifname)
 
@@ -49,6 +58,8 @@ public:
 
         this->server_ip = server_ip;
         this->server_port = boost::lexical_cast<unsigned short>(server_port);
+
+        return true;
     }
 
     void SetProxyKey(std::string key)

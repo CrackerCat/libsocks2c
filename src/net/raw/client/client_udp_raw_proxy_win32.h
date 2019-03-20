@@ -52,13 +52,12 @@ public:
 
 	}
 
-    virtual void SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
     {
 
         this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
 
 		this->local_ip = local_ip;
-
 
         //save server endpoint
         this->remote_ip = remote_ip;
