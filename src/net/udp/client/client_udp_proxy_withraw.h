@@ -81,14 +81,6 @@ private:
 
                 this->last_active_time = time(nullptr);
 
-                //// if
-                //if (!uout_init)
-                //{
-                //    this->handleLocalPacket(local_ep, bytes_read);
-                //    continue;
-                //}
-
-				
 				if (puout)
 				{
 					if (puout->IsRemoteConnected())
@@ -96,7 +88,7 @@ private:
 						handleLocalPacketViaRaw(local_ep, bytes_read, yield);
 						continue;
 					}
-					else // if puout and !puout->IsRemoteConnected(), which puout close within itself, we just need to reset it
+					else // if puout and !puout->IsRemoteConnected(), we don't know puout is close within itself or from outside, we just need to reset it
 					{
 						puout.reset();
 						uout_init = false;
