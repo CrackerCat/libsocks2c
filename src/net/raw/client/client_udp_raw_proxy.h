@@ -48,18 +48,28 @@ public:
 
     }
 
-    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override
     {
-
-        this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
+		if (local_raw_port.empty())
+		{
+			std::random_device rd;
+			std::mt19937 eng(rd());
+			std::uniform_int_distribution<unsigned short> distr(10000, 65535);
+			this->local_port = distr(eng);
+		}
+		else this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
 
         //Get Default if ifname is not set
         if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
 
-        if (local_ip.empty())
-            local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
-        else
+		if (local_ip.empty())
+		{
+			LOG_INFO("local_ip not provided, trying to get default ip")
+			LOG_INFO("if i retrive the wrong ip, you are probably fucked")
+			this->local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+			LOG_INFO("get {} as default ip", local_ip)
+		}else
             this->local_ip = local_ip;
 
         if (ifname.empty() || local_ip.empty())
@@ -118,9 +128,9 @@ private:
     boost::asio::basic_raw_socket<asio::ip::raw> send_socket_stream;
 
 
-    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield) override
+    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) override
     {
-        boost::system::error_code ec;
+
         this->sniffer_socket.async_wait(boost::asio::posix::descriptor_base::wait_read, yield[ec]);
 
         if (ec)

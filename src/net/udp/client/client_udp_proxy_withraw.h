@@ -11,24 +11,49 @@ class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 
 public:
 
-    void InitUdpOverUTcp(std::string local_ip, std::string server_ip, std::string server_raw_port, std::string local_raw_port)
+    void InitUout(std::string server_ip, std::string server_raw_port, std::string local_ip = std::string(), std::string local_raw_port = std::string())
     {
-        LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
-        pudp2raw = ClientUdpRawProxy<Protocol>::GetInstance(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
-        auto setup_res = pudp2raw->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
-        if (!setup_res)
-        {
-            LOG_INFO("ClientRawUdpProxy init failed, fallback to udp proxy")
-            return;
-        }
-        pudp2raw->StartProxy(local_raw_port);
-        uout_init = true;
+		this->server_ip = server_ip;
+		this->server_raw_port = server_raw_port;
+		this->local_ip = local_ip;
+		this->local_raw_port = local_raw_port;
     }
+
+	virtual void StopUout() {
+		if (puout && puout->IsRemoteConnected())
+		{
+			puout->Stop();
+			puout.reset();
+			uout_init = false;
+		}
+	}
+
+	void StartUout()
+	{
+		if (uout_init || puout) return;
+
+		LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
+		puout = boost::make_shared<ClientUdpRawProxy<Protocol>>(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
+		auto setup_res = puout->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
+		if (!setup_res)
+		{
+			LOG_INFO("ClientRawUdpProxy init failed, fallback to udp proxy")
+			return;
+		}
+		puout->StartProxy();
+		uout_init = true;
+
+		puout->TestClose();
+	}
 
 
 private:
 
-    bool uout_init = false;
+    bool uout_init;
+	std::string server_ip;
+	std::string server_raw_port;
+	std::string local_ip;
+	std::string local_raw_port;
 
     virtual void startAcceptorCoroutine() override
     {
@@ -56,22 +81,32 @@ private:
 
                 this->last_active_time = time(nullptr);
 
-                // if
-                if (!uout_init)
-                {
-                    this->handleLocalPacket(local_ep, bytes_read);
-                    continue;
-                }
+                //// if
+                //if (!uout_init)
+                //{
+                //    this->handleLocalPacket(local_ep, bytes_read);
+                //    continue;
+                //}
 
-                // send via raw if raw tcp connected
-                if (pudp2raw->IsRemoteConnected())
-                {
-                    handleLocalPacketViaRaw(local_ep, bytes_read, yield);
-                } else // or fallback to udp
-                {
-                    this->handleLocalPacket(local_ep, bytes_read);
-                    pudp2raw->TryConnect();
-                }
+				
+				if (puout)
+				{
+					if (puout->IsRemoteConnected())
+					{
+						handleLocalPacketViaRaw(local_ep, bytes_read, yield);
+						continue;
+					}
+					else // if puout and !puout->IsRemoteConnected(), which puout close within itself, we just need to reset it
+					{
+						puout.reset();
+						uout_init = false;
+					}
+				}
+				else  
+					StartUout();
+				// puout is canceled but before callback or puout is deleted
+				memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
+				this->handleLocalPacket(local_ep, bytes_read);
 
             }
 
@@ -91,11 +126,12 @@ private:
         //encrypt packet
         auto bytes_tosend = this->protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
 
-        pudp2raw->SendPacketViaRaw(this->local_recv_buff_, bytes_tosend, yield);
+        puout->SendPacketViaRaw(this->local_recv_buff_, bytes_tosend, yield);
 
     }
 
+	
 
-
-    BasicClientUdpRawProxy<Protocol>* pudp2raw;
+	boost::shared_ptr<BasicClientUdpRawProxy<Protocol>> puout;
+    
 };

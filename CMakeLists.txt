@@ -20,6 +20,7 @@ set(CMAKE_CXX_STANDARD 14)
 IF (WIN32)
   add_definitions(-D_WIN32_WINNT=0x0A00)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+  add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
   add_definitions(-DSODIUM_STATIC)
   add_definitions(-DBUILD_DLL)
   IF (ENABLE_UOUT)
@@ -72,7 +73,8 @@ SET(CORE_FILES
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp
 		src/utils/cacheline_helper.c
-
+		src/net/raw/raw_proxy_helper/interface_helper.h
+        src/net/raw/raw_proxy_helper/interface_helper.cpp
         lib/proxymap.h
         src/utils/singleton.h
         lib/version.h
@@ -89,8 +91,6 @@ LIST(APPEND CORE_FILES
         src/net/raw/client/client_udp_raw_proxy.h
         src/net/udp/client/client_udp_proxy_withraw.h
         src/net/raw/server/server_udp_raw_proxy_session.h
-        src/net/raw/raw_proxy_helper/interface_helper.h
-        src/net/raw/raw_proxy_helper/interface_helper.cpp
         src/net/raw/raw_proxy_helper/firewall_helper.h
         src/net/raw/raw_proxy_helper/firewall_helper.cpp
         src/utils/system/system_exec.h

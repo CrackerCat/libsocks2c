@@ -67,8 +67,11 @@ int LibSocks2c::StartProxy(Config config)
             config.socks5_port,
             config.server_ip,
             config.server_port,
+			config.server_uout_port,
+		    config.udp2raw,
+			config.local_uout_ip,
+			config.local_uout_port,
             config.resolve_dns,
-            config.udp2raw,
             config.timeout);
 
     auto res = ProxyMap<Protocol>::GetInstance()->Insert(config.socks5_port, handle);

@@ -10,6 +10,8 @@
 #include <boost/lexical_cast.hpp>
 #include "../../../protocol/socks5_protocol_helper.h"
 #include "../raw_proxy_helper/tcp_checksum_helper.h"
+#include "../raw_proxy_helper/interface_helper.h"
+
 #include "../sniffer_def.h"
 
 #include "basic_client_udp_raw_proxy.h"
@@ -28,7 +30,7 @@
  * when sending packet to remote
  */
 template <class Protocol>
-class ClientUdpRawProxy : public BasicClientUdpRawProxy<Protocol>, public Singleton<ClientUdpRawProxy<Protocol>>
+class ClientUdpRawProxy : public BasicClientUdpRawProxy<Protocol>, public boost::enable_shared_from_this<ClientUdpRawProxy<Protocol>>
 {
 
 public:
@@ -37,20 +39,50 @@ public:
         BasicClientUdpRawProxy<Protocol>(io, prot, pls),
         protocol_(prot)
     {
-        this->init_seq = time(nullptr);
-        this->local_seq = this->init_seq;
     }
+
+	virtual void TestClose() override
+	{
+		auto self(this->shared_from_this());
+		boost::asio::spawn([this, self](boost::asio::yield_context yield) {
+			boost::asio::deadline_timer timer(this->io_context_, boost::posix_time::seconds(5));
+			LOG_INFO("stop in 5 secs")
+			boost::system::error_code ec;
+			timer.async_wait(yield[ec]);
+
+			this->Stop();
+		});
+	}
 
 	virtual void Stop() override
 	{
-
+		WinDivertClose(this->rst_handle);
+		this->psniffer_socket->close();
+		this->psend_socket->close();
+		WinDivertClose(this->recv_handle);
+		this->status = DISCONNECT;
 	}
 
-    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port, std::string local_ip = std::string(), std::string ifname = std::string()) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override
     {
-		this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
-		this->local_ip = local_ip;
-
+		if (local_raw_port.empty())
+		{
+			std::random_device rd;
+			std::mt19937 eng(rd());
+			std::uniform_int_distribution<unsigned short> distr(10000, 65535);
+			this->local_port = distr(eng);
+		}
+		else this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
+		
+		if (local_ip.empty())
+		{
+			LOG_INFO("local_ip not provided, trying to get default ip")
+			LOG_INFO("if i retrive the wrong ip, you are probably fucked")
+		    this->local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+			LOG_INFO("get {} as default ip", local_ip)
+		}
+		else
+			this->local_ip = local_ip;
         //save server endpoint
         this->remote_ip = remote_ip;
         this->remote_port = boost::lexical_cast<unsigned short>(remote_port);
@@ -58,34 +90,9 @@ public:
 		bool init_handles_res = initHandles();
 
 		if (!init_handles_res) return false;
-		
-		WINDIVERT_ADDRESS addr; // Packet address
-		char packet[1500];    // Packet buffer
-		UINT packetLen;
 
-		// Main capture-modify-inject loop:
-		//while (TRUE)
-		//{
-		//	if (!WinDivertRecv(rst_handle, packet, sizeof(packet), &addr, &packetLen))
-		//	{
-		//		// Handle recv error
-		//		continue;
-		//	}
+		LOG_INFO("UOUT init, local ep {}:{}", local_ip, local_port)
 
-		//	LOG_INFO("Recv Rst Drop")
-		//		continue;
-		//	// Modify packet.
-
-		//	WinDivertHelperCalcChecksums(packet, packetLen, &addr, 0);
-		//	if (!WinDivertSend(recv_handle, packet, packetLen, &addr, NULL))
-		//	{
-		//		// Handle send error
-		//		continue;
-		//	}
-		//}
-
-
-        
 		return true;
     }
 
@@ -132,14 +139,11 @@ private:
 
 	bool initHandles()
 	{
+		
 		std::string rst_filter = "outbound and !loopback and "
 			"ip.DstAddr == " + remote_ip + " and "
-			"tcp.Rst";
-
-		/*std::string rst_filter = "outbound and !loopback and "
-			"ip.DstAddr == " + remote_ip + " and "
 			"tcp.SrcPort == " + boost::lexical_cast<std::string>(remote_port) + " and "
-			"tcp.Rst";*/
+			"tcp.Rst";
 
 		rst_handle = WinDivertOpen(
 			rst_filter.c_str(),
@@ -178,14 +182,13 @@ private:
 		return true;
 	}
 
-	virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield) override
+	virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) override
 	{
 		WINDIVERT_ADDRESS addr; 
 		UINT packetLen;
 
 		WinDivertRecvEx(recv_handle, remote_recv_buff, sizeof(remote_recv_buff), 0, &addr, &packetLen, &sniffer_overlapped);
 
-		boost::system::error_code ec;
 		psniffer_socket->async_wait(yield[ec]);
 		if (ec)
 		{
@@ -197,14 +200,6 @@ private:
 		GetOverlappedResult(sniffer_overlapped.hEvent, &sniffer_overlapped, &transferred, FALSE);
 
 		LOG_INFO("recv {} bytes from remote", transferred)
-
-
-		/*for (int i = 0; i < transferred; ++i)
-		{
-			printf("%x ", remote_recv_buff[i]);
-		}
-		printf("\n");
-		fflush(stdout);*/
 
 		auto ip_pdu = std::make_unique<Tins::IP>(remote_recv_buff, transferred);
 		return ip_pdu;
