@@ -79,7 +79,12 @@ public:
         this->pacceptor_->cancel();
         // only close timer when it is set
         if (this->ptimer_) this->ptimer_->cancel();
+
+		StopUout();
 	}
+
+	virtual void StopUout() {}
+
 
 protected:
 
@@ -118,7 +123,6 @@ protected:
                 handleLocalPacket(local_ep, bytes_read);
 
             }
-
 
         });
     }

@@ -63,9 +63,13 @@ public:
         if (ifname.empty())
             ifname = InterfaceHelper::GetInstance()->GetDefaultInterface();
 
-        if (local_ip.empty())
-            local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
-        else
+		if (local_ip.empty())
+		{
+			LOG_INFO("local_ip not provided, trying to get default ip")
+			LOG_INFO("if i retrive the wrong ip, you are probably fucked")
+			this->local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
+			LOG_INFO("get {} as default ip", local_ip)
+		}else
             this->local_ip = local_ip;
 
         if (ifname.empty() || local_ip.empty())
@@ -124,9 +128,9 @@ private:
     boost::asio::basic_raw_socket<asio::ip::raw> send_socket_stream;
 
 
-    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield) override
+    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) override
     {
-        boost::system::error_code ec;
+
         this->sniffer_socket.async_wait(boost::asio::posix::descriptor_base::wait_read, yield[ec]);
 
         if (ec)

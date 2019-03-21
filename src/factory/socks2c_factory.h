@@ -66,7 +66,7 @@ public:
 	// if defined MULTITHREAD_IO, then ClientTcpProxy would be multithread version
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
     template<class Protocol>
-    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, bool resolve_dns, bool udp2raw, uint64_t timeout = 0)
+    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, std::string local_uout_ip = std::string(), uint16_t local_uout_port = 0, bool resolve_dns = false, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ClientTcpProxy<Protocol>>();
 
@@ -84,8 +84,10 @@ public:
             udps->SetProxyKey(proxyKey);
             udps->SetProxyInfo(server_ip, server_port);
             udps->StartProxy(socks5_ip, socks5_port);
-            boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps)->InitUdpOverUTcp("192.168.1.176", server_ip, "4567");
-            return ClientProxy<Protocol>(tcps, udps);
+			auto uout = boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps);
+			uout->InitUout(server_ip, boost::lexical_cast<std::string>(server_uout_port), local_uout_ip, boost::lexical_cast<std::string>(local_uout_port));
+			uout->StartUout();
+			return ClientProxy<Protocol>(tcps, udps);
         }
 #endif
         udps = boost::make_shared<ClientUdpProxy<Protocol>>();

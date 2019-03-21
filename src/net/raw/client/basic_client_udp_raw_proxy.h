@@ -35,6 +35,9 @@ class BasicClientUdpRawProxy
 {
 
 public:
+	~BasicClientUdpRawProxy() {
+		LOG_INFO("BasicClientUdpRawProxy die")
+	}
 
     BasicClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : io_context_(io), protocol_(prot), plocal_socket(pls)
     {
@@ -47,6 +50,8 @@ public:
     }
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) = 0;
+
+	virtual void TestClose() = 0;
 
     // we use local_port as the tcp src port to connect remote
     void StartProxy()
@@ -117,7 +122,7 @@ protected:
 
     bool handshake_failed = false;
 
-    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield) = 0;
+    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) = 0;
 
     void RecvFromRemote()
     {
@@ -128,7 +133,15 @@ protected:
             while(1)
             {
 
-                std::unique_ptr<Tins::PDU> pdu_ptr = recvFromRemote(yield);
+				boost::system::error_code ec;
+
+                std::unique_ptr<Tins::PDU> pdu_ptr = recvFromRemote(yield, ec);
+
+				if (ec)
+				{
+					LOG_INFO("recvFromRemote err --> {}", ec.message())
+					return;
+				}
 
                 auto tcp = pdu_ptr->find_pdu<TCP>();
                 if (tcp == nullptr)
@@ -139,10 +152,11 @@ protected:
 
                 switch (tcp->flags())
                 {
-                    case (TCP::SYN):
+                    case TCP::SYN :
                     {
                         LOG_INFO("SYN")
-                        continue;
+						this->ackReply(tcp, yield);
+						continue;
                     }
                     case (TCP::SYN | TCP::ACK):
                     {
@@ -150,28 +164,26 @@ protected:
                         this->handshakeReply(tcp->seq(), tcp->ack_seq(), yield);
                         continue;
                     }
-                        // without data
+                    // without data
                     case TCP::ACK :
                     {
                         LOG_INFO("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-//                        if (tcp->ack_seq() > local_seq)
-//                        {
-//                            local_seq = tcp->ack_seq();
-//                        }
-                        break;
+                        continue;
                     }
-                        // with data
+                    // with data
                     case (TCP::PSH | TCP::ACK) :
                     {
                         LOG_INFO("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                         this->ackReply(tcp, yield);
                         this->sendToLocal(tcp->inner_pdu());
-                        break;
+						continue;
                     }
                     case TCP::RST :
                     {
-                        LOG_INFO("recv RST")
-                        break;
+						LOG_INFO("recv RST")
+						this->Stop();
+						this->status = DISCONNECT;
+						return;
                     }
                     default:
                     {
@@ -179,7 +191,6 @@ protected:
                         continue;
                     }
                 }
-
             }
 
         });
@@ -252,7 +263,6 @@ protected:
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
             auto bytes_read = protocol_.OnUdpPayloadReadFromClientRemote(protocol_hdr);
 
-            char buff[6];
             uint32_t src_ip;
             uint16_t src_port;
             memcpy(&src_ip, &data_copy[Protocol::ProtocolHeader::Size()], 4);
@@ -284,13 +294,6 @@ protected:
     {
         using Tins::TCP;
         using Tins::IP;
-        static time_t last_send_time = time(nullptr) - 1;
-
-        if (time(nullptr) - last_send_time < 1)
-        {
-            printf("short time\n");
-            return;
-        }
 
         auto ip = IP(remote_ip, local_ip);
         auto tcp = TCP(remote_port, local_port);
@@ -302,7 +305,6 @@ protected:
 		constructAndSend(ip, tcp, yield);
 
         this->status = ESTABLISHED;
-        last_send_time = time(nullptr);
 
         this->local_seq = init_seq + 1;
         this->last_ack = remote_seq;
@@ -325,6 +327,22 @@ protected:
 		constructAndSend(ip, tcp, yield);
     }
 
+	void rstReply(Tins::TCP* remote_tcp, boost::asio::yield_context yield)
+	{
+		using Tins::TCP;
+		using Tins::IP;
+		this->last_ack = remote_tcp->seq() + remote_tcp->inner_pdu()->size();
+
+		auto ip = IP(remote_ip, local_ip);
+		auto tcp = TCP(remote_tcp->sport(), remote_tcp->dport());
+		tcp.flags(TCP::RST);
+
+		tcp.ack_seq(remote_tcp->seq() + remote_tcp->size() - remote_tcp->header_size());
+		tcp.seq(local_seq);
+		LOG_INFO("RST Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
+
+		constructAndSend(ip, tcp, yield);
+	}
 
 	size_t constructAndSend(Tins::IP& ip, Tins::TCP& tcp, boost::asio::yield_context& yield)
 	{

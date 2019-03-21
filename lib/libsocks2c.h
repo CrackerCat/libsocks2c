@@ -27,10 +27,17 @@ public:
     {
         bool isServer;
         std::string proxyKey;
+
         std::string server_ip;
         uint16_t server_port;
+		uint16_t server_uout_port;
+
+		std::string local_uout_ip;
+		uint16_t local_uout_port;
+
         std::string socks5_ip;
         uint16_t socks5_port;
+
         size_t timeout;
         bool udp2raw = false;
         bool resolve_dns = false;
