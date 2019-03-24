@@ -7,9 +7,9 @@ IF (ENABLE_UOUT)
 ENDIF()
 
 add_definitions(-DPROTOCOL_CHACHA20)
-#add_definitions(-DDISABLE_DEBUG_LOG)
-add_definitions(-DLOG_DEBUG_DETAIL)
-add_definitions(-DUDP_DEBUG_DETAIL)
+add_definitions(-DDISABLE_DEBUG_LOG)
+#add_definitions(-DLOG_DEBUG_DETAIL)
+#add_definitions(-DUDP_DEBUG_DETAIL)
 #add_definitions(-DTCP_DEBUG_DETAIL)
 add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
@@ -103,7 +103,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-add_executable(libsocks2c ${CORE_FILES})
+add_library(libsocks2c ${CORE_FILES})
+#add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
