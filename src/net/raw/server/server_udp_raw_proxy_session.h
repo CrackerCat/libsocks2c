@@ -320,13 +320,17 @@ private:
     SESSION_STATUS status;
 
     // store client's tcp src ip src port
+    // we use this to construct dst of ip/tcp packet
     asio::ip::raw::endpoint local_ep;
+    // we use this to construct src of ip/tcp packet
     asio::ip::raw::endpoint server_ep;
 
     uint16_t tcp_sport;
     uint16_t tcp_dport;
 
     PRawSenderSocket prawsender_socket;
+
+    boost::asio::deadline_timer session_timer;
 
     uint32_t server_seq;
     uint32_t init_seq;
