@@ -42,8 +42,6 @@ public:
 		}
 		puout->StartProxy();
 		uout_init = true;
-
-		puout->TestClose();
 	}
 
 

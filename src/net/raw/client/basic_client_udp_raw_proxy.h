@@ -51,8 +51,6 @@ public:
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) = 0;
 
-	virtual void TestClose() = 0;
-
     // we use local_port as the tcp src port to connect remote
     void StartProxy()
     {

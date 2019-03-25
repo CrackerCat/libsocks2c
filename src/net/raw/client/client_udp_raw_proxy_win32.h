@@ -41,19 +41,6 @@ public:
     {
     }
 
-	virtual void TestClose() override
-	{
-		auto self(this->shared_from_this());
-		boost::asio::spawn([this, self](boost::asio::yield_context yield) {
-			boost::asio::deadline_timer timer(this->io_context_, boost::posix_time::seconds(5));
-			LOG_INFO("stop in 5 secs")
-			boost::system::error_code ec;
-			timer.async_wait(yield[ec]);
-
-			this->Stop();
-		});
-	}
-
 	virtual void Stop() override
 	{
 		WinDivertClose(this->rst_handle);
