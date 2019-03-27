@@ -69,7 +69,7 @@ public:
         return;
     }
 
-    void SendPacketViaRaw(void* data, size_t size, boost::asio::yield_context& yield)
+    void SendPacketViaRaw(void* data, uint32_t size, boost::asio::yield_context& yield)
     {
         using Tins::TCP;
         using Tins::IP;

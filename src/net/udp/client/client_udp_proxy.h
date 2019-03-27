@@ -134,7 +134,7 @@ protected:
 
         //encrypt packet
         auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
-        protocol_hdr->PAYLOAD_LENGTH = bytes_read;
+        protocol_hdr->PAYLOAD_LENGTH = static_cast<uint32_t>(bytes_read);
         //get payload length
         bytes_read = protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
 

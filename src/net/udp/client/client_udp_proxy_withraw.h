@@ -112,7 +112,7 @@ private:
 
         auto protocol_hdr = (typename Protocol::ProtocolHeader*)this->local_recv_buff_;
         //with ip + port 6 bytes totally
-        protocol_hdr->PAYLOAD_LENGTH = bytes_read + 4 + 2;
+        protocol_hdr->PAYLOAD_LENGTH = static_cast<uint32_t>(bytes_read + 4 + 2);
         //encrypt packet
         auto bytes_tosend = this->protocol_.OnUdpPayloadReadFromClientLocal(protocol_hdr);
 
