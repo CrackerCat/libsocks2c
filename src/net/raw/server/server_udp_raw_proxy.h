@@ -20,7 +20,7 @@ template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 {
 
-    using SessionMap = boost::unordered_map<tcp_session_src_tuple, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, TCPSrcTupleHash, TCPSrcTupleEQ>;
+    using SessionMap = boost::unordered_map<asio::ip::raw::endpoint, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>>;
 
 public:
 
@@ -35,7 +35,7 @@ public:
         if (server_ip.empty())
             server_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
         else
-            this->server_ip = server_ip;
+            server_ip = server_ip;
 
         if (ifname.empty() || server_ip.empty())
         {
@@ -57,8 +57,7 @@ public:
         //block tcp rst
         FirewallHelper::GetInstance()->BlockRst(server_ip, server_port);
 
-        this->server_ip = server_ip;
-        this->server_port = boost::lexical_cast<unsigned short>(server_port);
+        this->server_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(server_ip), boost::lexical_cast<unsigned short>(server_port));
 
         return true;
     }
@@ -69,6 +68,7 @@ public:
         memcpy(this->proxyKey_, key.c_str(), key.size() < 32 ? key.size() : 32);
     }
 
+    // start sniffing from local
     void StartProxy()
     {
         RecvFromLocal();
@@ -82,8 +82,7 @@ private:
 
     SessionMap session_map_;
 
-    std::string server_ip;
-    unsigned short server_port;
+    asio::ip::raw::endpoint server_ep;
 
     unsigned char proxyKey_[32U];
 
@@ -116,24 +115,25 @@ private:
 
                 // when recv tcp packet from local
                 // find session by src ip port pair
-                tcp_session_src_tuple src_ep = {};
-                src_ep.src_ip = inet_addr(ip->src_addr().to_string().c_str());
-                src_ep.src_port = tcp->sport();
+//                tcp_session_src_tuple src_ep = {};
+//                src_ep.src_ip = inet_addr(ip->src_addr().to_string().c_str());
+//                src_ep.src_port = tcp->sport();
 
-				boost::asio::ip::tcp::endpoint tcp_src_ep(boost::asio::ip::address::from_string(ip->src_addr().to_string()), tcp->sport());
+                asio::ip::raw::endpoint tcp_src_ep(boost::asio::ip::address::from_string(ip->src_addr().to_string()), tcp->sport());
 				LOG_DEBUG("RAW TCP Packet from {}:{}", tcp_src_ep.address.to_string(), tcp_src_ep.port())
 
-                auto map_it = session_map_.find(src_ep);
+                auto map_it = session_map_.find(tcp_src_ep);
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
                     in_addr src_ip_addr = {src_ep.src_ip};
                     std::string src_ip = inet_ntoa(src_ip_addr);
-                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(src_ip, src_ep.src_port, server_ip, server_port, session_map_, this->proxyKey_);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(tcp_src_ep, server_ep, session_map_, this->proxyKey_);
                     psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
                     psession->InitRawSocket(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);
-                    session_map_.insert({src_ep, psession});
+                    psession->Start()
+                    session_map_.insert({tcp_src_ep, psession});
 
                 }else { // if connection already created
                     auto psession = map_it->second;

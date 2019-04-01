@@ -84,6 +84,12 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
             runTimer();
         }
 
+        void Stop()
+        {
+            this->remote_socket_.cancel();
+            this->timer.cancel();
+        }
+
     private:
 
         boost::asio::io_context& io_context_;
@@ -160,6 +166,8 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
                     this->timer.expires_from_now(boost::posix_time::seconds(UDP_PROXY_SESSION_TIMEOUT));
                     this->timer.async_wait(yield[ec]);
 
+                    // we don't erase self in map if udp session is cancel
+                    // the caller will do
                     if (ec)
                     {
                         LOG_INFO("udp_proxy_session(raw) err -->{}", ec.message())
@@ -181,11 +189,11 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
 public:
 
-    ServerUdpRawProxySession(std::string local_ip, uint16_t local_port, std::string server_ip, uint16_t server_port, SessionMap& map_ref, unsigned char key[32U]) : session_map(map_ref)
+    ServerUdpRawProxySession(asio::ip::raw::endpoint src_ep, asio::ip::raw::endpoint server_ep, SessionMap& map_ref, unsigned char key[32U]) : session_map(map_ref)
     {
         this->protocol_.SetKey(key);
-        local_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(local_ip), local_port);
-        server_ep = asio::ip::raw::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
+        this->local_ep = src_ep;
+        this->server_ep = server_ep;
 
         std::random_device rd;
         std::mt19937 eng(rd());
@@ -226,7 +234,12 @@ public:
 				// if raw session timeout
 				if (time(nullptr) - last_active_time > RAW_PROXY_SESSION_TIMEOUT)
 				{
-					// TODO
+                    for (auto i = udpsession_map.begin(); i != udpsession_map.end();) {
+                        i->second->Stop();
+                        udpsession_map.erase(i);
+                    }
+
+                    this->prawsender_socket->cancel();
 					// clean all udp session, close sender socket
 					return;
 				}
