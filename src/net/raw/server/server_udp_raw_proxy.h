@@ -3,6 +3,7 @@
 #include "../../../utils/singleton.h"
 #include "../raw_socket.h"
 #include <tins/tins.h>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <boost/thread.hpp>
 #include <boost/asio/spawn.hpp>
@@ -119,6 +120,8 @@ private:
                 src_ep.src_ip = inet_addr(ip->src_addr().to_string().c_str());
                 src_ep.src_port = tcp->sport();
 
+				boost::asio::ip::tcp::endpoint tcp_src_ep(boost::asio::ip::address::from_string(ip->src_addr().to_string()), tcp->sport());
+				LOG_DEBUG("RAW TCP Packet from {}:{}", tcp_src_ep.address.to_string(), tcp_src_ep.port())
 
                 auto map_it = session_map_.find(src_ep);
                 // if new connection create session

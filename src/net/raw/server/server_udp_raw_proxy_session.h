@@ -11,6 +11,10 @@
 #include <random>
 #include "../raw_proxy_helper/tcp_checksum_helper.h"
 
+// timeout for ServerUdpRawProxySession
+#define RAW_PROXY_SESSION_TIMEOUT 300
+
+// timeout for ServerUdpRawProxySession's inner udp session class 
 #define UDP_PROXY_SESSION_TIMEOUT 60
 
 template <class Protocol>
@@ -32,7 +36,6 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
     using UdpSessionMap = boost::unordered_map<udp_ep_tuple, boost::shared_ptr<udp_proxy_session>, UdpEndPointTupleHash, UdpEndPointTupleEQ>;
     class udp_proxy_session : public boost::enable_shared_from_this<udp_proxy_session>
     {
-
 
     public:
         udp_proxy_session(boost::shared_ptr<ServerUdpRawProxySession<Protocol>> server, boost::asio::io_context& io, UdpSessionMap& map) : pserver(server), io_context_(io), udpsession_map(map), remote_socket_(io), timer(io)
@@ -64,7 +67,6 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
                 auto bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(copy_data.get(), size),
                                                                      remote_ep, yield[ec]);
-
                 if (ec)
                 {
                     UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
@@ -155,7 +157,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
                 while (1)
                 {
                     boost::system::error_code ec;
-                    this->timer.expires_from_now(boost::posix_time::seconds(10));
+                    this->timer.expires_from_now(boost::posix_time::seconds(UDP_PROXY_SESSION_TIMEOUT));
                     this->timer.async_wait(yield[ec]);
 
                     if (ec)
@@ -205,6 +207,34 @@ public:
         this->tcp_dport = dport;
     }
 
+	void Start()
+	{
+		auto self(this->shared_from_this());
+		boost::asio::spawn([this, self](boost::asio::yield_context yield){
+			while (1)
+			{
+				boost::system::error_code ec;
+				this->timer.expires_from_now(boost::posix_time::seconds(RAW_PROXY_SESSION_TIMEOUT));
+				this->timer.async_wait(yield[ec]);
+
+				if (ec)
+				{
+					LOG_INFO("raw_proxy_session timer err -->{}", ec.message())
+					return;
+				}
+
+				// if raw session timeout
+				if (time(nullptr) - last_active_time > RAW_PROXY_SESSION_TIMEOUT)
+				{
+					// TODO
+					// clean all udp session, close sender socket
+					return;
+				}
+
+			}
+		});
+	}
+
     Protocol& GetProtocol()
     {
         return this->protocol_;
@@ -251,14 +281,6 @@ public:
             // decrypt first
             case (TCP::PSH | TCP::ACK) :
             {
-
-                //send rst back if not connect
-//                if (this->status != ESTABLISHED)
-//                {
-//                    sendRst(tcp);
-//                    return false;
-//                }
-
                 LOG_INFO("GET PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                 ackReply(tcp);
                 proxyUdp(tcp->inner_pdu());

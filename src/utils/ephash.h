@@ -24,6 +24,7 @@ struct udp_ep_tuple
     uint32_t dst_ip;
     uint16_t  dst_port;
 };
+
 struct TCPSrcTupleHash {
     size_t operator()(tcp_session_src_tuple const &ep_tuple) const
     {
