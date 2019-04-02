@@ -139,8 +139,8 @@ private:
 
 		if (rst_handle == INVALID_HANDLE_VALUE)
 		{
-			LOG_INFO("err WinDivertOpen RST filter")
-				return false;
+			LOG_INFO("err WinDivertOpen RST filter, you may run as administrator")
+			return false;
 		}
 
 		std::string recv_filter = "inbound and !loopback and "
