@@ -61,6 +61,7 @@ public:
     virtual void Stop() = 0;
 
     bool IsRemoteConnected() { return this->status == ESTABLISHED; }
+	bool IsDisconnected() { return this->status == DISCONNECT; }
 
     void TryConnect()
     {
@@ -239,7 +240,8 @@ protected:
 
 			if (this->status != this->ESTABLISHED) {
 				LOG_INFO("Raw Tcp handshake failed")
-					this->handshake_failed = true;
+				this->handshake_failed = true;
+				this->status = DISCONNECT;
 			}
         });
 

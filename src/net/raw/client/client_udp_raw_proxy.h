@@ -45,7 +45,7 @@ public:
 
     virtual void Stop() override
     {
-
+		//TODO
     }
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override

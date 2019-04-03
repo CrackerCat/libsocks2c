@@ -20,7 +20,7 @@ public:
     }
 
 	virtual void StopUout() {
-		if (puout && puout->IsRemoteConnected())
+		if (puout)
 		{
 			puout->Stop();
 			puout.reset();
@@ -86,15 +86,20 @@ private:
 						handleLocalPacketViaRaw(local_ep, bytes_read, yield);
 						continue;
 					}
-					else // if puout and !puout->IsRemoteConnected(), we don't know puout is close within itself or from outside, we just need to reset it
+					else 
 					{
-						puout.reset();
-						uout_init = false;
+						// if puout recv rst or handshake faild
+						if (puout->IsDisconnected())
+						{
+							puout.reset();
+							uout_init = false;
+						}
 					}
 				}
 				else  
 					StartUout();
-				// puout is canceled but before callback or puout is deleted
+				
+				// send via udp as long as puout is not connected
 				memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
 				this->handleLocalPacket(local_ep, bytes_read);
 
