@@ -12,7 +12,7 @@
 #include "../raw_proxy_helper/tcp_checksum_helper.h"
 
 // timeout for ServerUdpRawProxySession
-#define RAW_PROXY_SESSION_TIMEOUT 300
+#define RAW_PROXY_SESSION_TIMEOUT 10
 
 // timeout for ServerUdpRawProxySession's inner udp session class 
 #define UDP_PROXY_SESSION_TIMEOUT 60
@@ -44,6 +44,10 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
             this->remote_socket_.open(remote_recv_ep_.protocol());
         }
 
+        ~udp_proxy_session()
+        {
+            LOG_INFO("udp proxy session die")
+        }
 
         void SaveSrcEndpoint(udp_ep_tuple src)
         {
@@ -129,11 +133,11 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
                     last_active_time = time(nullptr);
 
                     LOG_INFO("recv {} bytes udp data from remote", bytes_read)
-
-                    for (int i = 0; i < bytes_read; i++)
-                    {
-                        printf("%x ", remote_recv_buff_[Protocol::ProtocolHeader::Size() + 6 + 10 + i]);
-                    }
+//
+//                    for (int i = 0; i < bytes_read; i++)
+//                    {
+//                        printf("%x ", remote_recv_buff_[Protocol::ProtocolHeader::Size() + 6 + 10 + i]);
+//                    }
 
                     auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;
                     Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, remote_recv_ep_.address().to_string(), remote_recv_ep_.port());
@@ -205,10 +209,18 @@ public:
         this->server_seq = init_seq;
     }
 
-    void InitRawSocket(boost::asio::io_context& io)
+    ~ServerUdpRawProxySession()
     {
-        prawsender_socket = std::make_unique<RawSenderSocket>(io);
-        prawsender_socket->open();
+        LOG_INFO("raw session die")
+    }
+
+    void InitRawSocketAndTimer(boost::asio::io_context& io)
+    {
+        this->prawsender_socket = std::make_unique<RawSenderSocket>(io);
+        this->prawsender_socket->open();
+
+        this->psession_timer = std::make_unique<boost::asio::deadline_timer>(io);
+
     }
 
     void SaveOriginalTcpEp(uint16_t sport, uint16_t dport)
@@ -236,12 +248,16 @@ public:
 				// if raw session timeout
 				if (time(nullptr) - last_active_time > RAW_PROXY_SESSION_TIMEOUT)
 				{
-                    for (auto i = udpsession_map.begin(); i != udpsession_map.end();) {
-                        i->second->Stop();
-                        udpsession_map.erase(i);
+				    LOG_INFO("session {}:{} timeout", this->local_ep.address().to_string(), this->local_ep.port())
+                    auto it = udpsession_map.begin();
+
+                    while (it != udpsession_map.end()) {
+                        it->second->Stop();
+                        it = udpsession_map.erase(it);
                     }
 
                     this->prawsender_socket->cancel();
+                    this->session_map.erase(this->local_ep);
 					// clean all udp session, close sender socket
 					return;
 				}
@@ -255,6 +271,9 @@ public:
         return this->protocol_;
     }
 
+    // TODO
+    // check status before handling packet
+    // proxy packet after connection established
     // ip && tcp always vaild
     bool HandlePacket(Tins::IP* ip, Tins::TCP* tcp)
     {
