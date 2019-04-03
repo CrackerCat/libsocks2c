@@ -12,7 +12,7 @@
 #include "../raw_proxy_helper/tcp_checksum_helper.h"
 
 // timeout for ServerUdpRawProxySession
-#define RAW_PROXY_SESSION_TIMEOUT 10
+#define RAW_PROXY_SESSION_TIMEOUT 100
 
 // timeout for ServerUdpRawProxySession's inner udp session class 
 #define UDP_PROXY_SESSION_TIMEOUT 60
@@ -277,8 +277,10 @@ public:
     // ip && tcp always vaild
     bool HandlePacket(Tins::IP* ip, Tins::TCP* tcp)
     {
-
         using Tins::TCP;
+
+        this->last_active_time = time(nullptr);
+
         switch (tcp->flags())
         {
             // client start syn process
