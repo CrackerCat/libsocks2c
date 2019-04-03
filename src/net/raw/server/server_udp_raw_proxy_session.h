@@ -27,7 +27,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
         ESTABLISHED
     };
 
-    using SessionMap = boost::unordered_map<tcp_session_src_tuple, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, TCPSrcTupleHash, TCPSrcTupleEQ>;
+    using SessionMap = boost::unordered_map<asio::ip::raw::endpoint, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, RawEpHash>;
 
     using RawSenderSocket = boost::asio::basic_raw_socket<asio::ip::raw>;
     using PRawSenderSocket = std::unique_ptr<RawSenderSocket>;
@@ -195,6 +195,8 @@ public:
         this->local_ep = src_ep;
         this->server_ep = server_ep;
 
+        this->last_active_time = time(nullptr);
+
         std::random_device rd;
         std::mt19937 eng(rd());
         std::uniform_int_distribution<unsigned int> distr;
@@ -222,8 +224,8 @@ public:
 			while (1)
 			{
 				boost::system::error_code ec;
-				this->timer.expires_from_now(boost::posix_time::seconds(RAW_PROXY_SESSION_TIMEOUT));
-				this->timer.async_wait(yield[ec]);
+				this->psession_timer->expires_from_now(boost::posix_time::seconds(RAW_PROXY_SESSION_TIMEOUT));
+				this->psession_timer->async_wait(yield[ec]);
 
 				if (ec)
 				{
@@ -365,7 +367,8 @@ private:
 
     PRawSenderSocket prawsender_socket;
 
-    boost::asio::deadline_timer session_timer;
+    std::unique_ptr<boost::asio::deadline_timer> psession_timer;
+    time_t last_active_time;
 
     uint32_t server_seq;
     uint32_t init_seq;

@@ -103,6 +103,17 @@ namespace asio {
     } // namespace ip
 } // namespace asio
 
+struct RawEpHash {
+    size_t operator()(asio::ip::raw::endpoint const &ep_in) const
+    {
+        size_t seed = 0;
+        //printf("hashing %s:%d\n", ep_in.address().to_string(), ep_in.port());
+        boost::hash_combine(seed, ep_in.address().to_string());
+        boost::hash_combine(seed, ep_in.port());
+        return seed;
+    }
+};
+
 #include <boost/asio/detail/pop_options.hpp>
 
 #endif // RAW_HPP

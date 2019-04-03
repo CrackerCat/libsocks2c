@@ -47,6 +47,7 @@ int LibSocks2c::StartProxy(Config config)
                 config.proxyKey,
                 config.server_ip,
                 config.server_port,
+                config.server_uout_port,
                 config.udp2raw,
                 config.timeout);
 
@@ -56,8 +57,6 @@ int LibSocks2c::StartProxy(Config config)
 
         return config.server_port;
     }
-
-
 
     //run client
     if (ProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port)) return 0;

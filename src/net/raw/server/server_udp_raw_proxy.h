@@ -20,7 +20,7 @@ template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 {
 
-    using SessionMap = boost::unordered_map<asio::ip::raw::endpoint, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>>;
+    using SessionMap = boost::unordered_map<asio::ip::raw::endpoint, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, RawEpHash>;
 
 public:
 
@@ -126,13 +126,13 @@ private:
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    in_addr src_ip_addr = {src_ep.src_ip};
-                    std::string src_ip = inet_ntoa(src_ip_addr);
+                    //in_addr src_ip_addr = {src_ep.src_ip};
+                    //std::string src_ip = inet_ntoa(src_ip_addr);
                     auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(tcp_src_ep, server_ep, session_map_, this->proxyKey_);
                     psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
                     psession->InitRawSocket(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);
-                    psession->Start()
+                    psession->Start();
                     session_map_.insert({tcp_src_ep, psession});
 
                 }else { // if connection already created

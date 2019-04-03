@@ -32,7 +32,7 @@ public:
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
 	// use CreateServerProxyMt() instead on linux which provide better performance
     template<class Protocol>
-    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, bool udp2raw, uint64_t timeout = 0)
+    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, uint64_t timeout = 0)
     {
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
         tcps->SetProxyKey(proxyKey);
@@ -51,7 +51,7 @@ public:
         if (udp2raw)
         {
             auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
-            auto init_res = pudp2raw->SetUpSniffer("4567");
+            auto init_res = pudp2raw->SetUpSniffer(boost::lexical_cast<std::string>(server_uout_port));
             if (init_res)
             {
                 pudp2raw->SetProxyKey(proxyKey);
