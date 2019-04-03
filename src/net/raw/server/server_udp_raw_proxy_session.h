@@ -24,7 +24,8 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
     {
         INIT,
         SYN_RCVD,
-        ESTABLISHED
+        ESTABLISHED,
+        CLOSED
     };
 
     using SessionMap = boost::unordered_map<asio::ip::raw::endpoint, boost::shared_ptr<ServerUdpRawProxySession<Protocol>>, RawEpHash>;
@@ -249,15 +250,7 @@ public:
 				if (time(nullptr) - last_active_time > RAW_PROXY_SESSION_TIMEOUT)
 				{
 				    LOG_INFO("session {}:{} timeout", this->local_ep.address().to_string(), this->local_ep.port())
-                    auto it = udpsession_map.begin();
-
-                    while (it != udpsession_map.end()) {
-                        it->second->Stop();
-                        it = udpsession_map.erase(it);
-                    }
-
-                    this->prawsender_socket->cancel();
-                    this->session_map.erase(this->local_ep);
+                    stopSession();
 					// clean all udp session, close sender socket
 					return;
 				}
@@ -326,6 +319,7 @@ public:
             case TCP::RST :
             {
                 LOG_INFO("rst")
+                stopSession();
                 break;
             }
             default:
@@ -580,6 +574,24 @@ private:
         tcp.ack_seq(local_tcp->seq() + 1);
         tcp.seq(server_seq + local_tcp->inner_pdu()->size());
         sendPacket(tcp.serialize().data(), tcp.size());
+    }
+
+
+    void stopSession()
+    {
+        LOG_INFO("Stopping Raw session")
+
+        auto it = udpsession_map.begin();
+
+        while (it != udpsession_map.end()) {
+            it->second->Stop();
+            it = udpsession_map.erase(it);
+        }
+
+        this->prawsender_socket->cancel();
+        this->session_map.erase(this->local_ep);
+
+        this->status == CLOSED;
     }
 
 };
