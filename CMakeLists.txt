@@ -6,7 +6,7 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-add_definitions(-DPROTOCOL_CHACHA20)
+add_definitions(-DPROTOCOL_AES256GCM)
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
 #add_definitions(-DUDP_DEBUG_DETAIL)
@@ -103,8 +103,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-#add_library(libsocks2c ${CORE_FILES})
-add_executable(libsocks2c ${CORE_FILES})
+add_library(libsocks2c ${CORE_FILES})
+#add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file

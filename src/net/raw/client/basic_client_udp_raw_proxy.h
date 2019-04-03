@@ -17,7 +17,7 @@
 #include "../sniffer_def.h"
 #include <random>
 
-#define MAX_HANDSHAKE_TRY 10222
+#define MAX_HANDSHAKE_TRY 10
 
 /*
  * ClientUdpProxySession run in single thread mode

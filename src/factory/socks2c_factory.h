@@ -85,7 +85,7 @@ public:
             udps->SetProxyInfo(server_ip, server_port);
             udps->StartProxy(socks5_ip, socks5_port);
 			auto uout = boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps);
-			uout->InitUout(server_ip, boost::lexical_cast<std::string>(server_uout_port), local_uout_ip, boost::lexical_cast<std::string>(local_uout_port));
+			uout->InitUout(server_ip, boost::lexical_cast<std::string>(server_uout_port), local_uout_ip, local_uout_port == 0 ? std::string() : boost::lexical_cast<std::string>(local_uout_port));
 			uout->StartUout();
 			return ClientProxy<Protocol>(tcps, udps);
         }
