@@ -213,9 +213,8 @@ protected:
             while(this->status != this->ESTABLISHED && handshake_count++ < MAX_HANDSHAKE_TRY)
             {
 
-                auto ip = IP(this->remote_ip, this->local_ip);
-
-                auto tcp = TCP(this->remote_port, this->local_port);
+                auto ip = IP(this->remote_ip.c_str(), this->local_ip.c_str());
+				auto tcp = TCP(this->remote_port, this->local_port);
                 tcp.flags(TCP::SYN);
                 tcp.seq(this->init_seq);
 

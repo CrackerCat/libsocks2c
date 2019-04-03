@@ -66,7 +66,7 @@ public:
 			LOG_INFO("local_ip not provided, trying to get default ip")
 			LOG_INFO("if i retrive the wrong ip, you are probably fucked")
 		    this->local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
-			LOG_INFO("get {} as default ip", local_ip)
+			LOG_INFO("get {} as default ip", this->local_ip)
 		}
 		else
 			this->local_ip = local_ip;
@@ -78,7 +78,7 @@ public:
 
 		if (!init_handles_res) return false;
 
-		LOG_INFO("UOUT init, local ep {}:{}", local_ip, local_port)
+		LOG_INFO("UOUT init, local ep {}:{}", this->local_ip, this->local_port)
 
 		return true;
     }

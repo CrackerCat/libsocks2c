@@ -13,12 +13,12 @@ void test()
     LibSocks2c::Config config;
     config.isServer = false;
     config.proxyKey = "12345678";
-    config.server_ip = "192.168.1.192";
+    config.server_ip = "192.168.1.193";
     config.server_port = 443;
-	config.server_uout_port = 4567;
+	config.server_uout_port = 4444;
     config.socks5_ip = "0.0.0.0";
     config.socks5_port = 5555;
-    config.local_uout_ip = "192.168.1.193";
+    config.local_uout_ip = "";
     config.resolve_dns = false;
     config.udp2raw = true;
     config.timeout = 0;
