@@ -21,7 +21,6 @@
 
 /*
  * ClientUdpProxySession run in single thread mode
- * only client_udp_proxy_session will interact with this class when sending packet
  *
  * when recv packet from remote, we need to parse the dst endpoint which is encrypted together with data
  * format:
@@ -35,27 +34,26 @@ class BasicClientUdpRawProxy
 {
 
 public:
-	~BasicClientUdpRawProxy() {
-		LOG_INFO("BasicClientUdpRawProxy die")
-	}
 
     BasicClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : io_context_(io), protocol_(prot), plocal_socket(pls)
     {
-        std::random_device rd;
-        std::mt19937 eng(rd());
-        std::uniform_int_distribution<unsigned int> distr;
-
-        init_seq = distr(eng);
-        this->local_seq = init_seq;
+		initRandomTCPSeq();
     }
 
+	~BasicClientUdpRawProxy() {
+		LOG_DEBUG("BasicClientUdpRawProxy die")
+	}
+
+	// set up sniffer(pcap)
+	// server endpoint must be provided, whereas local endpoint can be chosen automatically
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) = 0;
 
-    // we use local_port as the tcp src port to connect remote
+  
+	// start 2 coroutine here
     void StartProxy()
     {
-        RecvFromRemote();
-        TcpHandShake();
+        readFromRemote();
+        tcpHandShake();
     }
 
     virtual void Stop() = 0;
@@ -97,14 +95,13 @@ protected:
     {
         SYN_SENT,
         ESTABLISHED,
-        DISCONNECT
+        DISCONNECT,
+		CLOSED
     };
 
     Protocol& protocol_;
 
     boost::asio::io_context& io_context_;
-
-	boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
 
     SESSION_STATUS status;
 
@@ -114,18 +111,22 @@ protected:
     unsigned short local_port;
     unsigned short remote_port;
 
-    unsigned int local_seq;
-    unsigned int init_seq;
+private:
+	bool handshake_failed = false;
 
-    unsigned int last_ack = 0;
+	unsigned int last_ack = 0;
 
-    bool handshake_failed = false;
+	unsigned int local_seq;
+	unsigned int init_seq;
 
-    virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) = 0;
+	boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
 
-    void RecvFromRemote()
+	// platform specific impl
+	virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) = 0;
+
+    void readFromRemote()
     {
-        //recv
+
         boost::asio::spawn(this->io_context_, [this](boost::asio::yield_context yield){
 
             using Tins::TCP;
@@ -153,8 +154,8 @@ protected:
                 {
                     case TCP::SYN :
                     {
-                        LOG_INFO("SYN")
-						this->ackReply(tcp, yield);
+                        LOG_INFO("Recv SYN, send RST back")
+						this->rstReply(tcp, yield);
 						continue;
                     }
                     case (TCP::SYN | TCP::ACK):
@@ -173,15 +174,18 @@ protected:
                     case (TCP::PSH | TCP::ACK) :
                     {
                         LOG_INFO("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                        this->ackReply(tcp, yield);
+						//only reply when ESTABLISHED
+						if (this->status != ESTABLISHED) return;
+
+						this->ackReply(tcp, yield);
                         this->sendToLocal(tcp->inner_pdu());
 						continue;
                     }
                     case TCP::RST :
                     {
-						LOG_INFO("recv RST")
+						LOG_INFO("recv RST, closing")
 						this->Stop();
-						this->status = DISCONNECT;
+						this->status = CLOSED;
 						return;
                     }
                     default:
@@ -196,7 +200,7 @@ protected:
     }
 
 
-    void TcpHandShake()
+    void tcpHandShake()
     {
         LOG_INFO("TcpHandShake Start")
         this->handshake_failed = false;
@@ -246,6 +250,7 @@ protected:
 
     }
 
+	// platform specific impl
     virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield) = 0;
 
     void sendToLocal(Tins::PDU* raw_data)
@@ -355,4 +360,18 @@ protected:
 		return sendPacket(ip_data + ip.header_size(), tcp.size(), yield);
 #endif
 	}
+
+
+
+	inline void initRandomTCPSeq() noexcept
+	{
+		std::random_device rd;
+		std::mt19937 eng(rd());
+		std::uniform_int_distribution<unsigned int> distr;
+
+		init_seq = distr(eng);
+		this->local_seq = init_seq;
+	}
+
+
 };

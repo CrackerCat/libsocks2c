@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
 
-OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
+OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" ON)
 IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
@@ -18,6 +18,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 #include headers
 IF (WIN32)
+  add_definitions(-DTINS_STATIC)
   add_definitions(-D_WIN32_WINNT=0x0A00)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -72,7 +73,6 @@ SET(CORE_FILES
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp
-		src/utils/cacheline_helper.c
 		src/net/raw/raw_proxy_helper/interface_helper.h
         src/net/raw/raw_proxy_helper/interface_helper.cpp
         lib/proxymap.h
@@ -103,8 +103,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-add_library(libsocks2c ${CORE_FILES})
-#add_executable(libsocks2c ${CORE_FILES})
+#add_library(libsocks2c ${CORE_FILES})
+add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file

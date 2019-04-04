@@ -37,7 +37,7 @@ public:
 
     ClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : \
         BasicClientUdpRawProxy<Protocol>(io, prot, pls),
-        protocol_(prot), sniffer_socket(io), send_socket_stream(io)
+        sniffer_socket(io), send_socket_stream(io)
     {
         if (!send_socket_stream.is_open())
             send_socket_stream.open();
@@ -45,7 +45,7 @@ public:
 
     virtual void Stop() override
     {
-		//TODO
+		if (this->status == CLOSED) return;
     }
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override
@@ -119,8 +119,6 @@ public:
     }
 
 private:
-    Protocol& protocol_;
-
     Tins::SnifferConfiguration config;
     std::unique_ptr<Tins::Sniffer> psniffer;
 	SnifferSocket sniffer_socket;

@@ -1,12 +1,5 @@
 #include "basic_network_io_mt.h"
 
-extern "C"
-{
-#include "../utils/cacheline_helper.h"
-}
-
-#define STEP 8
-
 std::vector<boost::asio::io_context*> BasicNetworkIO_MT::vpio_context_;
 std::vector<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>> BasicNetworkIO_MT::vwork_guard_;
 
@@ -20,10 +13,6 @@ BasicNetworkIO_MT::~BasicNetworkIO_MT()
 
 BasicNetworkIO_MT::BasicNetworkIO_MT()
 {
-	if (CacheLineSize() != 64)
-	{
-		LOG_INFO("CacheLineSize() != 64")
-	}
 
 #ifdef MULTITHREAD_IO
 	ioNum = boost::thread::physical_concurrency();
@@ -35,10 +24,9 @@ BasicNetworkIO_MT::BasicNetworkIO_MT()
 
 	for (unsigned int i = 0; i < ioNum; i++)
 	{
-		vpio_context_.emplace_back(new IO_CONTEXT(BOOST_ASIO_CONCURRENCY_HINT_SAFE));
-		vwork_guard_.emplace_back(boost::asio::make_work_guard(*vpio_context_[i * STEP]));
-
-		cacheline_padding();
+		//vpio_context_.emplace_back(new IO_CONTEXT(BOOST_ASIO_CONCURRENCY_HINT_SAFE));
+		vpio_context_.emplace_back(new IO_CONTEXT());
+		vwork_guard_.emplace_back(boost::asio::make_work_guard(*vpio_context_[i]));
 	}
 }
 
@@ -72,7 +60,7 @@ void BasicNetworkIO_MT::RunIO()
 	for (unsigned int i = 0; i < ioNum; ++i)
 	{
 		LOG_DEBUG("running thread {}", i);
-		thread_group_.create_thread(boost::bind(&boost::asio::io_context::run, vpio_context_[i * STEP]));
+		thread_group_.create_thread(boost::bind(&boost::asio::io_context::run, vpio_context_[i]));
 	}
 
 	isRunning = true;
@@ -85,14 +73,14 @@ boost::asio::io_context& BasicNetworkIO_MT::GetIOContext()
 
 boost::asio::io_context& BasicNetworkIO_MT::GetIOContextAt(unsigned int pos)
 {
-	return *vpio_context_[pos * STEP];
+	return *vpio_context_[pos];
 }
 
 boost::asio::io_context& BasicNetworkIO_MT::GetRandomIOContext()
 {
 	if (use_buildin_context)
 	{
-		return *vpio_context_[randomNum(0, ioNum - 1) * STEP];
+		return *vpio_context_[randomNum(0, ioNum - 1)];
 	}
 	return *vpio_context_[0];
 }
@@ -108,10 +96,3 @@ inline uint8_t BasicNetworkIO_MT::randomNum(int a, int b)
 	return rand() % (b - a + 1) + a;
 }
 
-inline void BasicNetworkIO_MT::cacheline_padding()
-{
-	for (size_t i = 0; i < STEP - 1; i++)
-	{
-		vpio_context_.emplace_back(nullptr);
-	}
-}

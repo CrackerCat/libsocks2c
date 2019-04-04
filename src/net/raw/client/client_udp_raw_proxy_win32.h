@@ -36,13 +36,13 @@ class ClientUdpRawProxy : public BasicClientUdpRawProxy<Protocol>, public boost:
 public:
 
     ClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : \
-        BasicClientUdpRawProxy<Protocol>(io, prot, pls),
-        protocol_(prot)
+        BasicClientUdpRawProxy<Protocol>(io, prot, pls)
     {
     }
 
 	virtual void Stop() override
 	{
+		if (this->status == CLOSED) return;
 		WinDivertClose(this->rst_handle);
 		this->psniffer_socket->close();
 		this->psend_socket->close();
@@ -112,7 +112,6 @@ public:
     }
 
 private:
-    Protocol& protocol_;
 	HANDLE rst_handle;
 	
 	HANDLE recv_handle;
