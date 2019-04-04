@@ -11,5 +11,5 @@ class FirewallHelper : public Singleton<FirewallHelper>
 public:
 
     void BlockRst(std::string dst_ip, std::string dst_port);
-
+    void Unblock(std::string dst_ip, std::string dst_port);
 };

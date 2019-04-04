@@ -24,15 +24,14 @@ public:
 		{
 			puout->Stop();
 			puout.reset();
-			uout_init = false;
 		}
 	}
 
 	void StartUout()
 	{
-		if (uout_init || puout) return;
+		if (puout) return;
 
-		LOG_INFO("ClientRawUdpProxy started, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
+		LOG_INFO("StartUout, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
 		puout = boost::make_shared<ClientUdpRawProxy<Protocol>>(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
 		auto setup_res = puout->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
 		if (!setup_res)
@@ -41,13 +40,11 @@ public:
 			return;
 		}
 		puout->StartProxy();
-		uout_init = true;
 	}
 
 
 private:
 
-    bool uout_init;
 	std::string server_ip;
 	std::string server_raw_port;
 	std::string local_ip;
@@ -86,17 +83,14 @@ private:
 						handleLocalPacketViaRaw(local_ep, bytes_read, yield);
 						continue;
 					}
-					else 
-					{
-						// if puout recv rst or handshake faild
-						if (puout->IsDisconnected())
-						{
-							puout.reset();
-							uout_init = false;
-						}
-					}
+
+					if (puout->IsClosed())
+						puout.reset();
+
+					if (puout->IsDisconnect)
+						puout->ReConnect();
 				}
-				else  
+				else  // if puout == nullptr
 					StartUout();
 				
 				// send via udp as long as puout is not connected

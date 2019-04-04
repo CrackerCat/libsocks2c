@@ -18,7 +18,7 @@
 #include <random>
 
 #define MAX_HANDSHAKE_TRY 10
-const int max_ack_delay = 20;
+const int max_ack_delay = 61;
 /*
  * ClientUdpProxySession run in single thread mode
  *
@@ -59,12 +59,13 @@ public:
     virtual void Stop() = 0;
 
     bool IsRemoteConnected() { return this->status == ESTABLISHED; }
-	bool IsDisconnected() { return this->status == DISCONNECT; }
+	bool IsClosed() { return this->status == CLOSED; }
+    bool IsDisconnect() { return this->status == DISCONNECT; }
 
-    void TryConnect()
+    void ReConnect()
     {
         if (handshake_failed)
-            TcpHandShake();
+            tcpHandShake();
         return;
     }
 
