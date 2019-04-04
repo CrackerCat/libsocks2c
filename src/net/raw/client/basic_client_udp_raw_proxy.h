@@ -17,8 +17,10 @@
 #include "../sniffer_def.h"
 #include <random>
 
+// maximum try for resending syn
 #define MAX_HANDSHAKE_TRY 10
-const int max_ack_delay = 61;
+// IF we send 50 packet out and didn't get any ack, then we close the connection
+const int max_ack_delay = 50;
 /*
  * ClientUdpProxySession run in single thread mode
  *
@@ -38,6 +40,7 @@ public:
     BasicClientUdpRawProxy(boost::asio::io_context& io, Protocol& prot, boost::shared_ptr<boost::asio::ip::udp::socket> pls) : io_context_(io), protocol_(prot), plocal_socket(pls)
     {
 		initRandomTCPSeq();
+		this->status = INIT;
     }
 
 	~BasicClientUdpRawProxy() {
@@ -56,6 +59,7 @@ public:
         tcpHandShake();
     }
 
+    // after Stop() status will set to CLOSED
     virtual void Stop() = 0;
 
     bool IsRemoteConnected() { return this->status == ESTABLISHED; }
@@ -99,7 +103,7 @@ protected:
 
     enum SESSION_STATUS
     {
-        SYN_SENT,
+        INIT,
         ESTABLISHED,
         DISCONNECT,
 		CLOSED
@@ -118,6 +122,7 @@ protected:
     unsigned short remote_port;
 
 private:
+    // flag for distinguishing whether another handshake process is running
 	bool handshake_failed = false;
 
 	// every packet send via raw will increase 1 to ack_expect_sum
@@ -130,6 +135,7 @@ private:
 	unsigned int local_seq;
 	unsigned int init_seq;
 
+	// udp socket use to send data back to local
 	boost::shared_ptr<boost::asio::ip::udp::socket> plocal_socket;
 
 	// platform specific impl
@@ -143,7 +149,6 @@ private:
             using Tins::TCP;
             while(1)
             {
-
 				boost::system::error_code ec;
 
                 std::unique_ptr<Tins::PDU> pdu_ptr = recvFromRemote(yield, ec);
@@ -200,6 +205,11 @@ private:
 						this->status = CLOSED;
 						return;
                     }
+                    case TCP::FIN:
+                    {
+                        LOG_INFO("recv FIN, ignore")
+                        continue;
+                    }
                     default:
                     {
                         LOG_INFO("default")
@@ -213,9 +223,9 @@ private:
 
     void tcpHandShake()
     {
-        LOG_INFO("TcpHandShake Start")
+        LOG_INFO("tcpHandShake Start")
         this->handshake_failed = false;
-        static size_t handshake_count = 0;
+        size_t handshake_count = 0;
         using Tins::TCP;
         using Tins::IP;
 
@@ -261,8 +271,6 @@ private:
 
     }
 
-	// platform specific impl
-    virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield) = 0;
 
     void sendToLocal(Tins::PDU* raw_data)
     {
@@ -299,7 +307,7 @@ private:
 				return;
 			}
 
-			LOG_INFO("send {} bytes via raw socket", bytes_send)
+			LOG_INFO("send {} bytes to local", bytes_send)
 
         });
 
@@ -359,12 +367,21 @@ private:
 		constructAndSend(ip, tcp, yield);
 	}
 
-	size_t constructAndSend(Tins::IP& ip, Tins::TCP& tcp, boost::asio::yield_context& yield)
+    // platform specific impl
+    // on unix like os, data should be TCP hdr
+    // on win32, data should be IP hdr
+    // return the bytes that actually send
+    // return 0 if err
+    virtual size_t sendPacket(void* data, size_t size, boost::asio::yield_context& yield) = 0;
+
+    // return the bytes that actually send
+    // return 0 if err
+    size_t constructAndSend(Tins::IP& ip, Tins::TCP& tcp, boost::asio::yield_context& yield)
 	{
 		ip = ip / tcp;
 		auto vip_data = ip.serialize();
 		auto ip_data = vip_data.data();
-#ifdef _WIN32
+#ifdef _WIN32 // we don't need to cal tcp checksum on win32
 		return sendPacket(ip_data, ip.size(), yield);
 #else
 		CalTcpChecksum(ip, ip_data);

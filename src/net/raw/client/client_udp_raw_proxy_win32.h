@@ -47,7 +47,6 @@ public:
 		this->psniffer_socket->close();
 		this->psend_socket->close();
 		WinDivertClose(this->recv_handle);
-		this->status = CLOSED;
 	}
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override
