@@ -77,8 +77,9 @@ std::string InterfaceHelper::GetDefaultNetIp()  //»ñÈ¡Íø¹Ø
 				if (local_gateway != ("") && local_gateway != ("0.0.0.0") && local_gateway != ("255.255.255.255"))
 				{
 					ip = pAdapter->IpAddressList.IpAddress.String;
-					break;
+					if (ip != "0.0.0.0") break;
 				}
+				
 				pAdapter = pAdapter->Next;
 			}
 		}

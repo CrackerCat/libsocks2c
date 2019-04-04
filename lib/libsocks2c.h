@@ -33,10 +33,10 @@ public:
 		std::string local_uout_ip;
 		uint16_t local_uout_port;
 
-        std::string socks5_ip;
-        uint16_t socks5_port;
+        std::string socks5_ip = "127.0.0.1";
+        uint16_t socks5_port = 5555;
 
-        size_t timeout;
+        size_t timeout = 0;
         bool udp2raw = false;
         bool resolve_dns = false;
     };
