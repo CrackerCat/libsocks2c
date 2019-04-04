@@ -18,7 +18,7 @@
 #include <random>
 
 #define MAX_HANDSHAKE_TRY 10
-
+const int max_ack_delay = 20;
 /*
  * ClientUdpProxySession run in single thread mode
  *
@@ -87,6 +87,11 @@ public:
 		constructAndSend(ip, tcp, yield);
 
         local_seq += (tcp.size() - tcp.header_size());
+
+		if (++ack_expect_sum > max_ack_delay) {
+			LOG_INFO("ack delay exceed {}, session disconnect and fallback to udp", max_ack_delay)
+			this->Stop();
+		}
     }
 
 protected:
@@ -113,6 +118,11 @@ protected:
 
 private:
 	bool handshake_failed = false;
+
+	// every packet send via raw will increase 1 to ack_expect_sum
+	// when ack is recved, we clear ack_expect_sum
+	// if ack_expect_sum exceed the maximum after packet send(via raw), we close session and fallback to udp proxy
+	unsigned int ack_expect_sum = 0;
 
 	unsigned int last_ack = 0;
 
@@ -167,8 +177,9 @@ private:
                     // without data
                     case TCP::ACK :
                     {
-                        LOG_INFO("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                        continue;
+						LOG_INFO("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
+						this->ack_expect_sum = 0;
+						continue;
                     }
                     // with data
                     case (TCP::PSH | TCP::ACK) :
@@ -198,7 +209,6 @@ private:
 
         });
     }
-
 
     void tcpHandShake()
     {
@@ -361,8 +371,6 @@ private:
 #endif
 	}
 
-
-
 	inline void initRandomTCPSeq() noexcept
 	{
 		std::random_device rd;
@@ -372,6 +380,5 @@ private:
 		init_seq = distr(eng);
 		this->local_seq = init_seq;
 	}
-
 
 };
