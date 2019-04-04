@@ -46,6 +46,10 @@ public:
         udps->SetProxyInfo(server_ip, server_port);
         udps->StartProxy(server_ip, server_port);
 
+#ifdef _WIN32
+#error  "err"
+#endif
+
 #ifndef _WIN32
 #ifdef UDP_OVER_UTCP
         if (udp2raw)

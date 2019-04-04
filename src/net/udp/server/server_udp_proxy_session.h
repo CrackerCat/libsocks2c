@@ -218,7 +218,7 @@ private:
 		return protocol_.OnUdpPayloadReadFromServerRemote(protocol_hdr);
 	}
 
-	bool sendToLocal(uint64_t bytes, boost::asio::yield_context yield)
+	virtual bool sendToLocal(uint64_t bytes, boost::asio::yield_context yield)
 	{
 		boost::system::error_code ec;
 

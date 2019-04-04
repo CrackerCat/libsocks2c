@@ -87,7 +87,7 @@ private:
 					if (puout->IsClosed())
 						puout.reset();
 
-					if (puout->IsDisconnect)
+					if (puout->IsDisconnect())
 						puout->ReConnect();
 				}
 				else  // if puout == nullptr

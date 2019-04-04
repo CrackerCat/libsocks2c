@@ -45,10 +45,10 @@ public:
 
     virtual void Stop() override
     {
-		if (this->status == CLOSED) return;
+		if (this->status == this->CLOSED) return;
 		this->sniffer_socket.cancel();
 		this->send_socket_stream.cancel();
-        FirewallHelper::GetInstance()->Unblock(local_ip, local_raw_port);
+        FirewallHelper::GetInstance()->Unblock(this->local_ip, boost::lexical_cast<std::string>(this->local_port));
     }
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_port = std::string(), std::string local_ip = std::string(), std::string ifname = std::string()) override

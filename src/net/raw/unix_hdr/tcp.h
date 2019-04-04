@@ -69,14 +69,7 @@ typedef unsigned short u_int16_t;
 typedef unsigned int u_int32_t;
 typedef unsigned int __uint32_t;
 
-#if defined( __linux__) || defined(__APPLE__)
-#include <sys/types.h>
-#include <sys/appleapiopts.h>
-#include <machine/endian.h>
-#include <machine/types.h> /* __uint32_t */
-#endif
 
-#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)
 typedef	__uint32_t tcp_seq;
 typedef __uint32_t tcp_cc;		/* connection count per rfc1644 */
 
@@ -202,7 +195,6 @@ struct tcphdr {
 #define TCP_MAXHLEN	(0xf<<2)	/* max length of header in bytes */
 #define TCP_MAXOLEN	(TCP_MAXHLEN - sizeof(struct tcphdr))
 /* max space left for options */
-#endif /* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE) */
 
 /*
  * User-settable options (used with setsockopt).

@@ -225,7 +225,6 @@ private:
     {
         LOG_INFO("tcpHandShake Start")
         this->handshake_failed = false;
-        size_t handshake_count = 0;
         using Tins::TCP;
         using Tins::IP;
 
@@ -234,6 +233,7 @@ private:
 
             boost::asio::deadline_timer timer(this->io_context_);
             boost::system::error_code ec;
+            size_t handshake_count = 0;
 
             while(this->status != this->ESTABLISHED && handshake_count++ < MAX_HANDSHAKE_TRY)
             {

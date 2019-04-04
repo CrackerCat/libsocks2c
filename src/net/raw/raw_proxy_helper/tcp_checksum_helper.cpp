@@ -1,5 +1,7 @@
 #include "tcp_checksum_helper.h"
 #include <tins/tcp.h>
+#include "../unix_hdr/tcp.h"
+
 #ifdef _WIN32
 #include <WinSock2.h>
 #endif // _WIN32
