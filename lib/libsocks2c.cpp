@@ -48,7 +48,7 @@ int LibSocks2c::StartProxy(Config config)
                 config.server_ip,
                 config.server_port,
                 config.server_uout_port,
-                config.udp2raw,
+                config.udp_over_utcp,
                 config.timeout);
 
         auto res = ProxyMap<Protocol>::GetInstance()->Insert(config.server_port, handle);
@@ -67,7 +67,7 @@ int LibSocks2c::StartProxy(Config config)
             config.server_ip,
             config.server_port,
 			config.server_uout_port,
-		    config.udp2raw,
+		    config.udp_over_utcp,
 			config.local_uout_ip,
 			config.local_uout_port,
             config.resolve_dns,

@@ -37,7 +37,7 @@ public:
         uint16_t socks5_port = 5555;
 
         size_t timeout = 0;
-        bool udp2raw = false;
+        bool udp_over_utcp = false;
         bool resolve_dns = false;
     };
 

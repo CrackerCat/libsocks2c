@@ -20,7 +20,7 @@ void test()
     config.socks5_port = 5555;
     config.local_uout_ip = "192.168.1.176";
     config.resolve_dns = false;
-    config.udp2raw = true;
+    config.udp_over_utcp = true;
     config.timeout = 0;
 
     LibSocks2c::StartProxy(config);
