@@ -101,9 +101,10 @@ void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &i
 
 }
 
-#include "version.h"
+#include "../src/info/version.h"
+#include "../src/info/encryption_info.h"
 std::string LibSocks2c::Version()
 {
-    return version;
+	return version + " [" + ENCRYPTION_METHOD + "]";
 }
 

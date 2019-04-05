@@ -80,6 +80,7 @@ SET(CORE_FILES
         src/net/raw/raw_proxy_helper/interface_helper.cpp
         lib/proxymap.h
         src/utils/singleton.h
+        src/utils/encryption_info.h
         lib/version.h
 		src/net/udp/bufferqueue.h
         src/utils/macro_def.h
