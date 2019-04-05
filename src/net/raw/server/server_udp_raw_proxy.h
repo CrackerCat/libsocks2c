@@ -16,8 +16,6 @@
 #include "../raw_proxy_helper/firewall_helper.h"
 #include "../sniffer_def.h"
 
-#include "server_udp_raw_proxy_session_wrapper.h"
-
 template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 {
