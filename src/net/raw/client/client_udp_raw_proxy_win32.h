@@ -9,7 +9,6 @@
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/lexical_cast.hpp>
 #include "../../../protocol/socks5_protocol_helper.h"
-#include "../raw_proxy_helper/tcp_checksum_helper.h"
 #include "../raw_proxy_helper/interface_helper.h"
 
 #include "../sniffer_def.h"

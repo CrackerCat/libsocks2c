@@ -89,10 +89,6 @@ struct tcphdr {
 	unsigned int	th_x2:4,	/* (unused) */
             th_off:4;	/* data offset */
 #endif
-#if BYTE_ORDER == BIG_ENDIAN
-    unsigned int	th_off:4,	/* data offset */
-			th_x2:4;	/* (unused) */
-#endif
     unsigned char	th_flags;
 #define	TH_FIN	0x01
 #define	TH_SYN	0x02

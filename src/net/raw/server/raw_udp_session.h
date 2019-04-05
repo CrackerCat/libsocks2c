@@ -95,8 +95,8 @@ private:
 
     udp_ep_tuple src_ep;
 
-    unsigned char local_recv_buff_[1500];
-    unsigned char remote_recv_buff_[1500];
+    unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
+    unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
 
 
     void readFromRemote()
