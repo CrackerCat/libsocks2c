@@ -247,9 +247,7 @@ private:
 		if (ec)
 		{
 			UDP_DEBUG("Udp timer err --> {}", ec.message().c_str())
-				
 			this->session_map_.erase(local_ep_);
-
 			return;
 		}
 
@@ -265,15 +263,7 @@ private:
 
 		timer_.expires_from_now(boost::posix_time::seconds(TIMER_EXPIRE_TIME));
 		timer_.async_wait(boost::bind(&ServerUdpProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
-
-
 	}
-
-
-
-
-
-
 };
 
 

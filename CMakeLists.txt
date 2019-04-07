@@ -82,7 +82,7 @@ SET(CORE_FILES
         src/utils/singleton.h
 		src/net/udp/bufferqueue.h
         src/utils/macro_def.h
-        src/net/raw/server/raw_udp_session.h)
+        src/net/raw/server/raw_udp_session.h src/net/udp/udp_socket_map.h)
 
 
 
@@ -105,8 +105,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-add_library(libsocks2c ${CORE_FILES})
-#add_executable(libsocks2c ${CORE_FILES})
+#add_library(libsocks2c ${CORE_FILES})
+add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
