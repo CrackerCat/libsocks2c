@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
 
-OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" ON)
+OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
+OPTION(BUILD_IOS_LIBRARY "build ios lib" ON)
 
-set(ENABLE_UOUT ON)
+if (BUILD_IOS_LIBRARY)
+    set(ENABLE_UOUT, OFF)
+endif()
+
 IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
-add_definitions(-DUDP_OVER_UTCP)
 
 add_definitions(-DPROTOCOL_AES256GCM)
 add_definitions(-DDISABLE_DEBUG_LOG)
@@ -76,18 +79,19 @@ SET(CORE_FILES
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp
-		src/net/raw/raw_proxy_helper/interface_helper.h
-        src/net/raw/raw_proxy_helper/interface_helper.cpp
+
         lib/proxymap.h
         src/utils/singleton.h
 		src/net/udp/bufferqueue.h
-        src/utils/macro_def.h
-        src/net/raw/server/raw_udp_session.h src/net/udp/udp_socket_map.h)
-
+        src/utils/macro_def.h)
 
 
 IF (ENABLE_UOUT)
 LIST(APPEND CORE_FILES
+        src/net/raw/raw_proxy_helper/interface_helper.h
+        src/net/raw/raw_proxy_helper/interface_helper.cpp
+        src/net/raw/server/raw_udp_session.h
+        src/net/udp/udp_socket_map.h
         src/net/raw/server/server_udp_raw_proxy.h
         src/net/raw/raw_socket.h
         src/net/raw/client/client_udp_raw_proxy.h
@@ -105,8 +109,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-#add_library(libsocks2c ${CORE_FILES})
-add_executable(libsocks2c ${CORE_FILES})
+add_library(libsocks2c ${CORE_FILES})
+#add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
@@ -131,16 +135,16 @@ ELSE()
         ENDIF()
     ENDIF()
 ENDIF()
+IF(!BUILD_IOS_LIBRARY)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
+    set(Boost_USE_STATIC_RUNTIME OFF)
+    find_package(Boost 1.68.0 REQUIRED system filesystem coroutine context regex thread)
 
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.68.0 REQUIRED system filesystem coroutine context regex thread)
-
-if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    target_link_libraries(libsocks2c ${Boost_LIBRARIES})
-endif ()
-
+    if (Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIRS})
+        target_link_libraries(libsocks2c ${Boost_LIBRARIES})
+    endif ()
+ENDIF()
 
 
