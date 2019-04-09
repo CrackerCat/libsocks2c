@@ -15,18 +15,39 @@ public:
      */
 
 
-    virtual uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->onSocks5RequestHeaderRead(header);
+    }
 
-    virtual bool onSocks5RequestPayloadRead(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    bool onSocks5RequestPayloadRead(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->onSocks5RequestPayloadRead(header);
+    }
 
-    virtual uint64_t onPayloadHeaderReadFromLocal(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t onPayloadHeaderReadFromLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->onPayloadHeaderReadFromLocal(header);
+    }
 
-    virtual bool onPayloadReadFromLocal(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    bool onPayloadReadFromLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->onPayloadReadFromLocal(header);
+    }
 
-    virtual uint64_t onPayloadReadFromRemote(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t onPayloadReadFromRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->onPayloadReadFromRemote(header);
+    }
 
-    virtual uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
-    virtual uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnUdpPayloadReadFromServerLocal(header);
+    }
+    uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnUdpPayloadReadFromServerRemote(header);
+    }
 
 };
 

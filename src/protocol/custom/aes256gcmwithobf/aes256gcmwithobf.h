@@ -39,11 +39,11 @@ struct aes256gcmwithobf_Header{
 };
 
 
-struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmwithobf_Header>, virtual public ServerProxyProtocol<aes256gcmwithobf_Header>
+struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_Header>, public ServerProxyProtocol<aes256gcmwithobf_Header>
 {
 
 
-    virtual uint64_t OnSocks5RequestSent(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnSocks5RequestSent(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
         encryptPayload(header);
@@ -56,7 +56,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
     }
 
 
-    virtual uint64_t OnPayloadReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnPayloadReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
 
@@ -72,13 +72,13 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
 
-    virtual uint64_t OnPayloadHeaderReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnPayloadHeaderReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
         return decryptHeader(header);
 
     }
 
-    virtual bool OnPayloadReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    bool OnPayloadReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
         return decryptPayload(header);
     }
@@ -87,7 +87,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
     // We encrypt payload first , then encrypt the data len
-    inline void encryptPayload(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    void encryptPayload(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
         uint64_t tag_len = 0;
@@ -102,7 +102,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
     }
 
 
-    inline void addObfuscation(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    void addObfuscation(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
         if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
@@ -124,7 +124,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
     // return the original len of data + paddle
-    inline uint32_t encryptHeaderLen(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint32_t encryptHeaderLen(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
         uint32_t original_len = header->PADDING_LENGTH + header->PAYLOAD_LENGTH;
@@ -149,28 +149,28 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
     //  -----   SERVER PART -----
 
-    virtual uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header) {
+    uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header) {
         return decryptHeader(header);
     }
 
 
-    virtual bool onSocks5RequestPayloadRead(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header) {
+    bool onSocks5RequestPayloadRead(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header) {
         return decryptPayload(header);
     }
 
 
-    virtual uint64_t onPayloadHeaderReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t onPayloadHeaderReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
         return decryptHeader(header);
     }
 
-    virtual bool onPayloadReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    bool onPayloadReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
         return decryptPayload(header);
     }
 
 
-    virtual uint64_t onPayloadReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t onPayloadReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
         encryptPayload(header);
@@ -184,7 +184,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
 
-    virtual uint64_t OnUdpPayloadReadFromClientLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromClientLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 
         encryptPayload(header);
@@ -197,7 +197,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
 
-    virtual uint64_t OnUdpPayloadReadFromClientRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromClientRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 		auto data_len = decryptHeader(header);
 		if (data_len == 0) return 0;
@@ -207,7 +207,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
 
-    virtual uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
 		auto data_len = decryptHeader(header);
 		if (data_len == 0) return 0;
@@ -217,7 +217,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
 
 
 
-    virtual uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
     {
         encryptPayload(header);
         addObfuscation(header);
@@ -270,7 +270,7 @@ struct aes256gcmwithobf_Protocol : virtual public ClientProxyProtocol<aes256gcmw
     }
 
     // must keep a copy of key
-    virtual void SetKey(unsigned char key[32U]) {
+    void SetKey(unsigned char key[32U]) {
         memcpy(ProxyKey, key, 32U);
     }
 

@@ -12,23 +12,40 @@ public:
     /*
      *  return len of sending data
      */
-    virtual uint64_t OnSocks5RequestSent(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
-
+    uint64_t OnSocks5RequestSent(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnSocks5RequestSent(header);
+    }
 
     /*
      *  Data is place at GetDataOffsetPtr()
      */
-    virtual uint64_t OnPayloadReadFromLocal(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t OnPayloadReadFromLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnPayloadReadFromLocal(header);
+    }
 
-    virtual uint64_t OnPayloadHeaderReadFromRemote(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t OnPayloadHeaderReadFromRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnPayloadHeaderReadFromRemote(header);
+    }
 
-    virtual bool OnPayloadReadFromRemote(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    bool OnPayloadReadFromRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnPayloadReadFromRemote(header);
+    }
 
 
 
 
-    virtual uint64_t OnUdpPayloadReadFromClientLocal(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
-    virtual uint64_t OnUdpPayloadReadFromClientRemote(typename IProxyProtocol<PH>::ProtocolHeader *header) = 0;
+    uint64_t OnUdpPayloadReadFromClientLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnUdpPayloadReadFromClientLocal(header);
+    }
+    uint64_t OnUdpPayloadReadFromClientRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    {
+        return static_cast<PH*>(this)->OnUdpPayloadReadFromClientRemote(header);
+    }
 
 
 
