@@ -47,7 +47,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
     // it's safe to use raw p here, cause io_context class will never desturct before protocol class
     netunnel_aes256gcmwithobf_Protocol(boost::asio::io_context* io = nullptr) : pio_context(io) {}
 
-    netunnel_aes256gcmwithobf_Protocol()
+    ~netunnel_aes256gcmwithobf_Protocol()
     {
         StatisticHelper::DumpTrafficIntoSql(pio_context, uid, src_ip, upstream_traffic, downstream_traffic);
     }
@@ -98,6 +98,8 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
     // We encrypt payload first , then encrypt the data len
     void encryptPayload(netunnel_aes256gcmwithobf_header *header)
     {
+
+        this->downstream_traffic += header->PAYLOAD_LENGTH;
 
         uint64_t tag_len = 0;
 
@@ -160,6 +162,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     uint64_t onSocks5RequestHeaderRead(netunnel_aes256gcmwithobf_header *header, std::string client_ip)
     {
+        this->src_ip = client_ip;
         return decryptHeader(header);
     }
 
@@ -255,6 +258,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
         if (res) {
             memcpy(&header->PAYLOAD_LENGTH, &len, sizeof(len));
+            this->upstream_traffic += header->PAYLOAD_LENGTH;
             return len.PAYLOAD_LENGTH + len.PADDING_LENGTH;
         }
 

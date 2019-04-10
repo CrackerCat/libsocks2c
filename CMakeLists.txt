@@ -151,7 +151,9 @@ ENDIF()
 include_directories(/home/mariolau/Desktop/ozo-master/include)
 include_directories(/usr/include/postgresql)
 
-target_link_libraries(libsocks2c /usr/lib/x86_64-linux-gnu/libpq.a)
+
+target_link_libraries(libsocks2c pq)
+
 #target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libssl.a)
 #target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libcrypto.a)
 

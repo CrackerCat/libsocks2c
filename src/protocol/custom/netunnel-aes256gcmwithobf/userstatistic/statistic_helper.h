@@ -8,6 +8,8 @@
 #include "../../../../utils/logger.h"
 
 
+const std::chrono::milliseconds ConnectorTimeout(500);
+const std::chrono::milliseconds WriteTimeout(500);
 
 // dump statistic when session is closing
 class StatisticHelper{
@@ -17,8 +19,10 @@ public:
 
     static void DumpTrafficIntoSql(boost::asio::io_context* io, uint32_t uid, std::string ip, size_t upstream_size, size_t downstream_size)
     {
-        if (upstream_size == 0 || downstream_size == 0) return;
 
+        if (!io) return;
+
+        if (upstream_size == 0 || downstream_size == 0) return;
 
         using namespace ozo::literals;
 
@@ -32,11 +36,11 @@ public:
             // Connection info with host and port to coonect to
             auto conn_info = ozo::make_connection_info("host=127.0.0.1 port=5432");
 
-            const auto connector = ozo::make_connector(conn_info, *io);
+            const auto connector = ozo::make_connector(conn_info, *io, ConnectorTimeout);
             ozo::result result;
             ozo::error_code ec;
 
-            ozo::request(connector, query, std::ref(result), yield[ec]);
+            ozo::request(connector, query, WriteTimeout, std::ref(result), yield[ec]);
 
             if (ec) {
                 LOG_INFO("write sql err --> {}", ec.message())
