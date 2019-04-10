@@ -109,8 +109,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-add_library(libsocks2c ${CORE_FILES})
-#add_executable(libsocks2c ${CORE_FILES})
+#add_library(libsocks2c ${CORE_FILES})
+add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
@@ -148,10 +148,10 @@ IF(NOT BUILD_IOS_LIBRARY)
 ENDIF()
 
 
-include_directories(/Users/mario/Desktop/ozo-master/include)
-include_directories(/usr/local/Cellar/libpq/11.2/include)
+include_directories(/home/mariolau/Desktop/ozo-master/include)
+include_directories(/usr/include/postgresql)
 
-target_link_libraries(libsocks2c /usr/local/Cellar/libpq/11.2/lib/libpq.a)
-target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libssl.a)
-target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libcrypto.a)
+target_link_libraries(libsocks2c /usr/lib/x86_64-linux-gnu/libpq.a)
+#target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libssl.a)
+#target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libcrypto.a)
 

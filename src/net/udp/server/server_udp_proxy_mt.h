@@ -32,6 +32,10 @@ public:
     {
         UDP_DEBUG("[{}] UDP Server created", (void*)this)
 
+        for (int j = 0; j < this->GetVIOContextSize(); ++j) {
+            vprotocol_.emplace_back(Protocol(&this->GetIOContextAt(j)));
+        }
+
     }
 
     ~ServerUdpProxy() {
@@ -68,7 +72,7 @@ public:
             this->server_ip = local_address;
             this->server_port = local_port;
 
-            this->protocol_.SetKey(this->proxyKey_);
+            this->vprotocol_[i].SetKey(this->proxyKey_);
 
             struct in6_addr in_val;
             if (inet_pton(AF_INET6, local_address.c_str(), &in_val) == 1)
@@ -133,7 +137,7 @@ public:
 
 private:
 
-    Protocol protocol_;
+    std::vector<Protocol> vprotocol_;
 
     VPACCEPTOR vpacceptor_;
 
@@ -173,7 +177,7 @@ private:
 
                     auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
                     // decrypt packet and get payload length
-                    bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
+                    bytes_read = vprotocol_[i].OnUdpPayloadReadFromServerLocal(protocol_hdr);
                     UDP_DEBUG("udp payload length: {}", bytes_read)
 
                     if (bytes_read == 0)

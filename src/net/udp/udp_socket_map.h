@@ -25,46 +25,42 @@ class UdpSocketMap : public Singleton<UdpSocketMap<Protocol>>
     using UDP_SOCKET = boost::asio::ip::udp::socket;
     using PUDP_SOCKET = boost::shared_ptr<UDP_SOCKET>;
 
-    using UDP_SOCKET_MAP = boost::unordered_map<UDP_EP, UdpSocketContext>;
-
-
     struct UdpSocketContext {
         PUDP_SOCKET psocket;
         PUdpProxySession<Protocol> pudpproxysession;
         PRawUdpProxySession<Protocol> prawudpproxysession;
-        bool idle = true;
+        bool fallback = false;
     };
+
+    using PUdpSocketContext = std::unique_ptr<UdpSocketContext>;
+    using UDP_SOCKET_MAP = boost::unordered_map<UDP_EP, UdpSocketContext>;
 
 
 
 public:
 
-    enum FromType {
-        UDP,
-        RAW_UDP
-    };
 
-    PUDP_SOCKET FindSocket(UDP_EP udp_ep, FromType from)
+    PUDP_SOCKET FindOrCreateContext(UDP_EP udp_ep, FromType from, boost::asio::io_context& io)
     {
         auto it = udp_socket_map.find(udp_ep);
-        if (it == udp_socket_map.end()) return nullptr;
+
+        if (it != udp_socket_map.end()) return it->second->psocket;
+
+        auto socket_context = std::make_unique<UdpSocketContext>();
+        socket_context->idle = true;
+        socket_context->psocket = std::make_unique<UDP_SOCKET>(io);
+        socket_context->psocket->open();
 
         switch(from)
         {
             case UDP: {
+
                 return it->second.idle ? nullptr : it->second.pudpproxysession;
             }
             case RAW_UDP: {
                 return it->second.idle ? nullptr : it->second.prawudpproxysession;
             }
         }
-
-    }
-
-
-    PUDP_SOCKET FindAndInsert(UDP_EP udp_ep, )
-    {
-
     }
 
 
