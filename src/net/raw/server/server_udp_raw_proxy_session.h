@@ -38,7 +38,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
 public:
 
-    ServerUdpRawProxySession(asio::ip::raw::endpoint src_ep, asio::ip::raw::endpoint server_ep, SessionMap& map_ref, unsigned char key[32U]) : session_map(map_ref)
+    ServerUdpRawProxySession(boost::asio::io_context& io, asio::ip::raw::endpoint src_ep, asio::ip::raw::endpoint server_ep, SessionMap& map_ref, unsigned char key[32U]) : protocol_(&io), session_map(map_ref)
     {
         this->protocol_.SetKey(key);
         this->local_ep = src_ep;

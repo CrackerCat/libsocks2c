@@ -28,7 +28,7 @@ class ServerTcpProxySession : public boost::enable_shared_from_this<ServerTcpPro
 public:
 
 	ServerTcpProxySession(IO_CONTEXT &io_context, unsigned char key[32U]) \
-		: local_socket_(io_context), remote_socket_(io_context), dns_resolver_(io_context), protocol_()
+		: protocol_(&io_context), local_socket_(io_context), remote_socket_(io_context), dns_resolver_(io_context)
 	{
 		this->protocol_.SetKey(key);
 	}
@@ -107,7 +107,7 @@ private:
 		}
 
 		auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
-		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr);
+		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, this->local_socket_.remote_endpoint().address().to_string());
 		if (data_len == 0) return false;
 
 		// Read the full content

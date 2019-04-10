@@ -85,7 +85,7 @@ public:
 		if (ec)
 		{
 			LOG_ERROR("err binding acceptor --> {}", ec.message().c_str())
-				return;
+			return;
 		}
 
 		pacceptor_->listen(SOMAXCONN, ec);

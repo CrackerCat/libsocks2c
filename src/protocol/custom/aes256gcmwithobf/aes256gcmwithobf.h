@@ -17,7 +17,7 @@
 
 
 
-struct aes256gcmwithobf_Header{
+struct aes256gcmwithobf_header{
 
     unsigned char NONCE[12];
     unsigned char LEN_TAG[16];
@@ -28,7 +28,7 @@ struct aes256gcmwithobf_Header{
 
     static constexpr int Size()
     {
-        return sizeof(aes256gcmwithobf_Header);
+        return sizeof(aes256gcmwithobf_header);
     }
 
     unsigned char* GetDataOffsetPtr()
@@ -38,12 +38,15 @@ struct aes256gcmwithobf_Header{
 
 };
 
+namespace boost { namespace asio { class io_context; } }
 
-struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_Header>, public ServerProxyProtocol<aes256gcmwithobf_Header>
+struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_header>, public ServerProxyProtocol<aes256gcmwithobf_header>
 {
 
+    // it's safe to use raw p here, cause io_context class will never desturct before protocol class
+    aes256gcmwithobf_Protocol(boost::asio::io_context* io = nullptr) : pio_context(io) {}
 
-    uint64_t OnSocks5RequestSent(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnSocks5RequestSent(aes256gcmwithobf_header *header)
     {
 
         encryptPayload(header);
@@ -56,7 +59,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
     }
 
 
-    uint64_t OnPayloadReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnPayloadReadFromLocal(aes256gcmwithobf_header *header)
     {
 
 
@@ -72,13 +75,13 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
 
-    uint64_t OnPayloadHeaderReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnPayloadHeaderReadFromRemote(aes256gcmwithobf_header *header)
     {
         return decryptHeader(header);
 
     }
 
-    bool OnPayloadReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    bool OnPayloadReadFromRemote(aes256gcmwithobf_header *header)
     {
         return decryptPayload(header);
     }
@@ -87,7 +90,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
     // We encrypt payload first , then encrypt the data len
-    void encryptPayload(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    void encryptPayload(aes256gcmwithobf_header *header)
     {
 
         uint64_t tag_len = 0;
@@ -102,7 +105,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
     }
 
 
-    void addObfuscation(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    void addObfuscation(aes256gcmwithobf_header *header)
     {
 
         if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
@@ -124,7 +127,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
     // return the original len of data + paddle
-    uint32_t encryptHeaderLen(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint32_t encryptHeaderLen(aes256gcmwithobf_header *header)
     {
 
         uint32_t original_len = header->PADDING_LENGTH + header->PAYLOAD_LENGTH;
@@ -149,28 +152,29 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
     //  -----   SERVER PART -----
 
-    uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header) {
-        return decryptHeader(header);
-    }
-
-
-    bool onSocks5RequestPayloadRead(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header) {
-        return decryptPayload(header);
-    }
-
-
-    uint64_t onPayloadHeaderReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t onSocks5RequestHeaderRead(aes256gcmwithobf_header *header, std::string client_ip)
     {
         return decryptHeader(header);
     }
 
-    bool onPayloadReadFromLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+
+    bool onSocks5RequestPayloadRead(aes256gcmwithobf_header *header) {
+        return decryptPayload(header);
+    }
+
+
+    uint64_t onPayloadHeaderReadFromLocal(aes256gcmwithobf_header *header)
+    {
+        return decryptHeader(header);
+    }
+
+    bool onPayloadReadFromLocal(aes256gcmwithobf_header *header)
     {
         return decryptPayload(header);
     }
 
 
-    uint64_t onPayloadReadFromRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t onPayloadReadFromRemote(aes256gcmwithobf_header *header)
     {
 
         encryptPayload(header);
@@ -184,7 +188,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
 
-    uint64_t OnUdpPayloadReadFromClientLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromClientLocal(aes256gcmwithobf_header *header)
     {
 
         encryptPayload(header);
@@ -197,7 +201,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
 
-    uint64_t OnUdpPayloadReadFromClientRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromClientRemote(aes256gcmwithobf_header *header)
     {
 		auto data_len = decryptHeader(header);
 		if (data_len == 0) return 0;
@@ -207,7 +211,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
 
-    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromServerLocal(aes256gcmwithobf_header *header)
     {
 		auto data_len = decryptHeader(header);
 		if (data_len == 0) return 0;
@@ -217,7 +221,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
 
-    uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromServerRemote(aes256gcmwithobf_header *header)
     {
         encryptPayload(header);
         addObfuscation(header);
@@ -227,7 +231,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
     }
 
 
-    inline uint64_t decryptHeader(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    inline uint64_t decryptHeader(aes256gcmwithobf_header *header)
     {
         struct {
             uint32_t PAYLOAD_LENGTH;
@@ -252,7 +256,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
     }
 
 
-    inline bool decryptPayload(typename IProxyProtocol<aes256gcmwithobf_Header>::ProtocolHeader *header)
+    inline bool decryptPayload(aes256gcmwithobf_header *header)
     {
 
         bool res = aes256gcmwithobf_Helper::decryptData(this->ProxyKey, header->NONCE, header->GetDataOffsetPtr(),
@@ -276,6 +280,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_H
 
 
 private:
+    boost::asio::io_context* pio_context;
 
     unsigned char ProxyKey[32];
 

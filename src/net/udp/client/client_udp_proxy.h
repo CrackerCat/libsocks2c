@@ -26,7 +26,7 @@ class ClientUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 public:
 
-    ClientUdpProxy() {}
+    ClientUdpProxy() : protocol_(nullptr) {}
 
 	~ClientUdpProxy()
 	{

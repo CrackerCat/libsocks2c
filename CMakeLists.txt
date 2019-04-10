@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
-
+add_definitions(-DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
 OPTION(BUILD_IOS_LIBRARY "build ios lib" OFF)
 
@@ -20,7 +20,7 @@ add_definitions(-DDISABLE_DEBUG_LOG)
 add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 #include headers
 IF (WIN32)
@@ -83,7 +83,7 @@ SET(CORE_FILES
         lib/proxymap.h
         src/utils/singleton.h
 		src/net/udp/bufferqueue.h
-        src/utils/macro_def.h)
+        src/utils/macro_def.h src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol.h src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol_helper.h src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/psql.cpp src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/psql.h)
 
 
 IF (ENABLE_UOUT)
@@ -147,4 +147,11 @@ IF(NOT BUILD_IOS_LIBRARY)
     endif ()
 ENDIF()
 
+
+include_directories(/Users/mario/Desktop/ozo-master/include)
+include_directories(/usr/local/Cellar/libpq/11.2/include)
+
+target_link_libraries(libsocks2c /usr/local/Cellar/libpq/11.2/lib/libpq.a)
+target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libssl.a)
+target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libcrypto.a)
 

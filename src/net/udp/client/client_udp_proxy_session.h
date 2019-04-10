@@ -30,7 +30,7 @@ public:
 
     }
 
-	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_io_context())
+	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_io_context())
 	{
 		this->protocol_.SetKey(key);
 		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);

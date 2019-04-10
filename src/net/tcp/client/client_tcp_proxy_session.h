@@ -27,7 +27,7 @@ class ClientTcpProxySession : public boost::enable_shared_from_this<ClientTcpPro
 public:
 
     ClientTcpProxySession(IO_CONTEXT &io_context, std::string server_ip, uint16_t server_port, unsigned char key[32U], bool resolve_dns_locally) \
-            : local_socket_(io_context), remote_socket_(io_context)
+            : protocol_(nullptr), local_socket_(io_context), remote_socket_(io_context)
     {
         this->protocol_.SetKey(key);
 

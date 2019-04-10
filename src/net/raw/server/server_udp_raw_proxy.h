@@ -123,7 +123,7 @@ private:
                     LOG_INFO("new raw session")
                     //in_addr src_ip_addr = {src_ep.src_ip};
                     //std::string src_ip = inet_ntoa(src_ip_addr);
-                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(tcp_src_ep, server_ep, session_map_, this->proxyKey_);
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(sniffer_socket.get_io_context(), tcp_src_ep, server_ep, session_map_, this->proxyKey_);
                     psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
                     psession->InitRawSocketAndTimer(sniffer_socket.get_io_context());
                     psession->HandlePacket(ip, tcp);

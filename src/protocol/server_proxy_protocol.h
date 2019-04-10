@@ -15,9 +15,9 @@ public:
      */
 
 
-    uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<PH>::ProtocolHeader *header, std::string client_ip)
     {
-        return static_cast<PH*>(this)->onSocks5RequestHeaderRead(header);
+        return static_cast<PH*>(this)->onSocks5RequestHeaderRead(header, client_ip);
     }
 
     bool onSocks5RequestPayloadRead(typename IProxyProtocol<PH>::ProtocolHeader *header)

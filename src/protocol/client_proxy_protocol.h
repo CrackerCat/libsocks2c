@@ -37,11 +37,13 @@ public:
 
 
 
-
+    // decrypt
     uint64_t OnUdpPayloadReadFromClientLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {
         return static_cast<PH*>(this)->OnUdpPayloadReadFromClientLocal(header);
     }
+
+    // encrypt
     uint64_t OnUdpPayloadReadFromClientRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {
         return static_cast<PH*>(this)->OnUdpPayloadReadFromClientRemote(header);

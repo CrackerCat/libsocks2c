@@ -40,10 +40,10 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 public:
 
-	ServerUdpProxy() {
+	ServerUdpProxy() : protocol_(nullptr) {
 		UDP_DEBUG("[{}] UDP Server created", (void*)this)
-
 	}
+
 	~ServerUdpProxy() {
 		UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
 	}

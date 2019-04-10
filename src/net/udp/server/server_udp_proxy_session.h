@@ -22,7 +22,7 @@ class ServerUdpProxySession : public boost::enable_shared_from_this<ServerUdpPro
 
 public:
 
-	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_io_context()), timer_(local_socket->get_io_context())
+	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : protocol_(&local_socket->get_io_context()), session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_io_context()), timer_(local_socket->get_io_context())
 	{
 		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
@@ -30,7 +30,7 @@ public:
 		this->last_update_time = time(nullptr);
 	}
 
-	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_io_context())
+	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_io_context())
 	{
 		//UDP_DEBUG("[{}] ServerUdpProxySession created", (void*)this)
 		this->protocol_.SetKey(key);
