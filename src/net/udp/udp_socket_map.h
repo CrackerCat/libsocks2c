@@ -40,32 +40,6 @@ class UdpSocketMap : public Singleton<UdpSocketMap<Protocol>>
 public:
 
 
-    PUDP_SOCKET FindOrCreateContext(UDP_EP udp_ep, FromType from, boost::asio::io_context& io)
-    {
-        auto it = udp_socket_map.find(udp_ep);
-
-        if (it != udp_socket_map.end()) return it->second->psocket;
-
-        auto socket_context = std::make_unique<UdpSocketContext>();
-        socket_context->idle = true;
-        socket_context->psocket = std::make_unique<UDP_SOCKET>(io);
-        socket_context->psocket->open();
-
-        switch(from)
-        {
-            case UDP: {
-
-                return it->second.idle ? nullptr : it->second.pudpproxysession;
-            }
-            case RAW_UDP: {
-                return it->second.idle ? nullptr : it->second.prawudpproxysession;
-            }
-        }
-    }
-
-
-
-
 
 private:
 

@@ -110,9 +110,6 @@ private:
             {
                 boost::system::error_code ec;
 
-                //alloc remote socket
-                UdpSocketMap::GetInstance()->FindOrCreateContext(src_ep)
-
                 // 10 extra bytes reserved for socks5 udp header
                 uint64_t bytes_read = this->remote_socket_.async_receive_from(boost::asio::buffer(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6 + 10, UDP_REMOTE_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 6 - 10), remote_recv_ep_, yield[ec]);
 
