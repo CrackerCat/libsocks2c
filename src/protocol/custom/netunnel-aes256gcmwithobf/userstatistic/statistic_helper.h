@@ -55,7 +55,7 @@ public:
 
         auto record_query = ozo::make_query_builder(boost::hana::make_tuple(ozo::make_query_text(std::string(sql_str))));
 
-        LOG_INFO("writing sql uid: {} upstream_traffic: {}, downstream_traffic: {} src: {} dst: {}", uid, upstream_size, downstream_size, src, dst)
+        LOG_DEBUG("writing sql uid: {} upstream_traffic: {}, downstream_traffic: {} src: {} dst: {}", uid, upstream_size, downstream_size, src, dst)
 
         boost::asio::spawn(*io, [io, record_query] (boost::asio::yield_context yield) {
 

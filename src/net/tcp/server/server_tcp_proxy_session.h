@@ -164,9 +164,9 @@ private:
 			boost::system::error_code ec;
 			boost::asio::ip::tcp::resolver::query query{ ip_str,std::to_string(port),boost::asio::ip::resolver_query_base::all_matching };
 
-			LOG_INFO("[{}] resolving {}:{}", (void*)this, ip_str.c_str(), port)
+			LOG_DEBUG("[{}] resolving {}:{}", (void*)this, ip_str.c_str(), port)
 
-				auto dns_result = dns_resolver_.async_resolve(query, yield[ec]);
+			auto dns_result = dns_resolver_.async_resolve(query, yield[ec]);
 
 			if (ec)
 			{
@@ -174,7 +174,7 @@ private:
 					return false;
 			}
 
-			LOG_INFO("[{}] Dns Resolved: {} --> {}:{}", (void*)this, ip_str.c_str(), dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
+			LOG_DEBUG("[{}] Dns Resolved: {} --> {}:{}", (void*)this, ip_str.c_str(), dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
 
 			protocol_.onSocks5DomainParse(ip_str + ":" + boost::lexical_cast<std::string>(port));
 
@@ -376,18 +376,17 @@ private:
 	bool connectToRemote(boost::asio::yield_context yield, boost::asio::ip::tcp::endpoint ep)
 	{
 		boost::system::error_code ec;
-		LOG_INFO("[{}] connecting to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
+		LOG_DEBUG("[{}] connecting to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
 
-			this->remote_socket_.async_connect(ep, yield[ec]);
+		this->remote_socket_.async_connect(ep, yield[ec]);
 
 		if (ec)
 		{
 			TCP_DEBUG("[{}] can't connect to remote --> {}", (void*)this, ec.message().c_str())
-				return false;
+			return false;
 		}
-		TCP_DEBUG("[{}] connected to --> {}:{}", (void*)this, ep.address().to_string().c_str(), ep.port())
 
-			return true;
+		return true;
 	}
 
 

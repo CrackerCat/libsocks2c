@@ -1,5 +1,14 @@
-INSERT INTO public.user_statistic (uid,upstream_traffic,downstream_traffic,srcip,last_active_time) VALUES 
-(1,100,200,'0',NULL)
-,(2,100,200,NULL,NULL)
-,(3,100,200,NULL,NULL)
-;
+-- Drop table
+
+-- DROP TABLE public.user_statistic;
+
+CREATE TABLE public.user_statistic (
+	uid int8 NOT NULL,
+	src_host text NOT NULL,
+	dst_host text NOT NULL,
+	last_active_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	upstream_traffic varchar NOT NULL,
+	downstream_traffic int8 NOT NULL,
+	"type" text NOT NULL,
+	CONSTRAINT user_statistic_fk FOREIGN KEY (uid) REFERENCES user_info(uid)
+);
