@@ -20,6 +20,10 @@ public:
         return static_cast<PH*>(this)->onSocks5RequestHeaderRead(header, client_ip);
     }
 
+    void onSocks5IpParse(std::string& domain) {}
+
+    void onSocks5DomainParse(std::string& domain) {}
+
     bool onSocks5RequestPayloadRead(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {
         return static_cast<PH*>(this)->onSocks5RequestPayloadRead(header);
@@ -40,9 +44,9 @@ public:
         return static_cast<PH*>(this)->onPayloadReadFromRemote(header);
     }
 
-    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
+    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<PH>::ProtocolHeader *header, std::string client_ip)
     {
-        return static_cast<PH*>(this)->OnUdpPayloadReadFromServerLocal(header);
+        return static_cast<PH*>(this)->OnUdpPayloadReadFromServerLocal(header, client_ip);
     }
     uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {

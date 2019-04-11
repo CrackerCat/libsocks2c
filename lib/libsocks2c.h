@@ -23,6 +23,8 @@ public:
 
     struct Config
     {
+        size_t uid;
+
         bool isServer;
         std::string proxyKey;
 

@@ -177,7 +177,7 @@ private:
 
                     auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
                     // decrypt packet and get payload length
-                    bytes_read = vprotocol_[i].OnUdpPayloadReadFromServerLocal(protocol_hdr);
+                    bytes_read = vprotocol_[i].OnUdpPayloadReadFromServerLocal(protocol_hdr, local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
                     UDP_DEBUG("udp payload length: {}", bytes_read)
 
                     if (bytes_read == 0)

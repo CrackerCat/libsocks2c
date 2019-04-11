@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
-add_definitions(-DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
+OPTION(BUILD_NETUNNEL_SERVER "netunnel" ON)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
 OPTION(BUILD_IOS_LIBRARY "build ios lib" OFF)
+
 
 if (BUILD_IOS_LIBRARY)
     set(ENABLE_UOUT, OFF)
@@ -83,9 +84,16 @@ SET(CORE_FILES
         lib/proxymap.h
         src/utils/singleton.h
 		src/net/udp/bufferqueue.h
-        src/utils/macro_def.h src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol.h src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol_helper.h src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/psql.cpp src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/psql.h)
-
-
+        src/utils/macro_def.h
+        src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol.h
+        src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol_helper.h
+        )
+IF(BUILD_NETUNNEL_SERVER)
+LIST(APPEND CORE_FILES
+        src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp
+        src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h
+        src/protocol/custom/netunnel-aes256gcmwithobf/user_info.h)
+ENDIF()
 IF (ENABLE_UOUT)
 LIST(APPEND CORE_FILES
         src/net/raw/raw_proxy_helper/interface_helper.h
@@ -147,13 +155,11 @@ IF(NOT BUILD_IOS_LIBRARY)
     endif ()
 ENDIF()
 
-
-include_directories(/home/mariolau/Desktop/ozo-master/include)
-include_directories(/usr/include/postgresql)
-
-
-target_link_libraries(libsocks2c pq)
-
-#target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libssl.a)
-#target_link_libraries(libsocks2c /usr/local/Cellar/openssl/1.0.2r/lib/libcrypto.a)
+IF(BUILD_NETUNNEL_SERVER)
+    add_definitions(-DBUILD_NETUNNEL_SERVER)
+    add_definitions(-DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
+    include_directories(/home/mariolau/Desktop/ozo-master/include)
+    include_directories(/usr/include/postgresql)
+    target_link_libraries(libsocks2c pq)
+ENDIF()
 

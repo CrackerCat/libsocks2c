@@ -328,7 +328,7 @@ private:
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)&full_data[0];
             // decrypt packet and get payload length
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
-            auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
+            auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr, local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
 
             if (bytes_read == 0 || bytes_read > UDP_LOCAL_RECV_BUFF_SIZE)
             {
@@ -350,6 +350,7 @@ private:
 
             std::string src_ip_str = inet_ntoa(in_addr({udp_ep.src_ip}));
             LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, ip_dst, udp_ep.dst_port)
+            protocol_.onSocks5IpParse(ip_dst + ":" + boost::lexical_cast<std::string>(udp_ep.dst_port));
 
             // hdr size include the protocol hdr + src ip + src port + socks5 hdr
             size_t header_size = Protocol::ProtocolHeader::Size() + 4 + 2 + 10;

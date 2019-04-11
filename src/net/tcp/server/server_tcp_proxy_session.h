@@ -107,7 +107,7 @@ private:
 		}
 
 		auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
-		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, this->local_socket_.remote_endpoint().address().to_string());
+		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, this->local_socket_.remote_endpoint().address().to_string() + ":" + std::to_string(this->local_socket_.remote_endpoint().port()));
 		if (data_len == 0) return false;
 
 		// Read the full content
@@ -143,6 +143,8 @@ private:
 
 			if (!connectToRemote(yield, remote_ep_)) return false;
 
+			protocol_.onSocks5IpParse(ip_str + ":" + boost::lexical_cast<std::string>(port));
+
 			return true;
 
 		}
@@ -172,6 +174,8 @@ private:
 			}
 
 			LOG_INFO("[{}] Dns Resolved: {} --> {}:{}", (void*)this, ip_str.c_str(), dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
+
+			protocol_.onSocks5DomainParse(ip_str + ":" + boost::lexical_cast<std::string>(port));
 
 			if (!openRemoteSocket(dns_result->endpoint())) return false;
 

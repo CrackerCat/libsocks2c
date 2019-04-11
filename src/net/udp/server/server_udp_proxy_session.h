@@ -72,6 +72,8 @@ public:
 
 		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
+		protocol_.onSocks5IpParse(ip_str + ":" + boost::lexical_cast<std::string>(port));
+
 		auto res = bufferqueue_.Enqueue(bytes - 10, GetLocalBuffer() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
 
         // queue is full if res == nullptr, we have to discard data

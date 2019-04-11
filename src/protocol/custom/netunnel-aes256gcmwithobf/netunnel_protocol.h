@@ -7,6 +7,7 @@
 
 #include "../../../utils/randomNumberGenerator.h"
 #include "../../../utils/logger.h"
+
 #include "userstatistic/statistic_helper.h"
 
 #include <cstdint>
@@ -49,7 +50,9 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     ~netunnel_aes256gcmwithobf_Protocol()
     {
-        StatisticHelper::DumpTrafficIntoSql(pio_context, uid, src_ip, upstream_traffic, downstream_traffic);
+#ifdef BUILD_NETUNNEL_SERVER
+        StatisticHelper::DumpTrafficIntoSql(pio_context, uid, upstream_traffic, downstream_traffic, this->src_ip, this->dst_ip_or_domain, this->ttype);
+#endif
     }
 
     uint64_t OnSocks5RequestSent(netunnel_aes256gcmwithobf_header *header)
@@ -163,7 +166,18 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
     uint64_t onSocks5RequestHeaderRead(netunnel_aes256gcmwithobf_header *header, std::string client_ip)
     {
         this->src_ip = client_ip;
+        this->ttype = TrafficType::TCP;
         return decryptHeader(header);
+    }
+
+    void onSocks5IpParse(std::string&& ip)
+    {
+        this->dst_ip_or_domain = ip;
+    }
+
+    void onSocks5DomainParse(std::string&& domain)
+    {
+        this->dst_ip_or_domain = domain;
     }
 
 
@@ -220,8 +234,10 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
 
 
-    uint64_t OnUdpPayloadReadFromServerLocal(netunnel_aes256gcmwithobf_header *header)
+    uint64_t OnUdpPayloadReadFromServerLocal(netunnel_aes256gcmwithobf_header *header, std::string&& client_ip)
     {
+        this->ttype = UDP;
+        this->src_ip = client_ip;
         auto data_len = decryptHeader(header);
         if (data_len == 0) return 0;
         if (decryptPayload(header)) return header->PAYLOAD_LENGTH;
@@ -288,7 +304,6 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
         memcpy(ProxyKey, key, 32U);
     }
 
-
 private:
     boost::asio::io_context* pio_context;
 
@@ -299,7 +314,10 @@ private:
 
     size_t uid = 0;
 
+    TrafficType ttype;
+
     std::string src_ip;
+    std::string dst_ip_or_domain;
     size_t upstream_traffic = 0;
     size_t downstream_traffic = 0;
 };
