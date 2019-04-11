@@ -59,12 +59,19 @@ public:
         last_active_time = time(nullptr);
     }
 
+    virtual void SetUid(int id)
+    {
+        this->uid = id;
+    }
+
 protected:
 
     using TIMER = boost::asio::deadline_timer;
     using PTIMER = std::unique_ptr<TIMER>;
 
     unsigned char proxyKey_[32U];
+
+    int uid = 0;
 
     PTIMER ptimer_;
     time_t last_active_time;

@@ -32,15 +32,17 @@ public:
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
 	// use CreateServerProxyMt() instead on linux which provide better performance
     template<class Protocol>
-    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, uint64_t timeout = 0)
+    static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, uint64_t timeout = 0, int uid = 0)
     {
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
+        tcps->SetUid(uid);
         tcps->SetProxyKey(proxyKey);
         tcps->SetExpireTime(timeout);
         tcps->SetProxyInfo(server_ip, server_port);
         tcps->StartProxy(server_ip, server_port);
 
         auto udps = boost::make_shared<ServerUdpProxy<Protocol>>();
+        udps->SetUid(uid);
         udps->SetProxyKey(proxyKey);
         udps->SetExpireTime(timeout);
         udps->SetProxyInfo(server_ip, server_port);
@@ -66,7 +68,7 @@ public:
 	// if defined MULTITHREAD_IO, then ClientTcpProxy would be multithread version
 	// only the tcp && udp session are multithreaded, the acceptor ain't cause SO_REUSEPORT is not support on win32 && mac 
     template<class Protocol>
-    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, std::string local_uout_ip = std::string(), uint16_t local_uout_port = 0, bool resolve_dns = false, uint64_t timeout = 0)
+    static ClientProxy<Protocol> CreateClientProxy(std::string proxyKey, std::string socks5_ip, uint16_t socks5_port, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, std::string local_uout_ip = std::string(), uint16_t local_uout_port = 0, bool resolve_dns = false, uint64_t timeout = 0, int uid = 0)
     {
         auto tcps = boost::make_shared<ClientTcpProxy<Protocol>>();
 

@@ -17,7 +17,7 @@
 #define OBF_MINPADDLE 250
 #define OBF_MAXPADDLE 800
 
-
+#include "user_info.h"
 
 struct netunnel_aes256gcmwithobf_header{
 
@@ -53,6 +53,11 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 #ifdef BUILD_NETUNNEL_SERVER
         StatisticHelper::DumpTrafficIntoSql(pio_context, uid, upstream_traffic, downstream_traffic, this->src_ip, this->dst_ip_or_domain, this->ttype);
 #endif
+    }
+
+    void SetUserID(int id)
+    {
+        this->uid = id;
     }
 
     uint64_t OnSocks5RequestSent(netunnel_aes256gcmwithobf_header *header)
@@ -181,7 +186,8 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
     }
 
 
-    bool onSocks5RequestPayloadRead(netunnel_aes256gcmwithobf_header *header) {
+    bool onSocks5RequestPayloadRead(netunnel_aes256gcmwithobf_header *header)
+    {
         return decryptPayload(header);
     }
 

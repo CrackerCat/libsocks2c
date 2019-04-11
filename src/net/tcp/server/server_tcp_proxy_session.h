@@ -27,10 +27,11 @@ class ServerTcpProxySession : public boost::enable_shared_from_this<ServerTcpPro
 
 public:
 
-	ServerTcpProxySession(IO_CONTEXT &io_context, unsigned char key[32U]) \
+	ServerTcpProxySession(IO_CONTEXT &io_context, unsigned char key[32U], int uid = 0) \
 		: protocol_(&io_context), local_socket_(io_context), remote_socket_(io_context), dns_resolver_(io_context)
 	{
 		this->protocol_.SetKey(key);
+		this->protocol_.SetUserID(uid);
 	}
 
 	~ServerTcpProxySession()

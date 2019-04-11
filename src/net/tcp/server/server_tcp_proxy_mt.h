@@ -100,8 +100,7 @@ public:
         {
             TCP_DEBUG("stopping tcp acceptor {}", i)
             this->vpacceptor_[i]->cancel();
-            if (this->vptimer_[i]) this->vptimer_[i]->cancel();
-
+            if (this->vptimer_.size() > 0) this->vptimer_[i]->cancel();
         }
     }
 
@@ -124,12 +123,12 @@ private:
                 while (1)
                 {
                     boost::system::error_code ec;
-                    auto new_session = boost::make_shared<ServerTcpProxySession<Protocol>>(GetIOContextAt(i), proxyKey_);
+                    auto new_session = boost::make_shared<ServerTcpProxySession<Protocol>>(GetIOContextAt(i), proxyKey_, this->uid);
                     this->vpacceptor_[i]->async_accept(new_session->GetLocalSocketRef(), yield[ec]);
 
                     if (ec)
                     {
-                        LOG_INFO("acceptor {} err --> {}", i, ec.message().c_str())
+                        LOG_DEBUG("acceptor {} err --> {}", i, ec.message().c_str())
                         return;
                     }
 

@@ -42,6 +42,13 @@ public:
         UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
     }
 
+    virtual void SetUid(int id) override
+    {
+        for (int j = 0; j < this->GetVIOContextSize(); ++j) {
+            vprotocol_[j].SetUserID(id);
+        }
+    }
+
     auto& GetDefaultIO()
     {
         return this->GetIOContext();
