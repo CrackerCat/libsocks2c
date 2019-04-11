@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
-OPTION(BUILD_NETUNNEL_SERVER "netunnel" ON)
+OPTION(BUILD_NETUNNEL_SERVER "netunnel" OFF)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
 OPTION(BUILD_IOS_LIBRARY "build ios lib" OFF)
-
 
 if (BUILD_IOS_LIBRARY)
     set(ENABLE_UOUT, OFF)
@@ -13,7 +12,7 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-add_definitions(-DPROTOCOL_AES256GCM)
+add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
 #add_definitions(-DUDP_DEBUG_DETAIL)
@@ -117,8 +116,8 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-add_library(libsocks2c ${CORE_FILES})
-#add_executable(libsocks2c ${CORE_FILES})
+#add_library(libsocks2c ${CORE_FILES})
+add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
