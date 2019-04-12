@@ -246,6 +246,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
         this->src_ip = client_ip;
         auto data_len = decryptHeader(header);
         if (data_len == 0) return 0;
+		this->upstream_traffic += header->PAYLOAD_LENGTH;
         if (decryptPayload(header)) return header->PAYLOAD_LENGTH;
         return 0;
     }
@@ -254,6 +255,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     uint64_t OnUdpPayloadReadFromServerRemote(netunnel_aes256gcmwithobf_header *header)
     {
+		this->downstream_traffic += header->PAYLOAD_LENGTH;
         encryptPayload(header);
         addObfuscation(header);
         uint32_t data_length = encryptHeaderLen(header);

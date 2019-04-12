@@ -110,7 +110,13 @@ private:
 		}
 
 		auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
-		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, this->local_socket_.remote_endpoint().address().to_string() + ":" + std::to_string(this->local_socket_.remote_endpoint().port()));
+
+		// if local close the connection as soon as it connect to server
+		// the server may not be able to get remote_endpoint which will throw Transport endpoint is not connected err
+		auto local_ep = this->local_socket_.remote_endpoint(ec);
+		if (ec) return false;
+
+		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, local_ep.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep.port));
 		if (data_len == 0) return false;
 
 		// Read the full content
