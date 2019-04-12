@@ -20,9 +20,9 @@ public:
         return static_cast<PH*>(this)->onSocks5RequestHeaderRead(header, client_ip);
     }
 
-    void onSocks5IpParse(std::string& domain) {}
+    void onSocks5IpParse(std::string&& domain) {}
 
-    void onSocks5DomainParse(std::string& domain) {}
+    void onSocks5DomainParse(std::string&& domain) {}
 
     bool onSocks5RequestPayloadRead(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {

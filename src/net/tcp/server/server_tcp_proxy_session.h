@@ -31,7 +31,9 @@ public:
 		: protocol_(&io_context), local_socket_(io_context), remote_socket_(io_context), dns_resolver_(io_context)
 	{
 		this->protocol_.SetKey(key);
+#ifdef BUILD_NETUNNEL_SERVER
 		this->protocol_.SetUserID(uid);
+#endif
 	}
 
 	~ServerTcpProxySession()

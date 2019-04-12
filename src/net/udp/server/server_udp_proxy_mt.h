@@ -44,9 +44,11 @@ public:
 
     virtual void SetUid(int id) override
     {
+#ifdef BUILD_NETUNNEL_SERVER
         for (int j = 0; j < this->GetVIOContextSize(); ++j) {
             vprotocol_[j].SetUserID(id);
         }
+#endif
     }
 
     auto& GetDefaultIO()

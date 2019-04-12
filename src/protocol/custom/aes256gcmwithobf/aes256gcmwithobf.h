@@ -211,7 +211,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
 
 
 
-    uint64_t OnUdpPayloadReadFromServerLocal(aes256gcmwithobf_header *header)
+    uint64_t OnUdpPayloadReadFromServerLocal(aes256gcmwithobf_header *header, std::string client_ip)
     {
 		auto data_len = decryptHeader(header);
 		if (data_len == 0) return 0;
