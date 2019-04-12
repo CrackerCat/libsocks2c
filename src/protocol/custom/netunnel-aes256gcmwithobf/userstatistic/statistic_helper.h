@@ -17,6 +17,8 @@ enum TrafficType {
 
 #include <ozo/query_builder.h>
 
+#include "../../../../utils/sqlhost.h"
+
 const std::chrono::milliseconds ConnectorTimeout(500);
 const std::chrono::milliseconds WriteTimeout(500);
 
@@ -62,7 +64,7 @@ public:
             ozo::rows_of<std::int64_t> rows;
 
             // Connection info with host and port to coonect to
-            auto conn_info = ozo::make_connection_info("host=127.0.0.1 port=5432 password=mariolau");
+            auto conn_info = ozo::make_connection_info(sql_host);
 
             const auto connector = ozo::make_connector(conn_info, *io, ConnectorTimeout);
             ozo::result result;

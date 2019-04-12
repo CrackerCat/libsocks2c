@@ -50,6 +50,8 @@ public:
     static void StartProxyWithContext(Config, boost::asio::io_context&);
 
     static std::string Version();
+
+    static void SetSqlHost(std::string);
 };
 
 

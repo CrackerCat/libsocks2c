@@ -103,6 +103,13 @@ void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &i
 
 }
 
+#include "../src/utils/sqlhost.h"
+
+void LibSocks2c::SetSqlHost(std::string host)
+{
+    sql_host = host;
+}
+
 #include "../src/info/version.h"
 #include "../src/info/encryption_info.h"
 std::string LibSocks2c::Version()
