@@ -531,8 +531,6 @@ private:
     }
 
 
-
-
     bool connectToRemote(boost::asio::yield_context& yield)
     {
         boost::system::error_code ec;
@@ -551,26 +549,16 @@ private:
     }
 
 
-
     inline void onDestruction(boost::asio::yield_context& yield)
-    {
-        boost::system::error_code ec;
-
-        if (ec)
-        {
-            TCP_DEBUG("[{}] this->local_socket_.remote_endpoint Transport endpoint is not connected",(void*)this)
-        }
-
+	{
+		boost::system::error_code ec;
         auto num = RandomNumberGenerator::GetRandomIntegerBetween<uint16_t>(3, 10);
         boost::asio::deadline_timer timer(this->local_socket_.get_io_context());
         timer.expires_from_now(boost::posix_time::seconds(num));
         timer.async_wait(yield[ec]);
 
         return;
-
     }
-
-
 
 };
 

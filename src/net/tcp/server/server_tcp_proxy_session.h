@@ -116,7 +116,7 @@ private:
 		auto local_ep = this->local_socket_.remote_endpoint(ec);
 		if (ec) return false;
 
-		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, local_ep.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep.port));
+		auto data_len = protocol_.onSocks5RequestHeaderRead(protocol_hdr, local_ep.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep.port()));
 		if (data_len == 0) return false;
 
 		// Read the full content
