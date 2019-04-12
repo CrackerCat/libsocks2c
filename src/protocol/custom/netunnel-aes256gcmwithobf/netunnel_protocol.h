@@ -238,7 +238,6 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     uint64_t OnUdpPayloadReadFromServerLocal(netunnel_aes256gcmwithobf_header *header)
     {
-        this->ttype = UDP;
         auto data_len = decryptHeader(header);
         if (data_len == 0) return 0;
 		this->upstream_traffic += header->PAYLOAD_LENGTH;
@@ -248,6 +247,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     void SetSrcEndpoint(std::string&& client_ip)
     {
+		this->ttype = UDP;
         this->src_ip = client_ip;
     }
 
