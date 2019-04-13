@@ -33,7 +33,7 @@ public:
         UDP_DEBUG("[{}] UDP Server created", (void*)this)
 
         for (int j = 0; j < this->GetVIOContextSize(); ++j) {
-            vprotocol_.emplace_back(Protocol(&this->GetIOContextAt(j)));
+            vprotocol_.emplace_back(Protocol(nullptr));
         }
 
     }
@@ -41,15 +41,14 @@ public:
     ~ServerUdpProxy() {
         UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
     }
-
-    virtual void SetUid(int id) override
-    {
-#ifdef BUILD_NETUNNEL_SERVER
-        for (int j = 0; j < this->GetVIOContextSize(); ++j) {
-            vprotocol_[j].SetUserID(id);
-        }
-#endif
-    }
+//#ifdef BUILD_NETUNNEL_SERVER
+//    virtual void SetUid(int id) override
+//    {
+//        for (int j = 0; j < this->GetVIOContextSize(); ++j) {
+//            vprotocol_[j].SetUserID(id);
+//        }
+//    }
+//#endif
 
     auto& GetDefaultIO()
     {
@@ -101,13 +100,6 @@ public:
 
         }
 
-//        if (expire_time > 0)
-//        {
-//            ptimer_ = std::make_unique<TIMER>(this->GetIOContext());
-//            ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
-//            ptimer_->async_wait(boost::bind(&ServerUdpProxy::onTimeExpire, this, boost::asio::placeholders::error));
-//        }
-
         startAcceptorCoroutine();
 
         LOG_INFO("ServerUdpProxy[MT] started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
@@ -131,11 +123,7 @@ public:
                 }
 
                 this->vpacceptor_[i]->cancel();
-                // only close timer when it is set
-                //if (this->vptimer_[i]) this->ptimer_[i]->cancel();
             });
-
-
 
         }
 
@@ -186,7 +174,7 @@ private:
 
                     auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
                     // decrypt packet and get payload length
-                    bytes_read = vprotocol_[i].OnUdpPayloadReadFromServerLocal(protocol_hdr, local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
+                    bytes_read = vprotocol_[i].OnUdpPayloadReadFromServerLocal(protocol_hdr);
                     UDP_DEBUG("udp payload length: {}", bytes_read)
 
                     if (bytes_read == 0)
@@ -203,6 +191,8 @@ private:
 
                         auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, this->vpacceptor_[i], vsession_map_[i]);
 
+                        new_session->GetProtocol().SetSrcEndpoint(local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
+                        new_session->GetProtocol().AddUpstreamTraffic(protocol_hdr->PAYLOAD_LENGTH);
                         new_session->GetLocalEndPoint() = local_ep_;
 
                         // COPY proxy data only (without protocol header)
@@ -218,6 +208,7 @@ private:
 
                         // COPY proxy data only (without protocol header)
                         memcpy(map_it->second->GetLocalBuffer(), protocol_hdr->GetDataOffsetPtr(), bytes_read);
+                        map_it->second->GetProtocol().AddUpstreamTraffic(protocol_hdr->PAYLOAD_LENGTH);
                         map_it->second->sendToRemote(bytes_read);
                     }
 

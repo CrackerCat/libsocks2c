@@ -13,6 +13,7 @@
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
 #include "../../bufferdef.h"
+#include <boost/unordered_set.hpp>
 
 template <class Protocol>
 class ServerUdpProxySession : public boost::enable_shared_from_this<ServerUdpProxySession<Protocol>> {
@@ -42,6 +43,12 @@ public:
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
 		assert(bufferqueue_.Empty());
+		std::string ip_record;
+		for(auto &ip : proxy_ip_set)
+		{
+			ip_record.append(ip);
+		}
+		this->protocol_.SetProxyEndpoint(std::move(ip_record));
 	}
 
 	unsigned char* GetLocalDataBuffer()
@@ -59,6 +66,11 @@ public:
 		return local_ep_;
 	}
 
+	auto& GetProtocol()
+	{
+		return protocol_;
+	}
+
 	// packet already decrypted
 	// sendToRemote may be call multiple times before last packet was send 
 	// thus we have to queue data
@@ -72,7 +84,7 @@ public:
 
 		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
-		protocol_.onSocks5IpParse(ip_str + ":" + boost::lexical_cast<std::string>(port));
+		proxy_ip_set.emplace(ip_str + ":" + boost::lexical_cast<std::string>(port) + ";");
 
 		auto res = bufferqueue_.Enqueue(bytes - 10, GetLocalBuffer() + 10, boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_str), port));
 
@@ -177,6 +189,7 @@ private:
 	Protocol protocol_;
 
 	SESSION_MAP& session_map_;
+	boost::unordered_set<std::string> proxy_ip_set;
 
 	boost::asio::ip::udp::endpoint local_ep_;
 	boost::asio::ip::udp::endpoint remote_ep_;
@@ -210,6 +223,8 @@ private:
 		}
 
 		LOG_DETAIL(UDP_DEBUG("[{}] udp read {} bytes from remote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
+
+		this->protocol_.AddDownstreamTraffic(bytes_read);
 
 		last_update_time = time(nullptr);
 

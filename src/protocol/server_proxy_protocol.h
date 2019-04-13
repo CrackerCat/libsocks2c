@@ -44,10 +44,11 @@ public:
         return static_cast<PH*>(this)->onPayloadReadFromRemote(header);
     }
 
-    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<PH>::ProtocolHeader *header, std::string client_ip)
+    uint64_t OnUdpPayloadReadFromServerLocal(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {
-        return static_cast<PH*>(this)->OnUdpPayloadReadFromServerLocal(header, client_ip);
+        return static_cast<PH*>(this)->OnUdpPayloadReadFromServerLocal(header);
     }
+
     uint64_t OnUdpPayloadReadFromServerRemote(typename IProxyProtocol<PH>::ProtocolHeader *header)
     {
         return static_cast<PH*>(this)->OnUdpPayloadReadFromServerRemote(header);
