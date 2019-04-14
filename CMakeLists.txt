@@ -5,11 +5,7 @@ OPTION(BUILD_SERVER_LIB "" OFF)
 OPTION(BUILD_CLIENT_LIB "" OFF)
 OPTION(BUILD_NETUNNEL_SERVER "netunnel" OFF)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
-OPTION(BUILD_IOS_LIBRARY "build ios lib" OFF)
-
-if (BUILD_IOS_LIBRARY)
-    set(ENABLE_UOUT, OFF)
-endif()
+OPTION(BUILD_IOS_LIB "build ios lib" OFF)
 
 IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
@@ -181,10 +177,19 @@ IF(NOT BUILD_IOS_LIBRARY)
 ENDIF()
 
 IF(BUILD_NETUNNEL_SERVER)
+    message("Build netunnelserver, removing client definition")
+    remove_definitions(-DBUILD_CLIENT_LIB)
     add_definitions(-DBUILD_NETUNNEL_SERVER)
     add_definitions(-DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
     include_directories(/home/mariolau/Desktop/ozo-master/include)
     include_directories(/usr/include/postgresql)
     target_link_libraries(libsocks2c pq)
 ENDIF()
+
+if (BUILD_IOS_LIB)
+    set(ENABLE_UOUT, OFF)
+    remove_definitions(-DUDP_OVER_UTCP)
+    remove_definitions(-DBUILD_SERVER_LIB)
+endif()
+
 

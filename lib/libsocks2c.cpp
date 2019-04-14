@@ -6,7 +6,9 @@
 #ifdef BUILD_SERVER_LIB
 #include "../src/factory/server_factory.h"
 #include "server_proxymap.h"
-#elif BUILD_CLIENT_LIB
+#endif
+
+#if BUILD_CLIENT_LIB
 #include "../src/factory/client_factory.h"
 #include "client_proxymap.h"
 #endif
