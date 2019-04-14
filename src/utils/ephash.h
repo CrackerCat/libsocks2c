@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/asio/ip/udp.hpp>
 
 struct EndPointHash {
     size_t operator()(boost::asio::ip::udp::endpoint const &ep_in) const

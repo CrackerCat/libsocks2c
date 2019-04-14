@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
+
+OPTION(BUILD_SERVER_LIB "" OFF)
+OPTION(BUILD_CLIENT_LIB "" OFF)
 OPTION(BUILD_NETUNNEL_SERVER "netunnel" OFF)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
 OPTION(BUILD_IOS_LIBRARY "build ios lib" OFF)
@@ -12,7 +15,7 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
+add_definitions(-DPROTOCOL_AES256GCM)
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
 #add_definitions(-DUDP_DEBUG_DETAIL)
@@ -50,50 +53,73 @@ SET(CORE_FILES
         src/protocol/socks5_protocol.h
         src/protocol/socks5_protocol_helper.cpp
         src/protocol/socks5_protocol_helper.h
-        src/netio/basic_network_io.h
         src/netio/basic_network_io_mt.h
         src/netio/basic_network_io_mt.cpp
-        src/net/tcp/client/client_tcp_proxy.h
-        src/net/tcp/client/client_tcp_proxy_session.h
-
-        src/net/udp/client/client_udp_proxy.h
-        src/net/udp/client/client_udp_proxy_session.h
 
         src/utils/logger.cpp
         src/utils/logger.h
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf.h
         src/protocol/iproxy_protocol.h
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf_helper.h
-        src/protocol/client_proxy_protocol.h src/utils/randomNumberGenerator.cpp
-        src/utils/randomNumberGenerator.h src/protocol/server_proxy_protocol.h
+        src/protocol/client_proxy_protocol.h
+        src/utils/randomNumberGenerator.cpp
+        src/utils/randomNumberGenerator.h
+        src/protocol/server_proxy_protocol.h
 
-        src/net/tcp/server/server_tcp_proxy.h
-        src/net/tcp/server/server_tcp_proxy_session.h
-        src/net/tcp/server/server_tcp_proxy_mt.h
-
-        src/net/udp/server/server_udp_proxy.h
-        src/net/udp/server/server_udp_proxy_session.h
         src/protocol/protocol_def.h
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
         src/utils/trafficcounter.cpp
 
-        lib/proxymap.h
+        lib/server_proxymap.h
         src/utils/singleton.h
 		src/net/udp/bufferqueue.h
         src/utils/macro_def.h
         src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol.h
         src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol_helper.h
-        src/utils/sqlhost.h)
+        src/utils/sqlhost.h src/factory/client_factory.h src/factory/server_factory.h lib/client_proxymap.h src/net/raw/server/buffersize_def.h)
+
+IF(BUILD_CLIENT_LIB)
+message("Build Client")
+add_definitions(-DBUILD_CLIENT_LIB)
+LIST(APPEND CORE_FIELS
+        src/net/tcp/client/client_tcp_proxy.h
+        src/net/tcp/client/client_tcp_proxy_session.h
+
+        src/net/udp/client/client_udp_proxy.h
+        src/net/udp/client/client_udp_proxy_session.h)
+
+ENDIF()
+
+
+IF(BUILD_SERVER_LIB)
+    message("Build server")
+
+    add_definitions(-DBUILD_SERVER_LIB)
+    LIST(APPEND CORE_FILES
+        src/net/tcp/server/server_tcp_proxy.h
+        src/net/tcp/server/server_tcp_proxy_session.h
+        src/net/tcp/server/server_tcp_proxy_mt.h
+
+        src/net/udp/server/server_udp_proxy.h
+        src/net/udp/server/server_udp_proxy_session.h)
+ENDIF()
+
+
 IF(BUILD_NETUNNEL_SERVER)
-LIST(APPEND CORE_FILES
+    message("Build Netunnel server")
+
+    LIST(APPEND CORE_FILES
         src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp
         src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h
         src/protocol/custom/netunnel-aes256gcmwithobf/user_info.h)
 ENDIF()
+
 IF (ENABLE_UOUT)
-LIST(APPEND CORE_FILES
+    message("Build uout")
+
+    LIST(APPEND CORE_FILES
         src/net/raw/raw_proxy_helper/interface_helper.h
         src/net/raw/raw_proxy_helper/interface_helper.cpp
         src/net/raw/server/raw_udp_session.h
@@ -115,9 +141,9 @@ LIST(APPEND CORE_FILES
     ENDIF()
 ENDIF()
 
-add_library(libsocks2c ${CORE_FILES})
-#LIST(APPEND CORE_FILES main.cpp)
-#add_executable(libsocks2c ${CORE_FILES})
+#add_library(libsocks2c ${CORE_FILES})
+LIST(APPEND CORE_FILES main.cpp)
+add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file

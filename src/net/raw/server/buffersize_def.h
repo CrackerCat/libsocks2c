@@ -1,0 +1,4 @@
+#pragma once
+
+#define RAW_UDP_LOCAL_RECV_BUFF_SIZE 1500
+#define RAW_UDP_REMOTE_RECV_BUFF_SIZE 1500

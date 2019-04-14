@@ -40,7 +40,7 @@ public:
         sniffer_socket(io), send_socket_stream(io)
     {
         if (!send_socket_stream.is_open())
-            send_socket_stream.open();
+d            send_socket_stream.open();
     }
 
     virtual void Stop() override

@@ -103,6 +103,7 @@ namespace asio {
     } // namespace ip
 } // namespace asio
 
+#include <boost/functional/hash.hpp>
 struct RawEpHash {
     size_t operator()(asio::ip::raw::endpoint const &ep_in) const
     {

@@ -13,6 +13,7 @@
 #include "../../../protocol/socks5_protocol_helper.h"
 
 #include "../../udp/udp_socket_map.h"
+#include "buffersize_def.h"
 
 template <class Protocol>
 class ServerUdpRawProxySession;
@@ -97,9 +98,8 @@ private:
 
     udp_ep_tuple src_ep;
 
-    unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
-    unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
-
+    unsigned char local_recv_buff_[RAW_UDP_LOCAL_RECV_BUFF_SIZE];
+    unsigned char remote_recv_buff_[RAW_UDP_REMOTE_RECV_BUFF_SIZE];
 
     void readFromRemote()
     {
@@ -111,7 +111,7 @@ private:
                 boost::system::error_code ec;
 
                 // 10 extra bytes reserved for socks5 udp header
-                uint64_t bytes_read = this->remote_socket_.async_receive_from(boost::asio::buffer(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6 + 10, UDP_REMOTE_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 6 - 10), remote_recv_ep_, yield[ec]);
+                uint64_t bytes_read = this->remote_socket_.async_receive_from(boost::asio::buffer(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6 + 10, RAW_UDP_REMOTE_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 6 - 10), remote_recv_ep_, yield[ec]);
 
                 if (ec)
                 {
