@@ -20,7 +20,6 @@ public:
 
    ~INetworkProxy(){
        LOG_DEBUG("INetworkProxy die")
-
    }
 
     /*
@@ -41,7 +40,8 @@ public:
     }
 
     /*
-     *  Set the ip && port for server if you are client
+     *  if client, set the endpoint of the proxy server 
+     *  if server, set the listening endpoint
      */
     virtual void SetProxyInfo(std::string server_ip, uint16_t server_port)
     {
@@ -58,22 +58,23 @@ public:
         this->expire_time = time_sec;
         last_active_time = time(nullptr);
     }
-
+    
+#ifdef BUILD_NETUNNEL_SERVER
     virtual void SetUid(int id)
     {
         this->uid = id;
     }
+#endif
 
 protected:
 
-    using TIMER = boost::asio::deadline_timer;
-    using PTIMER = std::unique_ptr<TIMER>;
-
     unsigned char proxyKey_[32U];
-
+    
+#ifdef BUILD_NETUNNEL_SERVER
     int uid = 0;
+#endif
 
-    PTIMER ptimer_;
+    std::unique_ptr<boost::asio::deadline_timer> ptimer_;
     time_t last_active_time;
     time_t expire_time = 0;
 
@@ -81,7 +82,6 @@ protected:
     uint16_t server_port;
 
     virtual void startAcceptorCoroutine() = 0;
-
 
 };
 
