@@ -16,15 +16,23 @@
 #define OBF_MAXPADDLE 800
 
 
-
-struct aes256gcmwithobf_header{
+// Example protocol
+/*
+ * every protocol header should define
+ * 1. int Size()
+ *      return the sizeof the protocol header
+ * 2. unsigned char* GetDataOffsetPtr()
+ *      return the pointer pointing to the payload following the protocol header
+ *
+ * header should be pod
+ */
+struct aes256gcmwithobf_header {
 
     unsigned char NONCE[12];
     unsigned char LEN_TAG[16];
     unsigned char PAYLOAD_TAG[16];
     uint32_t PAYLOAD_LENGTH;
     uint32_t PADDING_LENGTH;
-    //data
 
     static constexpr int Size()
     {
@@ -40,11 +48,98 @@ struct aes256gcmwithobf_header{
 
 namespace boost { namespace asio { class io_context; } }
 
+
+
+/*
+ * Protocol Implementation Here
+ *
+ * two member must be defined
+ *   boost::asio::io_context* pio_context;
+ *   unsigned char ProxyKey[32];
+ *
+ *  we add two buffer here cause the lib could'not en(de)crypt data inplace
+ *
+ */
 struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_header>, public ServerProxyProtocol<aes256gcmwithobf_header>
 {
 
-    // it's safe to use raw p here, cause io_context class will never desturct before protocol class
+    // Ctor template
     aes256gcmwithobf_Protocol(boost::asio::io_context* io = nullptr) : pio_context(io) {}
+
+
+    /*
+     * How we encrypt data
+     * 1. encryptPayload
+     * 2. (optional) addObfuscation
+     * 3. encryptHeaderLen
+     *
+     */
+
+    // encrypt the payload(the read data), not including padding
+    // PAYLOAD_LENGTH is set before calling
+    // we get PAYLOAD_TAG after encryption
+    void encryptPayload(aes256gcmwithobf_header *header)
+    {
+
+        uint64_t tag_len = 0;
+
+        // set NONCE random value
+        randombytes_buf(header->NONCE, sizeof(header->NONCE));
+
+        // encrypt data using this NONCE and preset key
+        aes256gcmwithobf_Helper::encryptData(this->ProxyKey, header->NONCE, header->GetDataOffsetPtr(),
+                                             header->PAYLOAD_LENGTH, encryptedData, &tag_len, header->PAYLOAD_TAG);
+
+        memcpy(header->GetDataOffsetPtr(), encryptedData, header->PAYLOAD_LENGTH);
+
+    }
+
+
+    void addObfuscation(aes256gcmwithobf_header *header)
+    {
+
+        if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
+        {
+            header->PADDING_LENGTH = 0;
+            return;
+        }
+
+        // data needs obf
+
+        auto paddle_len = RandomNumberGenerator::GetRandomIntegerBetween(OBF_MINPADDLE, OBF_MAXPADDLE);
+
+        randombytes_buf(header->GetDataOffsetPtr() + header->PAYLOAD_LENGTH, paddle_len);
+
+        header->PADDING_LENGTH = (uint32_t)paddle_len;
+
+
+    }
+
+
+    // encrypt the protocol header
+    // return the original len of data + paddle
+    uint32_t encryptHeaderLen(aes256gcmwithobf_header *header)
+    {
+
+        uint32_t original_len = header->PADDING_LENGTH + header->PAYLOAD_LENGTH;
+
+        unsigned char encrypted_length[8];
+        uint64_t tag_len = 0;
+
+        //randombytes_buf(header->NONCE, sizeof(header->NONCE));
+
+        aes256gcmwithobf_Helper::encryptData(this->ProxyKey, header->NONCE, (unsigned char*)&header->PAYLOAD_LENGTH,
+                                             sizeof(header->PAYLOAD_LENGTH) + sizeof(header->PADDING_LENGTH), encrypted_length, &tag_len, header->LEN_TAG);
+
+        memcpy(&header->PAYLOAD_LENGTH, encrypted_length, 8);
+
+        return original_len;
+
+    }
+
+
+
+
 
     uint64_t OnSocks5RequestSent(aes256gcmwithobf_header *header)
     {
@@ -89,62 +184,13 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
 
 
 
-    // We encrypt payload first , then encrypt the data len
-    void encryptPayload(aes256gcmwithobf_header *header)
-    {
-
-        uint64_t tag_len = 0;
-
-        randombytes_buf(header->NONCE, sizeof(header->NONCE));
-
-        aes256gcmwithobf_Helper::encryptData(this->ProxyKey, header->NONCE, header->GetDataOffsetPtr(),
-                                                    header->PAYLOAD_LENGTH, encryptedData, &tag_len, header->PAYLOAD_TAG);
-
-        memcpy(header->GetDataOffsetPtr(), encryptedData, header->PAYLOAD_LENGTH);
-
-    }
 
 
-    void addObfuscation(aes256gcmwithobf_header *header)
-    {
-
-        if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
-        {
-            header->PADDING_LENGTH = 0;
-            return;
-        }
-
-        // data needs obf
-
-        auto paddle_len = RandomNumberGenerator::GetRandomIntegerBetween(OBF_MINPADDLE, OBF_MAXPADDLE);
-
-        randombytes_buf(header->GetDataOffsetPtr() + header->PAYLOAD_LENGTH, paddle_len);
-
-        header->PADDING_LENGTH = (uint32_t)paddle_len;
 
 
-    }
 
 
-    // return the original len of data + paddle
-    uint32_t encryptHeaderLen(aes256gcmwithobf_header *header)
-    {
 
-        uint32_t original_len = header->PADDING_LENGTH + header->PAYLOAD_LENGTH;
-
-        unsigned char encrypted_length[8];
-        uint64_t tag_len = 0;
-
-        //randombytes_buf(header->NONCE, sizeof(header->NONCE));
-
-        aes256gcmwithobf_Helper::encryptData(this->ProxyKey, header->NONCE, (unsigned char*)&header->PAYLOAD_LENGTH,
-                                                    sizeof(header->PAYLOAD_LENGTH) + sizeof(header->PADDING_LENGTH), encrypted_length, &tag_len, header->LEN_TAG);
-
-        memcpy(&header->PAYLOAD_LENGTH, encrypted_length, 8);
-
-        return original_len;
-
-    }
 
 
 

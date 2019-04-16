@@ -13,8 +13,6 @@ public:
      *      1.  uint64_t return 0 if err,
      *      2.  bool     return false if err
      */
-
-
     uint64_t onSocks5RequestHeaderRead(typename IProxyProtocol<PH>::ProtocolHeader *header, std::string client_ip)
     {
         return static_cast<PH*>(this)->onSocks5RequestHeaderRead(header, client_ip);
