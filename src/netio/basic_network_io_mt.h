@@ -45,7 +45,7 @@ protected:
 
 	uint64_t GetVIOContextSize();
 
-    static VWORK_GUARD vwork_guard_;
+	static VWORK_GUARD vwork_guard_;
     static VPIO_CONTEXT vpio_context_;
 	THREAD_GROUP thread_group_;
 

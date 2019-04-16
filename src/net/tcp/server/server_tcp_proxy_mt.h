@@ -11,6 +11,8 @@
 #include "server_tcp_proxy_session.h"
 #include "../../../utils/logger.h"
 
+#include "../../inetwork_proxy.h"
+
 #include <arpa/inet.h>
 
 template <class Protocol>
@@ -20,6 +22,8 @@ class ServerTcpProxy : public INetworkProxy , public boost::enable_shared_from_t
     using ACCEPTOR = boost::asio::ip::tcp::acceptor;
     using PACCEPTOR = std::unique_ptr<ACCEPTOR>;
     using VPACCEPTOR = std::vector<PACCEPTOR>;
+    using TIMER = boost::asio::deadline_timer;
+    using PTIMER = std::unique_ptr<TIMER>;
     using VPTIMER = std::vector<PTIMER>;
 public:
 

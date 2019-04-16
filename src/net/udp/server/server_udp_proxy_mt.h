@@ -21,6 +21,8 @@ class ServerUdpProxy : public INetworkProxy, public boost::enable_shared_from_th
     using ACCEPTOR = boost::asio::ip::udp::socket;
     using PACCEPTOR = boost::shared_ptr<ACCEPTOR>;
     using VPACCEPTOR = std::vector<PACCEPTOR>;
+    using TIMER = boost::asio::deadline_timer;
+    using PTIMER = std::unique_ptr<TIMER>;
     using VPTIMER = std::vector<PTIMER>;
 
     using SESSION_MAP = boost::unordered_map<boost::asio::ip::udp::endpoint, boost::shared_ptr<ServerUdpProxySession<Protocol>>, EndPointHash>;
@@ -41,19 +43,7 @@ public:
     ~ServerUdpProxy() {
         UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
     }
-//#ifdef BUILD_NETUNNEL_SERVER
-//    virtual void SetUid(int id) override
-//    {
-//        for (int j = 0; j < this->GetVIOContextSize(); ++j) {
-//            vprotocol_[j].SetUserID(id);
-//        }
-//    }
-//#endif
 
-    auto& GetDefaultIO()
-    {
-        return this->GetIOContext();
-    }
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
     {
