@@ -74,9 +74,11 @@ protected:
     int uid = 0;
 #endif
 
+#if !defined(BUILD_NETUNNEL_SERVER)
     std::unique_ptr<boost::asio::deadline_timer> ptimer_;
     time_t last_active_time;
     time_t expire_time = 0;
+#endif
 
     std::string server_ip;
     uint16_t server_port;

@@ -29,10 +29,7 @@ public:
 
     }
     ~ServerTcpProxy() {
-
-
         TCP_DEBUG("ServerTcpProxy at port: {} die", this->server_port)
-
     }
 
     void StartProxy(std::string local_address, uint16_t local_port)
@@ -110,6 +107,8 @@ private:
     VPACCEPTOR vpacceptor_;
     VPTIMER vptimer_;
 
+    std::atomic<time_t> last_active_time;
+
     void startAcceptorCoroutine()
     {
         auto self(this->shared_from_this());
@@ -133,6 +132,8 @@ private:
                     }
 
                     TCP_DEBUG("[Thread {}] new connection from {}:{}", boost::lexical_cast<std::string>(boost::this_thread::get_id()).c_str(), new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
+
+                    this->last_active_time = time(nullptr);
 
                     new_session->Start();
                 }

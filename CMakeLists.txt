@@ -85,13 +85,11 @@ LIST(APPEND CORE_FIELS
 
         src/net/udp/client/client_udp_proxy.h
         src/net/udp/client/client_udp_proxy_session.h)
-
 ENDIF()
 
 
 IF(BUILD_SERVER_LIB)
     message("Build server")
-
     add_definitions(-DBUILD_SERVER_LIB)
     LIST(APPEND CORE_FILES
         src/net/tcp/server/server_tcp_proxy.h
@@ -104,7 +102,10 @@ ENDIF()
 
 
 IF(BUILD_NETUNNEL_SERVER)
-    message("Build Netunnel server")
+    message("configure Netunnel server")
+    IF (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
+        MESSAGE(FATAL_ERROR "Netunnel server can only build on linux")
+    ENDIF()
 
     LIST(APPEND CORE_FILES
         src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp
