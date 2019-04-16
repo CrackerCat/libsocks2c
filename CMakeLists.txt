@@ -74,7 +74,11 @@ SET(CORE_FILES
         src/utils/macro_def.h
         src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol.h
         src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol_helper.h
-        src/utils/sqlhost.h src/factory/client_factory.h src/factory/server_factory.h lib/client_proxymap.h src/net/raw/server/buffersize_def.h src/utils/sqlhost.cpp)
+        src/utils/sqlhost.h
+        src/factory/client_factory.h
+        src/factory/server_factory.h
+        lib/client_proxymap.h
+        src/net/raw/server/buffersize_def.h)
 
 IF(BUILD_CLIENT_LIB)
 message("Build Client")

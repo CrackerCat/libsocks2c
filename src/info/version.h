@@ -2,7 +2,7 @@
 
 #include <string>
 
-const std::string v = "2.1.2";
+const std::string v = "2.1.3";
 
 #ifdef UDP_OVER_UTCP
 const std::string version = "libsocks2c " + v + " with UOUT";
