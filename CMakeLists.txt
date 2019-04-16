@@ -11,7 +11,8 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
+add_definitions(-DPROTOCOL_AES256GCM)
+
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
 #add_definitions(-DUDP_DEBUG_DETAIL)
@@ -92,30 +93,31 @@ LIST(APPEND CORE_FIELS
 ENDIF()
 
 
-IF(BUILD_SERVER_LIB)
-    message("Build server")
-    add_definitions(-DBUILD_SERVER_LIB)
-    LIST(APPEND CORE_FILES
-        src/net/tcp/server/server_tcp_proxy.h
-        src/net/tcp/server/server_tcp_proxy_session.h
-        src/net/tcp/server/server_tcp_proxy_mt.h
-
-        src/net/udp/server/server_udp_proxy.h
-        src/net/udp/server/server_udp_proxy_session.h)
-ENDIF()
-
-
 IF(BUILD_NETUNNEL_SERVER)
     message("configure Netunnel server")
     IF (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
         MESSAGE(FATAL_ERROR "Netunnel server can only build on linux")
     ENDIF()
+    add_definitions(-DBUILD_SERVER_LIB)
 
     LIST(APPEND CORE_FILES
         src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp
         src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h
         src/protocol/custom/netunnel-aes256gcmwithobf/user_info.h)
 ENDIF()
+
+IF(BUILD_SERVER_LIB)
+    message("Build server")
+    add_definitions(-DBUILD_SERVER_LIB)
+    LIST(APPEND CORE_FILES
+            src/net/tcp/server/server_tcp_proxy.h
+            src/net/tcp/server/server_tcp_proxy_session.h
+            src/net/tcp/server/server_tcp_proxy_mt.h
+
+            src/net/udp/server/server_udp_proxy.h
+            src/net/udp/server/server_udp_proxy_session.h)
+ENDIF()
+
 
 IF (ENABLE_UOUT)
     message("Build uout")
