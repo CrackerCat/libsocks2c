@@ -5,7 +5,7 @@
 #include <tins/ip.h>
 #include <tins/tcp.h>
 #include "../raw_socket.h"
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include <random>

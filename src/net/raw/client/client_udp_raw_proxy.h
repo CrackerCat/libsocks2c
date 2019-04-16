@@ -9,7 +9,7 @@
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/asio/ip/udp.hpp>
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
 #include "../raw_proxy_helper/interface_helper.h"
 #include "../raw_proxy_helper/firewall_helper.h"

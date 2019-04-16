@@ -2,7 +2,7 @@
 
 #include "../../inetwork_proxy.h"
 #include "../../../utils/logger.h"
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include "client_udp_proxy_session.h"
 
 

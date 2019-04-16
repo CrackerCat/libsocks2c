@@ -8,7 +8,7 @@
 #include <boost/bind.hpp>
 
 #include "../bufferqueue.h"
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include "../../../utils/logger.h"
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"

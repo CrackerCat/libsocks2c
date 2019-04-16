@@ -9,7 +9,7 @@
 #include <string>
 #include "../bufferqueue.h"
 #include "../../../utils/logger.h"
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include "../../../utils/ephash.h"
 #include "../../../utils/macro_def.h"
 #include "../../bufferdef.h"

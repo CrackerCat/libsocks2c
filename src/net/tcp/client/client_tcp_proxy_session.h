@@ -4,8 +4,8 @@
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include "../../../utils/logger.h"
-#include "../../../protocol/socks5_protocol.h"
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 
 #include "../../../protocol/iproxy_protocol.h"
 #include "../../../utils/randomNumberGenerator.h"

@@ -46,9 +46,9 @@ ENDIF()
 SET(CORE_FILES
         lib/libsocks2c.cpp
         lib/libsocks2c.h
-        src/protocol/socks5_protocol.h
-        src/protocol/socks5_protocol_helper.cpp
-        src/protocol/socks5_protocol_helper.h
+        src/protocol/socks5/socks5_protocol.h
+        src/protocol/socks5/socks5_protocol_helper.cpp
+        src/protocol/socks5/socks5_protocol_helper.h
         src/netio/basic_network_io_mt.h
         src/netio/basic_network_io_mt.cpp
 
@@ -138,9 +138,9 @@ IF (ENABLE_UOUT)
     ENDIF()
 ENDIF()
 
-#add_library(libsocks2c ${CORE_FILES})
-LIST(APPEND CORE_FILES main.cpp)
-add_executable(libsocks2c ${CORE_FILES})
+add_library(libsocks2c ${CORE_FILES})
+#LIST(APPEND CORE_FILES main.cpp)
+#add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file

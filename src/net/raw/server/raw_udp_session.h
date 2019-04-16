@@ -10,7 +10,7 @@
 #include <boost/asio/ip/udp.hpp>
 #include <boost/asio/deadline_timer.hpp>
 
-#include "../../../protocol/socks5_protocol_helper.h"
+#include "../../../protocol/socks5/socks5_protocol_helper.h"
 
 #include "../../udp/udp_socket_map.h"
 #include "buffersize_def.h"
