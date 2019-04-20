@@ -68,9 +68,10 @@ namespace boost { namespace asio { class io_context; } }
  * you can leave server part definition blank if you are building client only and vice versa
  * but you need a server anyway :)
  *
- * we add two buffer here cause the lib could'not en(de)crypt data inplace, this won't be a bottleneck
+ * we add two buffer here cause the lib could'not en(de)crypt data inplace
  *
- * tips: never use shared_ptr if you want to allocate buffer which will cause great performance loss, use unique_ptr instead
+ * tips: never use shared_ptr if you want to allocate buffer
+ * the use of shared_ptr results in great performance loss, use unique_ptr instead
  *
  */
 struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_header>, public ServerProxyProtocol<aes256gcmwithobf_header>
@@ -84,11 +85,11 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
      * How we encrypt data
      * 1. encryptPayload
      * 2. (optional) addObfuscation
-     * 3. encryptHeaderLen
+     * 3. encryptHeader
      *
      */
-    // encrypt the payload(the read data), not including padding
-    // PAYLOAD_LENGTH is set before calling
+    // encrypt the payload(the read data)
+    // PAYLOAD_LENGTH is already set before encryptPayload is called
     // we get PAYLOAD_TAG after encryption
     void encryptPayload(aes256gcmwithobf_header *header)
     {
@@ -107,7 +108,8 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
 
     }
 
-    // add padding at the tail of payload
+    // (optional) add padding at the tail of payload
+    // we don't need to encrypt this part
     void addObfuscation(aes256gcmwithobf_header *header)
     {
         if (header->PAYLOAD_LENGTH > OBF_THRESHOLD)
@@ -146,7 +148,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
     //  -----   CLIENT PART TCP   -----
 
     // invoked when the client sending the socks5 request to remote
-    // for each connection, OnSocks5RequestSent will only call once
+    // for each connection, OnSocks5RequestSent will call once only
     // return the total length of data to be send
     uint64_t OnSocks5RequestSent(aes256gcmwithobf_header *header)
     {
@@ -175,7 +177,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
 
     /*
      * How we read data from remote
-     *  1. read header, get len of the following data
+     *  1. read header only, get the [len] of the following data
      *  2. read len bytes real data
      */
 
@@ -241,7 +243,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
     //  -----   CLIENT PART UDP   -----
 
     // invoked when the client read real data from local
-    // the same as client side
+    // the same as tcp
     uint64_t OnUdpPayloadReadFromClientLocal(aes256gcmwithobf_header *header)
     {
         encryptPayload(header);
