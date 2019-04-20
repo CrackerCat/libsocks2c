@@ -24,7 +24,7 @@
  * 2. unsigned char* GetDataOffsetPtr()
  *      return the pointer pointing to the payload following the protocol header
  *
- * header should be pod
+ * header should be a pod
  */
 struct aes256gcmwithobf_header {
 
@@ -65,7 +65,7 @@ namespace boost { namespace asio { class io_context; } }
  *           2 for client udp
  *           2 for server udp
  *
- * you can leave server part definition blank if you are building server only and vice versa
+ * you can leave server part definition blank if you are building client only and vice versa
  * but you need a server anyway :)
  *
  * we add two buffer here cause the lib could'not en(de)crypt data inplace, this won't be a bottleneck
