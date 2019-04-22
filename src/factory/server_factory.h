@@ -29,14 +29,18 @@ public:
     static ServerProxy<Protocol> CreateServerProxy(std::string proxyKey, std::string server_ip, uint16_t server_port, uint16_t server_uout_port, bool udp2raw, uint64_t timeout = 0, int uid = 0)
     {
         auto tcps = boost::make_shared<ServerTcpProxy<Protocol>>();
+#ifdef BUILD_NETUNNEL_SERVER
         tcps->SetUid(uid);
+#endif
         tcps->SetProxyKey(proxyKey);
         tcps->SetExpireTime(timeout);
         tcps->SetProxyInfo(server_ip, server_port);
         tcps->StartProxy(server_ip, server_port);
 
         auto udps = boost::make_shared<ServerUdpProxy<Protocol>>();
+#ifdef BUILD_NETUNNEL_SERVER
         udps->SetUid(uid);
+#endif
         udps->SetProxyKey(proxyKey);
         udps->SetExpireTime(timeout);
         udps->SetProxyInfo(server_ip, server_port);

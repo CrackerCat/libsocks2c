@@ -21,7 +21,7 @@ class ClientUdpProxySession : public boost::enable_shared_from_this<ClientUdpPro
 
 public:
 
-    ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_io_context()), timer_(local_socket->get_io_context())
+    ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_executor()), timer_(local_socket->get_executor())
     {
         this->protocol_.SetKey(key);
         remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
@@ -30,7 +30,7 @@ public:
 
     }
 
-	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_io_context())
+	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_executor())
 	{
 		this->protocol_.SetKey(key);
 		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
@@ -74,7 +74,7 @@ public:
     {
 
         auto self(this->shared_from_this());
-        boost::asio::spawn(this->local_socket_->get_io_context(), [this, self](boost::asio::yield_context yield){
+        boost::asio::spawn(this->local_socket_->get_executor(), [this, self](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
 
@@ -131,7 +131,7 @@ public:
 		remote_sending = true;
 
 		auto self(this->shared_from_this());
-		boost::asio::spawn(this->local_socket_->get_io_context(),
+		boost::asio::spawn(this->local_socket_->get_executor(),
 			[this, self](boost::asio::yield_context yield) {
 
 			while (!bufferqueue_.Empty())

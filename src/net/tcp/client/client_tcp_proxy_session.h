@@ -50,7 +50,7 @@ public:
         if (!setNoDelay()) return;
 
         auto self(this->shared_from_this());
-        boost::asio::spawn(this->local_socket_.get_io_context(),[this, self](boost::asio::yield_context yield){
+        boost::asio::spawn(this->local_socket_.get_executor(),[this, self](boost::asio::yield_context yield){
 
 
             if (!handleMethodSelection(yield)) DestorySession
@@ -374,7 +374,7 @@ private:
 
 
         auto self(this->shared_from_this());
-        boost::asio::spawn(this->local_socket_.get_io_context(),[this, self](boost::asio::yield_context yield){
+        boost::asio::spawn(this->local_socket_.get_executor(),[this, self](boost::asio::yield_context yield){
 
             boost::system::error_code ec;
 
@@ -553,7 +553,7 @@ private:
 	{
 		boost::system::error_code ec;
         auto num = RandomNumberGenerator::GetRandomIntegerBetween<uint16_t>(3, 10);
-        boost::asio::deadline_timer timer(this->local_socket_.get_io_context());
+        boost::asio::deadline_timer timer(this->local_socket_.get_executor());
         timer.expires_from_now(boost::posix_time::seconds(num));
         timer.async_wait(yield[ec]);
 

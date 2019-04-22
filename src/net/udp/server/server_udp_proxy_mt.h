@@ -104,7 +104,7 @@ public:
 
         for(int i = 0; i < this->GetVIOContextSize(); i++)
         {
-            this->vpacceptor_[i]->get_io_context().post([this, self, i]{
+            this->vpacceptor_[i]->get_executor().post([this, self, i]{
                 for (auto it = vsession_map_[i].begin(); it != vsession_map_[i].end(); )
                 {
 

@@ -59,7 +59,7 @@ public:
 
 		if (expire_time > 0)
 		{
-			ptimer_ = std::make_unique<TIMER>(this->GetIOContext());
+			ptimer_ = std::make_unique<boost::asio::deadline_timer>(this->GetIOContext());
 			ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
 			ptimer_->async_wait(boost::bind(&ServerUdpProxy::onTimeExpire, this, boost::asio::placeholders::error));
 		}
@@ -98,7 +98,7 @@ public:
 	void StopProxy()
 	{
 	    auto self(this->shared_from_this());
-	    this->pacceptor_->get_io_context().post([this, self]{
+	    this->pacceptor_->get_executor().post([this, self]{
             for (auto it = session_map_.begin(); it != session_map_.end(); )
             {
 

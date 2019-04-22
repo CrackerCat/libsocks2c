@@ -51,7 +51,7 @@ public:
 		//timer init for server
 		if (expire_time > 0)
 		{
-			ptimer_ = std::make_unique<TIMER>(this->GetIOContext());
+			ptimer_ = std::make_unique<boost::asio::deadline_timer>(this->GetIOContext());
 			ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
 			ptimer_->async_wait(boost::bind(&ServerTcpProxy::onTimeExpire, this->shared_from_this(), boost::asio::placeholders::error));
 		}
