@@ -79,7 +79,8 @@ SET(CORE_FILES
         src/factory/client_factory.h
         src/factory/server_factory.h
         lib/client_proxymap.h
-        src/net/raw/server/buffersize_def.h)
+        src/net/raw/server/buffersize_def.h
+        )
 
 IF(BUILD_CLIENT_LIB)
 message("Build Client")

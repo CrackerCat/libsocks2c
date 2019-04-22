@@ -300,10 +300,29 @@ private:
                 TCP_DEBUG("[{:p}] Dns Resolved: {}:{}", (void*)this, dns_result->endpoint().address().to_string().c_str(), dns_result->endpoint().port());
 
                 // once the ip is resolved, construct socks5 packet with ATYP == ipv4 and send to remote
+                // to be clear, we are not using the previous ip,port pair
+                std::string proxy_ip;
+                uint16_t proxy_port = 0;
+                for(auto& dns_it : dns_result)
+                {
+                    //TODO support ipv6 proxy
+                    auto proxy_ep = dns_it.endpoint();
+                    if(proxy_ep.address().is_v4())
+                    {
+                        proxy_ip = proxy_ep.address().to_string();
+                        proxy_port = proxy_ep.port();
+                        break;
+                    }
+                }
 
-                Socks5ProtocolHelper::ConstructSocks5RequestFromIpStringAndPort(protocol_hdr->GetDataOffsetPtr(), dns_result->endpoint().address().to_string(), dns_result->endpoint().port());
+                if (proxy_port == 0) {
+                    TCP_DEBUG("[{:p}] unable to parse dns reply", (void*)this)
+                    return false;
+                }
 
-                if (!sendToRemote(bytes_read,PayloadType::SOCKS5_DATA,yield))
+                Socks5ProtocolHelper::ConstructSocks5RequestFromIpStringAndPort(protocol_hdr->GetDataOffsetPtr(), std::move(proxy_ip), proxy_port);
+
+                if (!sendToRemote(bytes_read, PayloadType::SOCKS5_DATA, yield))
                 {
                     TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
                     return false;

@@ -102,7 +102,7 @@ public:
 		return false;
 	}
 
-    static void ConstructSocks5RequestFromIpStringAndPort(unsigned char* data_in, std::string&& ip, unsigned short&& port)
+    static void ConstructSocks5RequestFromIpStringAndPort(unsigned char* data_in, std::string&& ip, unsigned short port)
     {
 
         static const char *split = ".";
@@ -129,6 +129,7 @@ public:
 
     }
 
+
     static void ConstructSocks5UdpPacketFromIpStringAndPort(unsigned char* data_in_out, std::string&& ip, unsigned short&& port)
     {
 
@@ -139,7 +140,7 @@ public:
 
         static const char *split = ".";
         char *split_res = nullptr;
-        // the socket might be ipv6(actually it's ipv4 with FFFF header)
+        // the socket address might be ipv6(actually it's ipv4 with FFFF header)
         // then we just skip the ipv6 header
         if (ip.find("::ffff:") == std::string::npos)
         {
@@ -149,7 +150,6 @@ public:
             // ipv4 goes here
             split_res = strtok(const_cast<char*>(ip.c_str() + 7), split);
         }
-
 
         int pos = 4;
 
@@ -184,7 +184,13 @@ public:
     }
 
 
-    static void SetUdpSocks5ReplyEndpoint(std::string ip, int16_t port)
+    /*
+     * when client send udp proxy request,
+     * we need to reply which server it should send the req to
+     *
+     * the default server is 127.0.0.1:1080 if not set
+     */
+    static void SetUdpSocks5ReplyEndpoint(std::string&& ip, int16_t&& port)
     {
 
         static const char *split = ".";
@@ -208,7 +214,6 @@ public:
 
         socks5::DEFAULT_UDP_REQ_REPLY[8] = p[1];
         socks5::DEFAULT_UDP_REQ_REPLY[9] = p[0];
-
 
     }
 };
