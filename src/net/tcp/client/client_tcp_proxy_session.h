@@ -302,6 +302,7 @@ private:
                 // once the ip is resolved, construct socks5 packet with ATYP == ipv4 and send to remote
 
                 Socks5ProtocolHelper::ConstructSocks5RequestFromIpStringAndPort(protocol_hdr->GetDataOffsetPtr(), dns_result->endpoint().address().to_string(), dns_result->endpoint().port());
+
                 if (!sendToRemote(bytes_read,PayloadType::SOCKS5_DATA,yield))
                 {
                     TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())

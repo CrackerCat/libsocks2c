@@ -102,7 +102,7 @@ public:
 		return false;
 	}
 
-    static void ConstructSocks5RequestFromIpStringAndPort(unsigned char* data_in, std::string ip, unsigned short port)
+    static void ConstructSocks5RequestFromIpStringAndPort(unsigned char* data_in, std::string&& ip, unsigned short&& port)
     {
 
         static const char *split = ".";
@@ -129,7 +129,7 @@ public:
 
     }
 
-    static void ConstructSocks5UdpPacketFromIpStringAndPort(unsigned char* data_in_out, std::string ip, unsigned short port) noexcept
+    static void ConstructSocks5UdpPacketFromIpStringAndPort(unsigned char* data_in_out, std::string&& ip, unsigned short&& port)
     {
 
         auto req = (socks5::UDP_RELAY_PACKET*)data_in_out;
@@ -139,11 +139,14 @@ public:
 
         static const char *split = ".";
         char *split_res = nullptr;
+        // the socket might be ipv6(actually it's ipv4 with FFFF header)
+        // then we just skip the ipv6 header
         if (ip.find("::ffff:") == std::string::npos)
         {
             split_res = strtok(const_cast<char*>(ip.c_str()), split);
         }else
         {
+            // ipv4 goes here
             split_res = strtok(const_cast<char*>(ip.c_str() + 7), split);
         }
 
@@ -163,11 +166,8 @@ public:
         data_in_out[9] = pport[0];
         return;
 
-
-        // if ipv6 type
-
-
-
+        // TODO
+        // Add support for native ipv6
 
     }
 
