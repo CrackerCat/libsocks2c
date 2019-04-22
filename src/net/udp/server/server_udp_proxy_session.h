@@ -20,7 +20,6 @@ class ServerUdpProxySession : public boost::enable_shared_from_this<ServerUdpPro
 
 	using SESSION_MAP = boost::unordered_map<boost::asio::ip::udp::endpoint, boost::shared_ptr<ServerUdpProxySession<Protocol>>, EndPointHash>;
 
-
 public:
 
 	ServerUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : protocol_(&local_socket->get_executor().context()), session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_executor()), timer_(local_socket->get_executor())
