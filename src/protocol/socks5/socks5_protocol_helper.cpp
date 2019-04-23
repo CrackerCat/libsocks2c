@@ -3,6 +3,8 @@
 //
 
 #include "socks5_protocol_helper.h"
+#include "socks5_default_udp_reply.h"
+
 
 bool Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5::SOCKS_REQ* request, std::string &domain_out, uint16_t &port_out)
 {
@@ -178,7 +180,7 @@ void Socks5ProtocolHelper::SetUdpSocks5ReplyEndpoint(std::string&& ip, int16_t p
 {
 
     static const char *split = ".";
-    auto req = (socks5::SOCKS_REPLY*)socks5::DEFAULT_UDP_REQ_REPLY ;
+    auto req = (socks5::SOCKS_REPLY*)&socks5::DEFAULT_UDP_REQ_REPLY[0] ;
     req->REP = 0x00;
     req->RSV = 0x00;
     req->ATYP = 0x01;

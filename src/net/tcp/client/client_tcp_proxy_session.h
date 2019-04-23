@@ -13,6 +13,10 @@
 
 #include "../../bufferdef.h"
 
+namespace socks5 {
+	extern unsigned char DEFAULT_UDP_REQ_REPLY[10];
+}
+
 #define DestorySession { onDestruction(yield); return; }
 
 template<class Protocol>
@@ -121,10 +125,10 @@ private:
 
     }
 
-
+	
     void udpReply(boost::asio::yield_context& yield){
 
-
+		
         auto self(this->shared_from_this());
         async_write(this->local_socket_,
                     boost::asio::buffer(socks5::DEFAULT_UDP_REQ_REPLY,

@@ -69,8 +69,6 @@ namespace socks5 {
 
     };
 
-
-
     /*
      o  REP    Reply field:
      o  X'00' succeeded
@@ -99,12 +97,6 @@ namespace socks5 {
     // Always return successed
     static const vector<char> DEFAULT_SOCKS_REPLY = {0x05, 0x00, 0x00, 0x01 ,0x00 ,0x00 ,0x00, 0x00, 0x10,0x10};
 
-    /*
-        the specific ip:port is for testing
-     */
-    static unsigned char DEFAULT_UDP_REQ_REPLY[10] = {0x05, 0x00, 0x00, 0x01, 0x0A, 0xD3, 0x37, 0x02, 0x04, 0x38};
-
-
     struct UDP_RELAY_PACKET
     {
 
@@ -115,8 +107,6 @@ namespace socks5 {
         //DST.PORT
         //DATA
     };
-
-
 
 }
 
