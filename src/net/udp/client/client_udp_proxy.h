@@ -53,7 +53,7 @@ public:
 
         startAcceptorCoroutine();
 
-        LOG_INFO("ClientUdpProxy started, Server: [{}:{}], Key: [{}], Local socks5 Port: [{}:{}]", this->server_ip.c_str(), this->server_port, proxyKey_, local_address.c_str(), local_port)
+        LOG_INFO("[Client] UdpProxy started, Server: [{}:{}], Key: [{}], Local socks5 Port: [{}:{}]", this->server_ip.c_str(), this->server_port, proxyKey_, local_address.c_str(), local_port)
 
         this->RunIO();
     }

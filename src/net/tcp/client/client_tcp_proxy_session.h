@@ -263,7 +263,7 @@ private:
                 return false;
             }
 
-            TCP_LOG_INFO("proxy {}:{}", ip_str, port)
+            TCP_LOG_INFO("[proxy] {}:{}", ip_str, port)
 
             return true;
 
@@ -280,7 +280,7 @@ private:
                 return false;
             }
 
-            TCP_LOG_INFO("proxy {}:{}", domain_str, port)
+            TCP_LOG_INFO("[proxy] {}:{}", domain_str, port)
 
             if(pdns_resolver_)
             {
