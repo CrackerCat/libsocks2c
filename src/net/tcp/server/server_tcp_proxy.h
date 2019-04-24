@@ -136,7 +136,7 @@ private:
 					return;
 				}
 
-				LOG_INFO("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint(ec).address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint(ec).port())
+				LOG_DEBUG("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint(ec).address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint(ec).port())
 
 				new_session->Start();
 			}
