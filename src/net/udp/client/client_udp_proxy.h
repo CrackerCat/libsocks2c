@@ -41,13 +41,23 @@ public:
 
         auto ep = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(local_address),local_port);
 
-        pacceptor_->open(ep.protocol());
 
-//        int opt = 1;
-//        setsockopt(pAcceptor_->native_handle(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-//        setsockopt(pAcceptor_->native_handle(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+        boost::system::error_code ec;
 
-        pacceptor_->bind(ep);
+        pacceptor_->open(ep.protocol(), ec);
+        if (ec)
+        {
+            LOG_ERROR("udp acceptor open err--> {}", ec.message().c_str())
+            return;
+        }
+
+        pacceptor_->bind(ep, ec);
+
+        if (ec)
+        {
+            LOG_ERROR("udp acceptor bind err--> {}", ec.message().c_str())
+            return;
+        }
 
 		this->protocol_.SetKey(this->proxyKey_);
 

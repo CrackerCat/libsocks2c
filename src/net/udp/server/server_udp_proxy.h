@@ -67,8 +67,6 @@ public:
 		this->server_ip = local_address;
 		this->server_port = local_port;
 
-		this->protocol_.SetKey(this->proxyKey_);
-
 		auto ep = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(local_address), local_port);
 
 		boost::system::error_code ec;
@@ -87,11 +85,13 @@ public:
 				return;
 		}
 
+		this->protocol_.SetKey(this->proxyKey_);
+
 		startAcceptorCoroutine();
 
-		LOG_INFO("ServerUdpProxy started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
+		LOG_INFO("[Server] UdpProxy started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
 
-			this->RunIO();
+		this->RunIO();
 
 	}
 

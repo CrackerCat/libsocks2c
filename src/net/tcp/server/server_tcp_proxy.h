@@ -98,7 +98,7 @@ public:
 
 		startAcceptorCoroutine();
 
-		LOG_INFO("ServerTcpProxy started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
+		LOG_INFO("[Server] TcpProxy started at [{}:{}], key: [{}]", local_address.c_str(), local_port, proxyKey_)
 
 		this->RunIO();
 
