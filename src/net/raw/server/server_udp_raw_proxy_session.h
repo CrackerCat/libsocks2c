@@ -18,6 +18,7 @@
 // timeout for ServerUdpRawProxySession's inner udp session class 
 #define UDP_PROXY_SESSION_TIMEOUT 60
 
+
 template <class Protocol>
 class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession<Protocol>>
 {
@@ -38,7 +39,7 @@ class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdp
 
 public:
 
-    ServerUdpRawProxySession(boost::asio::io_context& io, asio::ip::raw::endpoint src_ep, asio::ip::raw::endpoint server_ep, SessionMap& map_ref, unsigned char key[32U]) : protocol_(&io), session_map(map_ref)
+    ServerUdpRawProxySession(boost::asio::io_context& io, asio::ip::raw::endpoint src_ep, asio::ip::raw::endpoint server_ep, SessionMap& map_ref, unsigned char key[32U]) : io_context_(io), protocol_(&io), session_map(map_ref)
     {
         this->protocol_.SetKey(key);
         this->local_ep = src_ep;
@@ -116,6 +117,8 @@ public:
     {
         using Tins::TCP;
 
+        if(this->status == CLOSED) return false;
+
         this->last_active_time = time(nullptr);
 
         switch (tcp->flags())
@@ -127,11 +130,16 @@ public:
             // we send reply back for each syn
             case (TCP::SYN):
             {
-                LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
-                // clone tcp cause we have to start new coroutine context
-                handshakeReply(tcp);
-                this->status = SYN_RCVD;
-                return true;
+                if (this->status == INIT || this->status == SYN_RCVD)
+                {
+                    LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
+                    // clone tcp cause we have to start new coroutine context
+                    handshakeReply(tcp);
+                    this->status = SYN_RCVD;
+                    return true;
+                }
+                //sendRst(tcp);
+                return false;
             }
             // if client send ack which ack match the init seq + 1,
             // which means the connection is established
@@ -140,9 +148,15 @@ public:
             {
                 LOG_INFO("GET ACK, seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
 
-                if (this->status != ESTABLISHED) {
+                if (this->status == SYN_RCVD) {
                     LOG_INFO("ESTABLISHED")
                     this->status = ESTABLISHED;
+                }
+
+                if (this->status != ESTABLISHED)
+                {
+                    LOG_INFO("recv ack at state {}", this->status)
+                    return false;
                 }
 
                 if (tcp->inner_pdu() != nullptr)
@@ -150,14 +164,26 @@ public:
 
                 break;
             }
-            // when recv data
-            // decrypt first
+            /*
+             * proxy data only if the session is in state SYN_RCVD or ESTABLISHED
+             *
+             */
             case (TCP::PSH | TCP::ACK) :
             {
+                if (this->status == SYN_RCVD) {
+                    LOG_INFO("ESTABLISHED")
+                    this->status = ESTABLISHED;
+                }
+
+                if (this->status != ESTABLISHED)
+                {
+                    LOG_INFO("recv ack at state {}", this->status)
+                    return false;
+                }
+
                 LOG_INFO("GET PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                 ackReply(tcp);
                 proxyUdp(tcp->inner_pdu());
-
                 break;
             }
             case TCP::RST :
@@ -184,7 +210,8 @@ public:
         auto ip = IP(local_ep.address().to_string(), server_ep.address().to_string());
 
         // swap sport and dport here cause we are sending data back
-        auto tcp = TCP(tcp_sport, tcp_dport);
+        // TCP(dst, src);
+        auto tcp = TCP(local_ep.port(), server_ep.port());
         tcp.flags(TCP::PSH | TCP::ACK);
         tcp.seq(server_seq);
         tcp.ack_seq(server_ack);
@@ -208,6 +235,9 @@ public:
 
 
 private:
+
+    boost::asio::io_context& io_context_;
+
     Protocol protocol_;
 
     SessionMap& session_map;
@@ -221,8 +251,8 @@ private:
     // we use this to construct src of ip/tcp packet
     asio::ip::raw::endpoint server_ep;
 
-    uint16_t tcp_sport;
-    uint16_t tcp_dport;
+//    uint16_t tcp_sport;
+//    uint16_t tcp_dport;
 
     PRawSenderSocket prawsender_socket;
 
@@ -342,7 +372,7 @@ private:
             udp_ep.src_port = *(uint16_t*)&full_data.at(Protocol::ProtocolHeader::Size() + 4);
 
             std::string ip_dst;
-            if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(full_data.data() + Protocol::ProtocolHeader::Size() + 4 + 2, ip_dst, udp_ep.dst_port))
+            if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket((socks5::UDP_RELAY_PACKET*)(full_data.data() + Protocol::ProtocolHeader::Size() + 4 + 2), ip_dst, udp_ep.dst_port))
             {
                 LOG_INFO("unable to parse socks5 udp header")
                 return;
@@ -361,7 +391,7 @@ private:
             if (udpsession_it == udpsession_map.end())
             {
 
-                auto psession = boost::make_shared<udp_proxy_session<Protocol>>(this->shared_from_this(), this->prawsender_socket->get_io_context(), this->udpsession_map);
+                auto psession = boost::make_shared<udp_proxy_session<Protocol>>(this->shared_from_this(), io_context_, this->udpsession_map);
 
                 udpsession_map.insert({udp_ep, psession});
                 psession->SaveSrcEndpoint(udp_ep);
@@ -374,6 +404,7 @@ private:
             }
 
 
+            delete data_copy;
         });
 
     }

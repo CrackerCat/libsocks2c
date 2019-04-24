@@ -24,7 +24,7 @@ class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
 
 public:
 
-    ServerUdpRawProxy(boost::asio::io_context& io) : sniffer_socket(io) {}
+    ServerUdpRawProxy(boost::asio::io_context& io) : io_context_(io), sniffer_socket(io) {}
 
     bool SetUpSniffer(std::string server_port, std::string server_ip = std::string(), std::string ifname = std::string())
     {
@@ -72,9 +72,12 @@ public:
     void StartProxy()
     {
         RecvFromLocal();
+        LOG_INFO("[Server] RawProxy started, server endpoint [{}:{}], key: same as udp", this->server_ep.address().to_string(), this->server_ep.port())
     }
 
 private:
+
+    boost::asio::io_context& io_context_;
 
 	SnifferSocket sniffer_socket;
     std::unique_ptr<Tins::Sniffer> psniffer;
@@ -93,7 +96,7 @@ private:
         using Tins::TCP;
 
         //recv
-        boost::asio::spawn(sniffer_socket.get_io_context(), [this](boost::asio::yield_context yield){
+        boost::asio::spawn(io_context_, [this](boost::asio::yield_context yield){
 
             while(1)
             {
@@ -123,9 +126,9 @@ private:
                     LOG_INFO("new raw session")
                     //in_addr src_ip_addr = {src_ep.src_ip};
                     //std::string src_ip = inet_ntoa(src_ip_addr);
-                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(sniffer_socket.get_io_context(), tcp_src_ep, server_ep, session_map_, this->proxyKey_);
-                    psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
-                    psession->InitRawSocketAndTimer(sniffer_socket.get_io_context());
+                    auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(io_context_, tcp_src_ep, server_ep, session_map_, this->proxyKey_);
+                    //psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
+                    psession->InitRawSocketAndTimer(io_context_);
                     psession->HandlePacket(ip, tcp);
                     psession->Start();
                     session_map_.insert({tcp_src_ep, psession});
@@ -138,9 +141,6 @@ private:
             }
 
         });
-
-
     }
-
 
 };
