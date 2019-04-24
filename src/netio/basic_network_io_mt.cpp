@@ -24,7 +24,13 @@ BasicNetworkIO_MT::BasicNetworkIO_MT()
 
 	for (unsigned int i = 0; i < ioNum; i++)
 	{
-		//vpio_context_.emplace_back(new IO_CONTEXT(BOOST_ASIO_CONCURRENCY_HINT_SAFE));
+		// if there's only 1 thread running
+		if (ioNum == 1)
+		{
+			vpio_context_.emplace_back(new IO_CONTEXT(BOOST_ASIO_CONCURRENCY_HINT_UNSAFE_IO));
+			vwork_guard_.emplace_back(boost::asio::make_work_guard(*vpio_context_[i]));
+			return;
+		}
 		vpio_context_.emplace_back(new IO_CONTEXT());
 		vwork_guard_.emplace_back(boost::asio::make_work_guard(*vpio_context_[i]));
 	}
