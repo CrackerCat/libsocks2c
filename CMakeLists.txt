@@ -56,14 +56,14 @@ SET(CORE_FILES
         src/utils/logger.cpp
         src/utils/logger.h
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf.h
-        src/protocol/iproxy_protocol.h
+        src/protocol/basic_protocol/iproxy_protocol.h
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf_helper.h
-        src/protocol/client_proxy_protocol.h
+        src/protocol/basic_protocol/client_proxy_protocol.h
         src/utils/randomNumberGenerator.cpp
         src/utils/randomNumberGenerator.h
-        src/protocol/server_proxy_protocol.h
+        src/protocol/basic_protocol/server_proxy_protocol.h
 
-        src/protocol/protocol_def.h
+        src/protocol/basic_protocol/protocol_def.h
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h

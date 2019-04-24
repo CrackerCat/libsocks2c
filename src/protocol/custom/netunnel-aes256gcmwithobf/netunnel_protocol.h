@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../client_proxy_protocol.h"
-#include "../../server_proxy_protocol.h"
+#include "../../basic_protocol/client_proxy_protocol.h"
+#include "../../basic_protocol/server_proxy_protocol.h"
 
 #include "netunnel_protocol_helper.h"
 

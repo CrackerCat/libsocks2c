@@ -11,7 +11,7 @@
 #include "client_tcp_proxy_session.h"
 #include "../../../utils/logger.h"
 
-#include "../../../protocol/iproxy_protocol.h"
+#include "../../../protocol/basic_protocol/iproxy_protocol.h"
 #include "../../inetwork_proxy.h"
 #include <boost/enable_shared_from_this.hpp>
 

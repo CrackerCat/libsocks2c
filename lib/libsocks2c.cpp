@@ -13,7 +13,7 @@
 #include "client_proxymap.h"
 #endif
 
-#include "../src/protocol/protocol_def.h"
+#include "../src/protocol/basic_protocol/protocol_def.h"
 
 #include <mutex>
 #include <boost/asio/io_context.hpp>

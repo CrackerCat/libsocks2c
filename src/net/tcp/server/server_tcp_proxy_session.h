@@ -9,7 +9,7 @@
 
 #include "../../../protocol/socks5/socks5_protocol.h"
 #include "../../../protocol/socks5/socks5_protocol_helper.h"
-#include "../../../protocol/iproxy_protocol.h"
+#include "../../../protocol/basic_protocol/iproxy_protocol.h"
 
 #include "../../bufferdef.h"
 

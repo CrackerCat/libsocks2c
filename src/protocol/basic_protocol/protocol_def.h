@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef PROTOCOL_AES256GCM
-#include "custom/aes256gcmwithobf/aes256gcmwithobf.h"
+#include "../custom/aes256gcmwithobf/aes256gcmwithobf.h"
 #define Protocol aes256gcmwithobf_Protocol
 #elif PROTOCOL_NETUNNEL_AES256GCM
 #include "custom/netunnel-aes256gcmwithobf/netunnel_protocol.h"
