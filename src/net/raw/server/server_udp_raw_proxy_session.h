@@ -155,7 +155,7 @@ public:
 
                 if (this->status != ESTABLISHED)
                 {
-                    LOG_INFO("recv ack at state {}", this->status)
+                    //LOG_INFO("recv ack at state {}", this->status)
                     return false;
                 }
 
@@ -170,6 +170,8 @@ public:
              */
             case (TCP::PSH | TCP::ACK) :
             {
+                LOG_INFO("GET PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
+
                 if (this->status == SYN_RCVD) {
                     LOG_INFO("ESTABLISHED")
                     this->status = ESTABLISHED;
@@ -181,7 +183,6 @@ public:
                     return false;
                 }
 
-                LOG_INFO("GET PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                 ackReply(tcp);
                 proxyUdp(tcp->inner_pdu());
                 break;
