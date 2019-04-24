@@ -43,8 +43,8 @@ public:
 	{
 		if (this->status == CLOSED) return;
 		WinDivertClose(this->rst_handle);
-		this->psniffer_socket->close();
-		this->psend_socket->close();
+		this->psniffer_socket->cancel();
+		this->psend_socket->cancel();
 		WinDivertClose(this->recv_handle);
 	}
 

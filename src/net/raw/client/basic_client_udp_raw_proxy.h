@@ -19,8 +19,8 @@
 
 // maximum try for resending syn
 #define MAX_HANDSHAKE_TRY 10
-// IF we send 50 packet out and didn't get any ack, then we close the connection
-const int max_ack_delay = 50;
+// IF we send 10 packet out and didn't get any ack, then we close the connection
+const int max_ack_delay = 10;
 /*
  * ClientUdpProxySession run in single thread mode
  *
@@ -96,6 +96,7 @@ public:
 		if (++ack_expect_sum > max_ack_delay) {
 			LOG_INFO("ack delay exceed {}, session disconnect and fallback to udp", max_ack_delay)
 			this->Stop();
+			this->status = CLOSED;
 		}
     }
 
@@ -192,7 +193,7 @@ private:
                     {
                         LOG_INFO("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
 						//only reply when ESTABLISHED
-						if (this->status != ESTABLISHED) return;
+						if (this->status != ESTABLISHED) continue;
 
 						this->ackReply(tcp, yield);
                         this->sendToLocal(tcp->inner_pdu());
@@ -205,14 +206,14 @@ private:
 						this->status = CLOSED;
 						return;
                     }
-                    case TCP::FIN:
-                    {
-                        LOG_INFO("recv FIN, ignore")
-                        continue;
-                    }
+                    //case TCP::FIN:
+                    //{
+                    //    LOG_INFO("recv FIN, ignore")
+                    //    continue;
+                    //}
                     default:
                     {
-                        LOG_INFO("default")
+                        //LOG_INFO("default")
                         continue;
                     }
                 }

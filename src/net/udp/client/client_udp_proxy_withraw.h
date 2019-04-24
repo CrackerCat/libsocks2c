@@ -32,7 +32,7 @@ public:
 		if (puout) return;
 
 		LOG_INFO("StartUout, server_ip: [{}] server_raw_port: [{}] local_raw_port: [{}]", server_ip, server_raw_port, local_raw_port)
-		puout = boost::make_shared<ClientUdpRawProxy<Protocol>>(this->pacceptor_->get_io_context(), this->protocol_, this->pacceptor_);
+		puout = boost::make_shared<ClientUdpRawProxy<Protocol>>(this->GetIOContext(), this->protocol_, this->pacceptor_);
 		auto setup_res = puout->SetUpSniffer(server_ip, server_raw_port, local_raw_port, local_ip);
 		if (!setup_res)
 		{
@@ -85,8 +85,11 @@ private:
 					}
 
 					if (puout->IsClosed())
+					{
 						puout.reset();
-
+						continue;
+					}
+						
 					if (puout->IsDisconnect())
 						puout->ReConnect();
 				}
