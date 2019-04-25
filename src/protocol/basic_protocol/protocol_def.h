@@ -4,7 +4,7 @@
 #include "../custom/aes256gcmwithobf/aes256gcmwithobf.h"
 #define Protocol aes256gcmwithobf_Protocol
 #elif PROTOCOL_NETUNNEL_AES256GCM
-#include "custom/netunnel-aes256gcmwithobf/netunnel_protocol.h"
+#include "../custom/netunnel-aes256gcmwithobf/netunnel_protocol.h"
 #define Protocol netunnel_aes256gcmwithobf_Protocol
 #elif  PROTOCOL_CHACHA20POLY1305
 #include "custom/chacha20poly1305withobf/chacha20poly1305withobf.h"

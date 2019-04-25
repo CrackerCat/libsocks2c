@@ -179,7 +179,7 @@ private:
                     {
                         UDP_DEBUG("new session from {}:{}", local_ep_.address().to_string().c_str(), local_ep_.port())
 
-                        auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, this->vpacceptor_[i], vsession_map_[i]);
+                        auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->GetIOContextAt(i), this->server_ip, this->server_port, proxyKey_, this->vpacceptor_[i], vsession_map_[i]);
 
                         new_session->GetProtocol().SetSrcEndpoint(local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
 						new_session->GetProtocol().SetUserID(this->uid);
