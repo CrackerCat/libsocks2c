@@ -59,7 +59,7 @@ public:
 
         LOG_DEBUG("writing sql uid: {} upstream_traffic: {}, downstream_traffic: {} src: {} dst: {}", uid, upstream_size, downstream_size, src, dst)
 
-        boost::asio::spawn(*io, [io, record_query] (boost::asio::yield_context yield) {
+        boost::asio::spawn(*io, [io, record_query, uid] (boost::asio::yield_context yield) {
 
             ozo::rows_of<std::int64_t> rows;
 
@@ -73,7 +73,7 @@ public:
             ozo::request(connector, record_query, WriteTimeout, std::ref(result), yield[ec]);
 
             if (ec) {
-                LOG_INFO("write sql err --> {}", ec.message())
+                LOG_INFO("uid: {} write sql err --> {}", uid, ec.message())
                 return;
             }
 
