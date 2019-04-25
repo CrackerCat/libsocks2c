@@ -44,7 +44,7 @@ public:
     };
 
     static int  StartProxy(Config);
-    static bool StopProxy(int, bool);
+    static bool StopProxy(int, bool isServer);
 
     //not impl yet
     static void StartProxyWithContext(Config, boost::asio::io_context&);
