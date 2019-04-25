@@ -1,0 +1,8 @@
+//
+// Created by mario on 19-4-25.
+//
+
+#ifndef LIBSOCKS2C_GLOBALSTATE_H
+#define LIBSOCKS2C_GLOBALSTATE_H
+
+#endif //LIBSOCKS2C_GLOBALSTATE_H

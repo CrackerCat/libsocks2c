@@ -183,6 +183,8 @@ private:
 
                         new_session->GetProtocol().SetSrcEndpoint(local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
 						new_session->GetProtocol().SetUserID(this->uid);
+
+						// other protocol in session may not have AddUpstreamTraffic() so we add count here
 						new_session->GetProtocol().AddUpstreamTraffic(protocol_hdr->PAYLOAD_LENGTH);
 
                         new_session->GetLocalEndPoint() = local_ep_;
