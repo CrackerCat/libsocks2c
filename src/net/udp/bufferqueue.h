@@ -11,6 +11,6 @@
     // but it will be dequeue in remote_socket_'s context
     #include "lockfree_queue.h"
     #endif
-#else
+#else // if running in single thread, we don't need thread safe queue
 #include "normal_queue.h"
 #endif
