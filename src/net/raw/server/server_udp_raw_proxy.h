@@ -134,7 +134,7 @@ private:
                     session_map_.insert({tcp_src_ep, psession});
 
                 }else { // if connection already created
-                    //LOG_INFO("old raw session")
+                    LOG_INFO("old raw session")
                     auto psession = map_it->second;
                     psession->HandlePacket(ip, tcp);
                 }

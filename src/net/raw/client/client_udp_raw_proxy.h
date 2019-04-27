@@ -40,7 +40,14 @@ public:
         sniffer_socket(io), send_socket_stream(io)
     {
         if (!send_socket_stream.is_open())
-            send_socket_stream.open();
+        {
+            boost::system::error_code ec;
+            send_socket_stream.open(asio::ip::raw::endpoint().protocol(), ec);
+            if (ec) {
+                LOG_INFO("raw send_socket_stream open err --> {}", ec.message())
+                return;
+            }
+        }
     }
 
     virtual void Stop() override

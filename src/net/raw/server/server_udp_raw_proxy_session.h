@@ -130,6 +130,7 @@ public:
             // we send reply back for each syn
             case (TCP::SYN):
             {
+                LOG_INFO("recv SYN")
                 if (this->status == INIT || this->status == SYN_RCVD)
                 {
                     LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
