@@ -50,7 +50,7 @@ public:
     }
 
     /*
-     *  Timeout for destroying idle proxy instance
+     *  timeout for destroying idle proxy instance
      *
      */
     void SetExpireTime(uint64_t time_sec)

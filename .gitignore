@@ -75,3 +75,4 @@ build/CMakeFiles/libsocks2c.dir/src/protocol/socks5_protocol_helper.cpp.o
 build/CMakeFiles/libsocks2c.dir/src/utils/logger.cpp.o
 build/CMakeFiles/libsocks2c.dir/src/utils/randomNumberGenerator.cpp.o
 build/CMakeFiles/libsocks2c.dir/src/utils/trafficcounter.cpp.o
+/.vs/tasks.vs.json

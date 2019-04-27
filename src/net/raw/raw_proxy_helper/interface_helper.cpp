@@ -47,7 +47,7 @@ std::string InterfaceHelper::GetDefaultNetIp()
 
 std::string InterfaceHelper::GetDefaultInterface() { return ""; }
 
-std::string InterfaceHelper::GetDefaultNetIp()  //»ñÈ¡Íø¹Ø
+std::string InterfaceHelper::GetDefaultNetIp()  
 {
 	std::string ip;
 

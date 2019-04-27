@@ -4,10 +4,18 @@
 #else
 #include "../../raw/client/client_udp_raw_proxy.h"
 #endif
+
+enum class RawProxyPolicy
+{
+	DEFAULT,
+	NO_FALLBACK,
+	FALLBACK_RESTRICT
+};
+
+
 template<class Protocol>
 class ClientUdpProxyWithRaw : public ClientUdpProxy<Protocol>
 {
-
 
 public:
 
@@ -18,6 +26,15 @@ public:
 		this->local_ip = local_ip;
 		this->local_raw_port = local_raw_port;
     }
+
+	void SwitchPolicy(RawProxyPolicy new_policy)
+	{
+		auto self(this->shared_from_this());
+
+		this->GetIOContext().post([this, self, new_policy] () {
+			this->proxy_policy = new_policy;
+		});
+	}
 
 	virtual void StopUout() {
 		if (puout)
@@ -50,6 +67,8 @@ private:
 	std::string local_ip;
 	std::string local_raw_port;
 
+	RawProxyPolicy proxy_policy = RawProxyPolicy::DEFAULT;
+
     virtual void startAcceptorCoroutine() override
     {
         auto self(this->shared_from_this());
@@ -76,34 +95,71 @@ private:
 
                 this->last_active_time = time(nullptr);
 
-				if (puout)
+				// we determine how to handle packet under different policy
+				switch (this->proxy_policy)
 				{
-					if (puout->IsRemoteConnected())
+					case RawProxyPolicy::DEFAULT:
 					{
-						handleLocalPacketViaRaw(local_ep, bytes_read, yield);
-						continue;
+						auto dispatch_res = dispatchUoutPacket(puout, local_ep, bytes_read, yield);
+
+						if (dispatch_res) continue;
+
+						// if send via raw failed, send it via udp
+						memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
+						this->handleLocalPacket(local_ep, bytes_read);
+
+						break;
 					}
 
-					if (puout->IsClosed())
+					case RawProxyPolicy::NO_FALLBACK:
 					{
-						puout.reset();
-						continue;
+						dispatchUoutPacket(puout, local_ep, bytes_read, yield);
+						break;
 					}
-						
-					if (puout->IsDisconnect())
-						puout->ReConnect();
-				}
-				else  // if puout == nullptr
-					StartUout();
-				
-				// send via udp as long as puout is not connected
-				memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
-				this->handleLocalPacket(local_ep, bytes_read);
+
+					case RawProxyPolicy::FALLBACK_RESTRICT:
+					{
+						throw std::runtime_error("FALLBACK_RESTRICT policy not implement yet");
+					}
+
+					default:
+						throw std::runtime_error("unknow policy");
+					}
 
             }
 
         });
     }
+
+	// try to proxy packet via raw, return true if packet is send 
+	bool dispatchUoutPacket(const boost::shared_ptr<BasicClientUdpRawProxy<Protocol>>& pout, boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::asio::yield_context& yield)
+	{
+		if (puout)
+		{
+			// send the packet via raw if the connection is estableshed
+			if (puout->IsRemoteConnected())
+			{
+				handleLocalPacketViaRaw(local_ep, bytes_read, yield);
+				return true;
+			}
+
+			// if the connection is closed, reset the puout so ClientUdpRawProxy will be init next time the packet recv
+			if (puout->IsClosed())
+			{
+				puout.reset();
+				return false;
+			}
+
+			// if connection handshake failed, we try to reconnect with the same port 
+			if (puout->IsDisconnect())
+				puout->ReConnect();
+		}
+		else  // if puout == nullptr
+			StartUout();
+
+		return false;
+	}
+
 
     void handleLocalPacketViaRaw(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::asio::yield_context yield)
     {
@@ -121,8 +177,6 @@ private:
         puout->SendPacketViaRaw(this->local_recv_buff_, bytes_tosend, yield);
 
     }
-
-	
 
 	boost::shared_ptr<BasicClientUdpRawProxy<Protocol>> puout;
     

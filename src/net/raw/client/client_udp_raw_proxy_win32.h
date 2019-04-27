@@ -10,6 +10,7 @@
 #include <boost/lexical_cast.hpp>
 #include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include "../raw_proxy_helper/interface_helper.h"
+#include "../raw_proxy_helper/port_usable_checker.h"
 
 #include "../sniffer_def.h"
 
@@ -52,22 +53,24 @@ public:
     {
 		if (local_raw_port.empty())
 		{
-			std::random_device rd;
-			std::mt19937 eng(rd());
-			std::uniform_int_distribution<unsigned short> distr(10000, 65535);
-			this->local_port = distr(eng);
+			do {
+				std::random_device rd;
+				std::mt19937 eng(rd());
+				std::uniform_int_distribution<unsigned short> distr(10000, 65535);
+				this->local_port = distr(eng);
+			} while (port_in_use(this->local_port));
 		}
 		else this->local_port = boost::lexical_cast<unsigned short>(local_raw_port);
 		
 		if (local_ip.empty())
 		{
 			LOG_INFO("local_ip not provided, trying to get default ip")
-			LOG_INFO("if i retrive the wrong ip, you are probably fucked")
 		    this->local_ip = InterfaceHelper::GetInstance()->GetDefaultNetIp();
 			LOG_INFO("get {} as default ip", this->local_ip)
 		}
 		else
 			this->local_ip = local_ip;
+
         //save server endpoint
         this->remote_ip = remote_ip;
         this->remote_port = boost::lexical_cast<unsigned short>(remote_port);
@@ -105,7 +108,7 @@ public:
 		DWORD transferred;
 		GetOverlappedResult(sniffer_overlapped.hEvent, &sniffer_overlapped, &transferred, FALSE);
 
-		LOG_INFO("send {} bytes", size);
+		LOG_DEBUG("send {} bytes", size);
 		return size;
     }
 

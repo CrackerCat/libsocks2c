@@ -244,7 +244,7 @@ private:
                 tcp.flags(TCP::SYN);
                 tcp.seq(this->init_seq);
 
-                LOG_INFO("send SYN seq: {}, ack: {}", tcp.seq(), tcp.ack_seq())
+                LOG_DEBUG("send SYN seq: {}, ack: {}", tcp.seq(), tcp.ack_seq())
 
                 // we send tcp only, ip hdr is for checksum cal only
                 auto bytes_send = constructAndSend(ip, tcp, yield);

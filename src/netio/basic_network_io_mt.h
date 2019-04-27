@@ -58,8 +58,6 @@ private:
 
 	inline uint8_t randomNum(int a, int b);
 
-	inline void cacheline_padding();
-
 };
 
 
