@@ -129,7 +129,6 @@ IF (ENABLE_UOUT)
         src/net/raw/raw_proxy_helper/interface_helper.h
         src/net/raw/raw_proxy_helper/interface_helper.cpp
         src/net/raw/server/raw_udp_session.h
-        src/net/udp/udp_socket_map.h
         src/net/raw/server/server_udp_raw_proxy.h
         src/net/raw/raw_socket.h
         src/net/raw/client/client_udp_raw_proxy.h

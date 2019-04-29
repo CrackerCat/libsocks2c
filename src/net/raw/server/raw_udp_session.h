@@ -12,7 +12,6 @@
 
 #include "../../../protocol/socks5/socks5_protocol_helper.h"
 
-#include "../../udp/udp_socket_map.h"
 #include "buffersize_def.h"
 
 template <class Protocol>

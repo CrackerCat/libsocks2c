@@ -11,7 +11,6 @@
 #include <boost/functional/hash.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
 
@@ -138,7 +137,7 @@ protected:
     }
 
 
-    void handleLocalPacket(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read)
+    void handleLocalPacket(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::unordered_set<uint16_t>& port_set)
     {
         bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket((socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size()));
 

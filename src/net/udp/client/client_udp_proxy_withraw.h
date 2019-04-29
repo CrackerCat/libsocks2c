@@ -67,7 +67,9 @@ private:
 	std::string local_ip;
 	std::string local_raw_port;
 
-	RawProxyPolicy proxy_policy = RawProxyPolicy::DEFAULT;
+    boost::unordered_set<uint16_t> port_set;
+
+    RawProxyPolicy proxy_policy = RawProxyPolicy::DEFAULT;
 
     virtual void startAcceptorCoroutine() override
     {
@@ -100,39 +102,50 @@ private:
 				{
 					case RawProxyPolicy::DEFAULT:
 					{
-						auto dispatch_res = dispatchUoutPacket(puout, local_ep, bytes_read, yield);
+						auto res = proxyUoutPacket(puout, local_ep, bytes_read, yield);
 
-						if (dispatch_res) continue;
+						if (res) continue;
 
 						// if send via raw failed, send it via udp
 						memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
-						this->handleLocalPacket(local_ep, bytes_read);
+						this->handleLocalPacket(local_ep, bytes_read, this->);
 
 						break;
 					}
 
 					case RawProxyPolicy::NO_FALLBACK:
 					{
-						dispatchUoutPacket(puout, local_ep, bytes_read, yield);
+                        proxyUoutPacket(puout, local_ep, bytes_read, yield);
 						break;
 					}
 
 					case RawProxyPolicy::FALLBACK_RESTRICT:
 					{
-						throw std::runtime_error("FALLBACK_RESTRICT policy not implement yet");
-					}
 
-					default:
-						throw std::runtime_error("unknow policy");
-					}
+					    if (this->port_set.find(local_ep.port()) == this->port_set.end())
+                        {
+                            auto res = proxyUoutPacket(puout, local_ep, bytes_read, yield);
 
+                            if (res)
+                                continue;
+                            else
+                            {
+                                this->port_set.insert(local_ep.port());
+                            }
+
+                        }
+
+                        // if send via raw failed, send it via udp
+                        memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
+                        this->handleLocalPacket(local_ep, bytes_read, this->port_set);
+					}
             }
 
         });
     }
 
 	// try to proxy packet via raw, return true if packet is send 
-	bool dispatchUoutPacket(const boost::shared_ptr<BasicClientUdpRawProxy<Protocol>>& pout, boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::asio::yield_context& yield)
+	bool proxyUoutPacket(const boost::shared_ptr<BasicClientUdpRawProxy<Protocol>>& pout, boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::asio::yield_context& yield)
 	{
 		if (puout)
 		{
