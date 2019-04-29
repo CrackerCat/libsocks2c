@@ -208,7 +208,7 @@ IF(NOT BUILD_IOS_LIBRARY)
 #		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_thread-vc142-mt-gd-x64-1_70.lib")
 #		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_chrono-vc142-mt-gd-x64-1_70.lib")
 	ELSE()
-	target_link_libraries(libsocks2c "/usr/local/lib/libboost_thread.a")
+	    target_link_libraries(libsocks2c "/usr/local/lib/libboost_thread.a")
 		target_link_libraries(libsocks2c "/usr/local/lib/libboost_regex.a")
 		target_link_libraries(libsocks2c "/usr/local/lib/libboost_coroutine.a")
         target_link_libraries(libsocks2c "/usr/local/lib/libboost_context.a")
@@ -234,4 +234,8 @@ if (BUILD_IOS_LIB)
     remove_definitions(-DMULTITHREAD_IO)
 endif()
 
+
+add_subdirectory(test/socks5protocolhelper)
+enable_testing()
+add_test(NAME Socks5ProtocolHelper COMMAND Test)
 
