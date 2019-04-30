@@ -244,6 +244,18 @@ private:
         if (socks5_req_header->ATYP == socks5::SOCKS5_ATYP_TYPE::IPV4 || socks5_req_header->ATYP == socks5::SOCKS5_ATYP_TYPE::IPV6)
         {
 
+            std::string ip_str;
+            uint16_t port;
+
+            if (!Socks5ProtocolHelper::parseIpPortFromSocks5Request(socks5_req_header, ip_str, port))
+            {
+                TCP_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
+                return false;
+            }
+
+            TCP_LOG_INFO("[proxy] {}:{}", ip_str, port)
+
+
             /*
              *
              *  Forward Socks5 request to remote.
@@ -257,17 +269,6 @@ private:
                 TCP_DEBUG("[{:p}] handleSocks5Request async_write socks5 request to server err --> {}", (void*)this, ec.message().c_str())
                 return false;
             }
-
-            std::string ip_str;
-            uint16_t port;
-
-            if (!Socks5ProtocolHelper::parseIpPortFromSocks5Request(socks5_req_header, ip_str, port))
-            {
-                TCP_DEBUG("[{:p}] parseDomainPortFromSocks5Request err ", (void*)this)
-                return false;
-            }
-
-            TCP_LOG_INFO("[proxy] {}:{}", ip_str, port)
 
             return true;
 
