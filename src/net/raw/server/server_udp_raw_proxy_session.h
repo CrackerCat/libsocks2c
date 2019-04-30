@@ -245,7 +245,7 @@ private:
     SessionMap& session_map;
     UdpSessionMap udpsession_map;
 
-    SESSION_STATUS status;
+    SESSION_STATUS status = INIT;
 
     // store client's tcp src ip src port
     // we use this to construct dst of ip/tcp packet

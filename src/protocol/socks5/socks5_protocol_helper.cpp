@@ -43,51 +43,35 @@ bool Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5::SOCKS_REQ* r
 bool Socks5ProtocolHelper::parseIpPortFromSocks5Request(socks5::SOCKS_REQ* request, std::string &ip_out, uint16_t &port_out)
 {
 
-    switch(request->ATYP)
-    {
-        case socks5::IPV4:
-        {
-            unsigned char temp[10];
-            memcpy(temp, request, 10);
-            ip_out.clear();
-            for (int i = 4; i < 7; i++) {
-                ip_out.append(std::to_string(temp[i]));
-                ip_out.append(".");
-            }
-            ip_out.append(std::to_string(temp[7]));
-
-            uint32_t size;
-            // regex_match(ip_out,ipPattern)
-            // regex is 30 times slower than inet_pton
-            if (1 == inet_pton(AF_INET, ip_out.c_str(), &size)) {
-                char port[2];
-                port[0] = temp[9];
-                port[1] = temp[8];
-                memcpy(&port_out, port, 2);
-                return true;
-            }else{
-                ip_out.clear();
-                return false;
-            }
-        }
-
-        //TODO add ipv6 support
-        case socks5::IPV6:
-        {
-            return false;
-        }
-
-        default:
-            return false;
+    unsigned char temp[10];
+    memcpy(temp, request, 10);
+    ip_out.clear();
+    for (int i = 4; i < 7; i++) {
+        ip_out.append(std::to_string(temp[i]));
+        ip_out.append(".");
     }
+    ip_out.append(std::to_string(temp[7]));
 
+    uint32_t size;
+    // regex_match(ip_out,ipPattern)
+    // regex is 30 times slower than inet_pton
+    if (1 == inet_pton(AF_INET, ip_out.c_str(), &size)) {
+        char port[2];
+        port[0] = temp[9];
+        port[1] = temp[8];
+        memcpy(&port_out, port, 2);
+        return true;
+    }else{
+        ip_out.clear();
+        return false;
+    }
 }
 
+
+// domain proxy is not supported in udp
 bool Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(socks5::UDP_RELAY_PACKET* data, std::string &ip_out, uint16_t &port_out)
 {
-	auto req = reinterpret_cast<socks5::SOCKS_REQ*>(data);
-	req->ATYP = socks5::IPV4;
-    return parseIpPortFromSocks5Request(req, ip_out, port_out);
+    return parseIpPortFromSocks5Request(reinterpret_cast<socks5::SOCKS_REQ*>(data), ip_out, port_out);
 }
 
 
