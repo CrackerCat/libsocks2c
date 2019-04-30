@@ -4,7 +4,12 @@
 
 #include "socks5_protocol_helper.h"
 #include "socks5_default_udp_reply.h"
+#ifdef _WIN32
+#include <WS2tcpip.h>
+#else
 #include <arpa/inet.h>
+#endif // _WIN32
+
 
 bool Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5::SOCKS_REQ* request, std::string &domain_out, uint16_t &port_out)
 {
@@ -80,7 +85,9 @@ bool Socks5ProtocolHelper::parseIpPortFromSocks5Request(socks5::SOCKS_REQ* reque
 
 bool Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(socks5::UDP_RELAY_PACKET* data, std::string &ip_out, uint16_t &port_out)
 {
-    return parseIpPortFromSocks5Request(reinterpret_cast<socks5::SOCKS_REQ*>(data), ip_out, port_out);
+	auto req = reinterpret_cast<socks5::SOCKS_REQ*>(data);
+	req->ATYP = socks5::IPV4;
+    return parseIpPortFromSocks5Request(req, ip_out, port_out);
 }
 
 

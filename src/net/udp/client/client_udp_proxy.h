@@ -103,6 +103,8 @@ protected:
 
     SESSION_MAP session_map_;
 
+	boost::unordered_set<uint16_t> port_set;
+
     unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
 
     virtual void startAcceptorCoroutine() override
@@ -137,7 +139,7 @@ protected:
     }
 
 
-    void handleLocalPacket(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read, boost::unordered_set<uint16_t>& port_set)
+    void handleLocalPacket(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read)
     {
         bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket((socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size()));
 
@@ -154,7 +156,7 @@ protected:
         if (map_it == session_map_.end())
         {
 
-            auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext());
+            auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext(), this->port_set);
 
             UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep.address().to_string().c_str(), local_ep.port());
 

@@ -67,35 +67,33 @@ private:
 	std::string local_ip;
 	std::string local_raw_port;
 
-    boost::unordered_set<uint16_t> port_set;
-
     RawProxyPolicy proxy_policy = RawProxyPolicy::DEFAULT;
 
     virtual void startAcceptorCoroutine() override
     {
-        auto self(this->shared_from_this());
-        boost::asio::spawn(this->GetIOContext(),[this, self](boost::asio::yield_context yield) {
+		auto self(this->shared_from_this());
+		boost::asio::spawn(this->GetIOContext(), [this, self](boost::asio::yield_context yield) {
 
-            boost::asio::ip::udp::endpoint local_ep;
+			boost::asio::ip::udp::endpoint local_ep;
 
-            while (1)
-            {
-                boost::system::error_code ec;
+			while (1)
+			{
+				boost::system::error_code ec;
 
-                //async recv
-                // we have to reserve 4 + 2 bytes for local ip + local port info
-                uint64_t bytes_read = this->pacceptor_->async_receive_from(boost::asio::buffer(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4 + 2, UDP_LOCAL_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 10 - 4 - 2), local_ep, yield[ec]);
+				//async recv
+				// we have to reserve 4 + 2 bytes for local ip + local port info
+				uint64_t bytes_read = this->pacceptor_->async_receive_from(boost::asio::buffer(this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 4 + 2, UDP_LOCAL_RECV_BUFF_SIZE - Protocol::ProtocolHeader::Size() - 10 - 4 - 2), local_ep, yield[ec]);
 
-                if (ec || bytes_read == 0)
-                {
-                    LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
-                    if (ec == boost::system::errc::operation_canceled) return;
-                    continue;
-                }
+				if (ec || bytes_read == 0)
+				{
+					LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
+						if (ec == boost::system::errc::operation_canceled) return;
+					continue;
+				}
 
-                LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port()))
+				LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port()))
 
-                this->last_active_time = time(nullptr);
+				this->last_active_time = time(nullptr);
 
 				// we determine how to handle packet under different policy
 				switch (this->proxy_policy)
@@ -108,40 +106,40 @@ private:
 
 						// if send via raw failed, send it via udp
 						memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
-						this->handleLocalPacket(local_ep, bytes_read, this->);
+						this->handleLocalPacket(local_ep, bytes_read);
 
 						break;
 					}
 
 					case RawProxyPolicy::NO_FALLBACK:
 					{
-                        proxyUoutPacket(puout, local_ep, bytes_read, yield);
+						proxyUoutPacket(puout, local_ep, bytes_read, yield);
 						break;
 					}
 
 					case RawProxyPolicy::FALLBACK_RESTRICT:
 					{
 
-					    if (this->port_set.find(local_ep.port()) == this->port_set.end())
-                        {
-                            auto res = proxyUoutPacket(puout, local_ep, bytes_read, yield);
+						if (this->port_set.find(local_ep.port()) == this->port_set.end())
+						{
+							auto res = proxyUoutPacket(puout, local_ep, bytes_read, yield);
 
-                            if (res)
-                                continue;
-                            else
-                            {
-                                this->port_set.insert(local_ep.port());
-                            }
+							if (res)
+								continue;
+							else
+							{
+								this->port_set.insert(local_ep.port());
+							}
 
-                        }
+						}
 
-                        // if send via raw failed, send it via udp
-                        memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
-                        this->handleLocalPacket(local_ep, bytes_read, this->port_set);
+						// if send via raw failed, send it via udp
+						memmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);
+						this->handleLocalPacket(local_ep, bytes_read);
 					}
-            }
-
-        });
+				}
+			}
+		});
     }
 
 	// try to proxy packet via raw, return true if packet is send 

@@ -37,7 +37,6 @@ public:
 		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
 		this->remote_socket_.open(remote_ep_.protocol());
 		this->last_update_time = time(nullptr);
-
     }
 
 	~ClientUdpProxySession()
@@ -114,11 +113,6 @@ public:
 
         auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
         auto udp_socks_packet = (socks5::UDP_RELAY_PACKET*)protocol_hdr->GetDataOffsetPtr();
-
-		std::string ip_str;
-		uint16_t port;
-
-		if (!Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks_packet, ip_str, port)) return;
 
 		auto res = bufferqueue_.Enqueue(bytes, GetLocalBuffer(), remote_ep_);
 
