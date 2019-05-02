@@ -141,7 +141,14 @@ protected:
 
     void handleLocalPacket(boost::asio::ip::udp::endpoint& local_ep, size_t bytes_read)
     {
-        bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket((socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size()));
+        auto socks5_packet = (socks5::UDP_RELAY_PACKET*)(local_recv_buff_ + Protocol::ProtocolHeader::Size());
+        bool isDnsPacket = Socks5ProtocolHelper::isDnsPacket(socks5_packet);
+
+        std::string ip;
+        uint16_t port;
+        Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(socks5_packet, ip, port);
+
+        LOG_INFO("[udp proxy] {}:{}", ip, port)
 
         //encrypt packet
         auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;

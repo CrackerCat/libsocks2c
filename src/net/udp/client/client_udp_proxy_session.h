@@ -42,8 +42,7 @@ public:
 	~ClientUdpProxySession()
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
-        assert(bufferqueue_.Empty());
-
+        //assert(bufferqueue_.Empty());
         while (!bufferqueue_.Empty())
         {
             bufferqueue_.Dequeue();
