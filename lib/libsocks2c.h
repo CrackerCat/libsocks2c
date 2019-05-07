@@ -41,6 +41,7 @@ public:
         size_t timeout = 0;
         bool udp_over_utcp = false;
         bool resolve_dns = false;
+        bool logtofile = false;
     };
 
     static int  StartProxy(Config);

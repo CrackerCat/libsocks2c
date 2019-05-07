@@ -1,7 +1,6 @@
 #include "libsocks2c.h"
 
-
-#include "../src/utils/logger.h"
+#include "../src/app/app.h"
 
 #ifdef BUILD_SERVER_LIB
 #include "../src/factory/server_factory.h"
@@ -15,37 +14,13 @@
 
 #include "../src/protocol/basic_protocol/protocol_def.h"
 
-#include <mutex>
 #include <boost/asio/io_context.hpp>
 
-static bool isLogInited(false);
-static std::mutex log_mutex;
-
-void initLog()
-{
-    std::lock_guard<std::mutex> lg(log_mutex);
-
-    if (!isLogInited)
-    {
-        Logger::GetInstance()->InitLog();
-#ifndef LOG_DEBUG_DETAIL
-        Logger::GetInstance()->GetConsole()->set_level(spdlog::level::info);
-#else
-        Logger::GetInstance()->GetConsole()->set_level(spdlog::level::debug);
-#endif
-        isLogInited = true;
-
-#ifndef MULTITHREAD_IO
-        LOG_INFO("This build without MULTITHREAD_IO")
-#endif
-    }
-
-}
 
 int LibSocks2c::StartProxy(Config config)
 {
 
-    initLog();
+    App::Init(config.logtofile);
 #ifdef BUILD_SERVER_LIB
     //run server
     if (config.isServer)
@@ -115,12 +90,6 @@ bool LibSocks2c::StopProxy(int id, bool isServer)
 
 void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &io_context)
 {
-    initLog();
-
-    {
-        //Socks2cFactory::CreateServerProxyWithContext<Protocol>(&io_context, proxyKey, server_ip, server_port, timeout);
-    }
-    //Socks2cFactory::CreateClientProxyWithContext<Protocol>(&io_context, proxyKey, socks5_ip, socks5_port, server_ip, server_port, timeout);
 
 }
 

@@ -1,11 +1,16 @@
 #include "logger.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
-#include <sodium.h>
+#include <boost/lexical_cast.hpp>
+
 std::shared_ptr<spdlog::logger> Logger::console = nullptr;
 
-void Logger::InitLog()
+void Logger::InitLog(bool logtofile)
 {
-    console = spdlog::stdout_color_mt("console");
-    int res = sodium_init();
-    //spdlog::set_pattern("[%H:%M:%S:%e] [thread %t] %v");
+    if (logtofile)
+    {
+        auto current_time = boost::lexical_cast<std::string>(time(nullptr));
+        console = spdlog::basic_logger_mt("console", current_time);
+    }else
+        console = spdlog::stdout_color_mt("console");
 }

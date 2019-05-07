@@ -148,9 +148,9 @@ IF (ENABLE_UOUT)
     ENDIF()
 ENDIF()
 
-#add_library(libsocks2c ${CORE_FILES})
-LIST(APPEND CORE_FILES main.cpp)
-add_executable(libsocks2c ${CORE_FILES})
+add_library(libsocks2c ${CORE_FILES})
+#LIST(APPEND CORE_FILES main.cpp)
+#add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file

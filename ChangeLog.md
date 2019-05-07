@@ -1,3 +1,6 @@
+* Version 2.1.8
+    - add file log
+
 * Version 2.1.7
     - add raw proxy policy
     - client raw proxy now will check if the selected port is being used

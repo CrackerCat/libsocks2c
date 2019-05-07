@@ -7,13 +7,12 @@
 class Logger : public Singleton<Logger>
 {
 public:
-    void InitLog();
+    void InitLog(bool logtofile);
 
     std::shared_ptr<spdlog::logger> GetConsole(){return console;}
     void SetLevel(spdlog::level::level_enum log_level)
     {
         Logger::GetInstance()->GetConsole()->set_level(log_level);
-
     }
 
 private:

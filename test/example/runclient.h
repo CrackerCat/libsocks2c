@@ -25,6 +25,8 @@ void test()
     config.udp_over_utcp = false;
     config.timeout = 0;
 
+    config.logtofile = true;
+
     LibSocks2c::StartProxy(config);
 
     getchar();
