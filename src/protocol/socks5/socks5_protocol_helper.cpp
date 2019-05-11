@@ -33,6 +33,15 @@ bool Socks5ProtocolHelper::parseDomainPortFromSocks5Request(socks5::SOCKS_REQ* r
         return true;
     }
 
+    int size = 0;
+    if (1 == inet_pton(AF_INET, domain_out.c_str(), &size)) {
+        char port[2];
+        port[0] = tmp[domain_length + 6];
+        port[1] = tmp[domain_length + 5];
+        memcpy(&port_out, port, 2);
+        return true;
+    }
+
     domain_out.clear();
 
     return false;
