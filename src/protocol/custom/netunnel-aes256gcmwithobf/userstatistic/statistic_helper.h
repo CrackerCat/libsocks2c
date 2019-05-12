@@ -51,6 +51,7 @@ public:
         if (upstream_size == 0 || downstream_size == 0) return;
 
         char sql_str[256];
+
         sprintf(sql_str, "INSERT INTO user_statistic (uid, src_host, dst_host, upstream_traffic, downstream_traffic, type) values(%d, '%s', '%s', %ld, %ld, '%s');", uid, src.c_str(), dst.c_str(), upstream_size, downstream_size, TrafficTypeToStr(type));
 
         //std::string sql_str(sql);
