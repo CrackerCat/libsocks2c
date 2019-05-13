@@ -298,7 +298,7 @@ private:
 
 		LOG_DETAIL(TCP_DEBUG("[{}] read {} bytes from remote", (void*)this, bytes_read))
 
-			return bytes_read;
+		return bytes_read;
 	}
 
 

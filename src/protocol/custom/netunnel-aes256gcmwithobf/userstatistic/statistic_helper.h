@@ -50,7 +50,13 @@ public:
         if (!io) return;
         if (upstream_size == 0 || downstream_size == 0) return;
 
-        char sql_str[256];
+        char sql_str[512];
+
+        // dst might exceed the buff
+        if (dst.size() >= 256) {
+            dst = dst.substring(0, 256);
+            LOG_INFO("cut str to {}", dst)
+        }
 
         sprintf(sql_str, "INSERT INTO user_statistic (uid, src_host, dst_host, upstream_traffic, downstream_traffic, type) values(%d, '%s', '%s', %ld, %ld, '%s');", uid, src.c_str(), dst.c_str(), upstream_size, downstream_size, TrafficTypeToStr(type));
 
@@ -58,7 +64,7 @@ public:
 
         auto record_query = ozo::make_query_builder(boost::hana::make_tuple(ozo::make_query_text(std::string(sql_str))));
 
-        LOG_DEBUG("writing sql uid: {} upstream_traffic: {}, downstream_traffic: {} src: {} dst: {}", uid, upstream_size, downstream_size, src, dst)
+        LOG_INFO("writing sql uid: {} upstream_traffic: {}, downstream_traffic: {} src: {} dst: {}", uid, upstream_size, downstream_size, src, dst)
 
         boost::asio::spawn(*io, [io, record_query, uid] (boost::asio::yield_context yield) {
 
