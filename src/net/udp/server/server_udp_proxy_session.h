@@ -225,9 +225,9 @@ private:
 
 		LOG_DETAIL(UDP_DEBUG("[{}] udp read {} bytes from remote : {}:{}", (void*)this, bytes_read, remote_recv_ep_.address().to_string().c_str(), remote_recv_ep_.port()))
 
-#ifdef BUILD_NETUNNEL_SERVER
-		this->protocol_.AddDownstreamTraffic(bytes_read);
-#endif
+//#ifdef BUILD_NETUNNEL_SERVER
+//		this->protocol_.AddDownstreamTraffic(bytes_read);
+//#endif
 		last_update_time = time(nullptr);
 
 		auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;

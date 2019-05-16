@@ -268,7 +268,8 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     uint64_t OnUdpPayloadReadFromServerRemote(netunnel_aes256gcmwithobf_header *header)
     {
-		this->downstream_traffic += header->PAYLOAD_LENGTH;
+
+        AddDownstreamTraffic(header->PAYLOAD_LENGTH)
         encryptPayload(header);
         addObfuscation(header);
         uint32_t data_length = encryptHeaderLen(header);
