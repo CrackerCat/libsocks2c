@@ -277,7 +277,6 @@ private:
 			this->remote_socket_.cancel(ec);
 			this->session_map_.erase(local_ep_);
 			this->port_set_.erase(local_ep_.port());
-
 			return;
 		}
 

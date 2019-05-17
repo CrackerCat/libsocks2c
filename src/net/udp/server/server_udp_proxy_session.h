@@ -46,6 +46,7 @@ public:
 		for(auto &ip : proxy_ip_set)
 		{
 			ip_record.append(ip);
+			ip_record.append(";");
 		}
 		#ifdef BUILD_NETUNNEL_SERVER
 		this->protocol_.SetProxyEndpoint(std::move(ip_record));
@@ -277,6 +278,7 @@ private:
 
 			boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);
+			this->session_map_.erase(local_ep_);
 			return;
 		}
 
