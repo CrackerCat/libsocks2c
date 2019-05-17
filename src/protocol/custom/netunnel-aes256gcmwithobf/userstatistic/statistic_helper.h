@@ -54,7 +54,7 @@ public:
 
         // dst might exceed the buff
         if (dst.size() >= 256) {
-            dst = dst.substring(0, 256);
+            dst = dst.substr(0, 256);
             LOG_INFO("cut str to {}", dst)
         }
 

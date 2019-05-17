@@ -11,7 +11,7 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-add_definitions(-DPROTOCOL_AES256GCM)
+add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
 
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
@@ -45,6 +45,8 @@ ELSE()
 ENDIF()
 
 SET(CORE_FILES
+        lib/libsocks2c-server.cpp
+        lib/libsocks2c-server.h
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5/socks5_protocol.h
@@ -148,7 +150,7 @@ IF (ENABLE_UOUT)
     ENDIF()
 ENDIF()
 
-add_library(libsocks2c ${CORE_FILES})
+add_library(libsocks2c SHARED ${CORE_FILES})
 #LIST(APPEND CORE_FILES main.cpp)
 #add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")

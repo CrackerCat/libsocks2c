@@ -9,13 +9,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <cstdint>
 
 OS_Dll_API void socks2c_setsqlhost(char* host);
 
-OS_Dll_API int  socks2c_start(int64_t uid, const char* key, uint16_t port);
+OS_Dll_API int  socks2c_start(long uid, const char* key, unsigned short port);
 
-OS_Dll_API void socks2c_stop(uint16_t instance_id);
+OS_Dll_API void socks2c_stop(unsigned short instance_id);
+OS_Dll_API void test();
 
 #ifdef __cplusplus
 }
