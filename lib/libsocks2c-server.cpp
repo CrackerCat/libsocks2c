@@ -14,13 +14,28 @@ void socks2c_setsqlhost(char* host)
 
  }
 
-int socks2c_start(int64_t uid, const char* key, uint16_t port)
+int socks2c_start(int64_t uid, const char* key, uint16_t udp_port)
 {
     LibSocks2c::Config config;
     config.uid = uid;
     config.isServer = true;
     config.server_ip = "::0";
-    config.server_port = port;
+    config.server_port = udp_port;
+    config.proxyKey = key;
+    config.timeout = 0;
+    LibSocks2c::StartProxy(config);
+}
+
+int socks2c_start_raw(long uid, const char* key, unsigned short udp_port, char* raw_ip, unsigned short raw_port, char* ifname)
+{
+    LibSocks2c::Config config;
+    config.uid = uid;
+    config.isServer = true;
+    config.server_ip = "::0";
+    config.server_port = udp_port;
+    config.local_uout_ip = std::string(raw_ip);
+    config.local_uout_port = raw_port;
+    config.udp_over_utcp = true;
     config.proxyKey = key;
     config.timeout = 0;
     LibSocks2c::StartProxy(config);
