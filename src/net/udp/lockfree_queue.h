@@ -45,9 +45,12 @@ public:
 
     void Dequeue()
     {
-        auto front = data_queue_.front();
-        data_queue_.pop();
-        delete [] front->payload_;
+        if (data_queue_.read_available() > 0)
+        {
+            auto front = data_queue_.front();
+            data_queue_.pop();
+            delete [] front->payload_;
+        }
     }
 
     PBufferData GetFront()
