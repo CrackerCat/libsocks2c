@@ -23,9 +23,10 @@ CREATE TABLE public.user_info (
   password text NOT NULL,
   isban bool NOT NULL DEFAULT false,
   port int2 NOT NULL DEFAULT nextval('PORT_SEQ'),
+  raw_port int2 NOT NULL,
   usergroup text NOT NULL,
   CONSTRAINT user_info_pk PRIMARY KEY (uid),
-  CONSTRAINT user_info_un UNIQUE (port)
+  CONSTRAINT user_info_un UNIQUE (port, raw_port)
 );
 
 
