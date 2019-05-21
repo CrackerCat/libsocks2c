@@ -230,7 +230,7 @@ public:
 
         // we send tcp only, ip hdr is for checksum cal only
         sendPacket(ip_data + ip.header_size(), tcp.size());
-        LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
+        LOG_INFO("send {} bytes to local PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
 
         server_seq += (tcp.size() - tcp.header_size());
     }
@@ -265,24 +265,22 @@ private:
     uint32_t init_seq;
     uint32_t server_ack = 0;
 
+    uint32_t first_local_seq = 0;
+
     void handshakeReply(Tins::TCP* local_tcp)
     {
-        static time_t last_send_time = time(nullptr) - 22;
-
-        auto now = time(nullptr);
-
-        auto diff = now - last_send_time;
-        if (diff < 1)
+        if (first_local_seq == 0)
         {
-            LOG_INFO("time short");
-            return;
+            first_local_seq = local_tcp->seq();
         }
 
         // swap src port and dst port
         auto tcp_reply = Tins::TCP(local_tcp->sport(), local_tcp->dport());
         tcp_reply.flags(Tins::TCP::ACK | Tins::TCP::SYN);
-        tcp_reply.ack_seq(local_tcp->seq() + 1); // +1 client's seq
-        tcp_reply.seq(init_seq++);
+        tcp_reply.ack_seq(first_local_seq + 1); // +1 client's first Zseq
+        tcp_reply.seq(init_seq);
+        if (this->server_seq == init_seq) this->server_seq++;
+
 
         LOG_INFO("send syn ack back, seq: {}, ack: {}", tcp_reply.seq(), tcp_reply.ack_seq());
 
@@ -313,7 +311,6 @@ private:
         // we send tcp only, ip hdr is for checksum cal only
         LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
         sendPacket(ip_data + ip.header_size(), bytes_tosend);
-        last_send_time = time(nullptr);
         //this->server_ack = local_tcp->seq() + 1;
     }
 
@@ -338,7 +335,7 @@ private:
                 return;
             }
 
-            LOG_INFO("send {} bytes via raw socket", bytes_send)
+            //LOG_INFO("send {} bytes via raw socket", bytes_send)
 
         });
 
@@ -381,7 +378,7 @@ private:
             }
 
             std::string src_ip_str = inet_ntoa(in_addr({udp_ep.src_ip}));
-            LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, ip_dst, udp_ep.dst_port)
+            //LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, ip_dst, udp_ep.dst_port)
             protocol_.onSocks5IpParse(ip_dst + ":" + boost::lexical_cast<std::string>(udp_ep.dst_port));
 
             // hdr size include the protocol hdr + src ip + src port + socks5 hdr
@@ -426,7 +423,7 @@ private:
         {
             //save server_ack
             //cause we have to know what ack to send when recv udp packet from remote
-            this->server_ack = local_tcp->seq() + local_tcp->inner_pdu()->size();
+            this->server_ack = local_tcp->seq() + 1;
         }
         tcp.ack_seq(this->server_ack);
 

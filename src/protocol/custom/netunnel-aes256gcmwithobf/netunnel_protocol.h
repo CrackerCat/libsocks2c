@@ -245,9 +245,9 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
         return 0;
     }
 
-    void SetSrcEndpoint(std::string&& client_ip)
+    void SetSrcEndpoint(std::string&& client_ip, TrafficType type)
     {
-		this->ttype = UDP;
+		this->ttype = type;
         this->src_ip = client_ip;
     }
 

@@ -3,7 +3,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 
-enum TrafficType {
+enum class TrafficType {
     TCP,
     UDP,
     RAW
@@ -31,16 +31,21 @@ public:
     {
         switch (type)
         {
-            case TCP:
+            case TrafficType::TCP:
             {
                 return "TCP";
             }
-            case UDP:
+            case TrafficType::UDP:
             {
                 return "UDP";
             }
+            case TrafficType::RAW:
+            {
+                return "RAW";
+            }
         }
 
+        throw std::runtime_error("unknow traffic type");
     }
 
     #define str(x) std::to_string(x)

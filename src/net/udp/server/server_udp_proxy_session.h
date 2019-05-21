@@ -42,15 +42,16 @@ public:
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
 		assert(bufferqueue_.Empty());
-		std::string ip_record;
-		for(auto &ip : proxy_ip_set)
-		{
-			ip_record.append(ip);
-			ip_record.append(";");
-		}
-		#ifdef BUILD_NETUNNEL_SERVER
+#ifdef BUILD_NETUNNEL_SERVER
+        std::string ip_record;
+
+        for(auto &ip : proxy_ip_set)
+        {
+            ip_record.append(ip);
+            ip_record += " ";
+        }
 		this->protocol_.SetProxyEndpoint(std::move(ip_record));
-        #endif
+#endif
 	}
 
 	unsigned char* GetLocalDataBuffer()
