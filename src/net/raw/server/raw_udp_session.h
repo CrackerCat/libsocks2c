@@ -18,7 +18,7 @@ template <class Protocol>
 class ServerUdpRawProxySession;
 
 // timeout for ServerUdpRawProxySession's inner udp session class
-#define UDP_PROXY_SESSION_TIMEOUT 60
+#define UDP_PROXY_SESSION_TIMEOUT 30
 
 
 template <class Protocol>
@@ -66,7 +66,7 @@ public:
                 return;
             }
 
-            LOG_INFO("send {} bytes udp data to remote", bytes_send)
+            LOG_DEBUG("send {} bytes udp data to remote", bytes_send)
 
         });
     }
@@ -120,13 +120,13 @@ private:
 
                 last_active_time = time(nullptr);
 
-                LOG_INFO("recv {} bytes udp data from remote", bytes_read)
+                LOG_DEBUG("recv {} bytes udp data from remote", bytes_read)
 
 
                 auto protocol_hdr = (typename Protocol::ProtocolHeader*)remote_recv_buff_;
                 Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, remote_recv_ep_.address().to_string(), remote_recv_ep_.port());
                 // paddle the socks5 udp header
-                LOG_INFO("encrypting payload size {}", bytes_read + 10 + 6)
+                LOG_DEBUG("encrypting payload size {}", bytes_read + 10 + 6)
 
                 memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size(), &this->src_ep.src_ip, 4);
                 memcpy(remote_recv_buff_ + Protocol::ProtocolHeader::Size() + 4, &this->src_ep.src_port, 2);

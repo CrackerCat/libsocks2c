@@ -124,7 +124,7 @@ private:
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    LOG_INFO("new raw session")
+                    //LOG_INFO("new raw session")
                     //in_addr src_ip_addr = {src_ep.src_ip};
                     //std::string src_ip = inet_ntoa(src_ip_addr);
                     auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(io_context_, tcp_src_ep, server_ep, session_map_, this->proxyKey_);
@@ -136,7 +136,7 @@ private:
                     session_map_.insert({tcp_src_ep, psession});
 
                 }else { // if connection already created
-                    LOG_INFO("old raw session")
+                    //LOG_INFO("old raw session")
                     auto psession = map_it->second;
                     psession->HandlePacket(ip, tcp);
                 }

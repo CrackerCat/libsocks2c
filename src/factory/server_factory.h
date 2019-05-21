@@ -51,7 +51,7 @@ public:
         if (udp2raw)
         {
             auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetIOContextAt1());
-            auto init_res = pudp2raw->SetUpSniffer(boost::lexical_cast<std::string>(server_uout_port), "192.168.1.104");
+            auto init_res = pudp2raw->SetUpSniffer(boost::lexical_cast<std::string>(server_uout_port), "192.168.1.176");
             if (init_res)
             {
                 pudp2raw->SetProxyKey(proxyKey);

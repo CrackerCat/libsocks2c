@@ -13,11 +13,7 @@
 #include "raw_udp_session.h"
 
 // timeout for ServerUdpRawProxySession
-#define RAW_PROXY_SESSION_TIMEOUT 100
-
-// timeout for ServerUdpRawProxySession's inner udp session class 
-#define UDP_PROXY_SESSION_TIMEOUT 60
-
+#define RAW_PROXY_SESSION_TIMEOUT 60
 
 template <class Protocol>
 class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession<Protocol>>
@@ -130,10 +126,10 @@ public:
             // we send reply back for each syn
             case (TCP::SYN):
             {
-                LOG_INFO("recv SYN")
+                LOG_DEBUG("recv SYN")
                 if (this->status == INIT || this->status == SYN_RCVD)
                 {
-                    LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
+                    LOG_DEBUG("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
                     // clone tcp cause we have to start new coroutine context
                     handshakeReply(tcp);
                     this->status = SYN_RCVD;
@@ -230,7 +226,7 @@ public:
 
         // we send tcp only, ip hdr is for checksum cal only
         sendPacket(ip_data + ip.header_size(), tcp.size());
-        LOG_INFO("send {} bytes to local PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
+        LOG_DEBUG("send {} bytes to local PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
 
         server_seq += (tcp.size() - tcp.header_size());
     }
@@ -309,7 +305,7 @@ private:
 //        printf("\n");
 
         // we send tcp only, ip hdr is for checksum cal only
-        LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
+        //LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
         sendPacket(ip_data + ip.header_size(), bytes_tosend);
         //this->server_ack = local_tcp->seq() + 1;
     }
@@ -349,7 +345,7 @@ private:
         auto self(this->shared_from_this());
         boost::asio::spawn([this, self, data_copy](boost::asio::yield_context yield){
 
-            LOG_INFO("TCP DATA SIZE {}", data_copy->size());
+            LOG_DEBUG("TCP DATA SIZE {}", data_copy->size());
 
             auto full_data = data_copy->serialize();
 
