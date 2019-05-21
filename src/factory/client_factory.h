@@ -4,6 +4,7 @@
 #include "../net/tcp/client/client_tcp_proxy.h"
 
 #ifdef UDP_OVER_UTCP
+#include "../net/udp/client/raw/client_raw_proxy.h"
 #include "../net/udp/client/client_udp_proxy_withraw.h"
 #endif
 
@@ -32,14 +33,13 @@ public:
 #ifdef UDP_OVER_UTCP
         if (udp2raw)
         {
-            udps = boost::make_shared<ClientUdpProxyWithRaw<Protocol>>();
-            udps->SetProxyKey(proxyKey);
-            udps->SetProxyInfo(server_ip, server_port);
-            udps->StartProxy(socks5_ip, socks5_port);
-			auto uout = boost::static_pointer_cast<ClientUdpProxyWithRaw<Protocol>>(udps);
-			uout->InitUout(server_ip, boost::lexical_cast<std::string>(server_uout_port), local_uout_ip, local_uout_port == 0 ? std::string() : boost::lexical_cast<std::string>(local_uout_port));
-			uout->StartUout();
-			return ClientProxy<Protocol>(tcps, udps);
+            auto uout = boost::make_shared<ClientRawProxy<Protocol>>();
+            uout->SetProxyKey(proxyKey);
+            uout->SetProxyInfo(server_ip, server_port);
+            uout->StartProxy(socks5_ip, socks5_port);
+			uout->InitUout(server_ip, boost::lexical_cast<std::string>(server_uout_port), local_uout_ip, "en0");
+			//uout->StartUout();
+			return ClientProxy<Protocol>(tcps, boost::static_pointer_cast<ClientUdpProxy<Protocol>>(uout));
         }
 #endif
         udps = boost::make_shared<ClientUdpProxy<Protocol>>();

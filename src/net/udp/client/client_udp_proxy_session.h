@@ -247,6 +247,7 @@ private:
 			timer_.cancel();
 			return false;
 		}
+
         return true;
     }
 
