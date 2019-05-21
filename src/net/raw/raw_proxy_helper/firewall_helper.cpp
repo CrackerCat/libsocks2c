@@ -16,7 +16,7 @@ void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
     }
 
     boost::filesystem::ofstream ofs {full_path};
-    std::string filewall_rule = "block drop proto tcp from " + dst_ip + " port " + dst_port + " to any flags R/R\n";
+    std::string filewall_rule = "block drop proto tcp from any to " + dst_ip + " port " + dst_port + " flags R/R\n";
     LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
 
     ofs << filewall_rule;
