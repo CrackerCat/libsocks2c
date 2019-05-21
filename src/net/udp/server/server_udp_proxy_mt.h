@@ -4,6 +4,7 @@
 #include "../../inetwork_proxy.h"
 #include "../../../protocol/socks5/socks5_protocol_helper.h"
 #include "server_udp_proxy_session.h"
+#include "../../../protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h"
 
 
 #include <boost/asio.hpp>
@@ -44,6 +45,10 @@ public:
         UDP_DEBUG("ServerUdpProxy at port: {} die", this->server_port)
     }
 
+    auto& GetIOContextAt1()
+    {
+        return this->GetIOContext();
+    }
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
     {
@@ -178,7 +183,7 @@ private:
 
                         auto new_session = boost::make_shared<ServerUdpProxySession<Protocol>>(this->GetIOContextAt(i), this->server_ip, this->server_port, proxyKey_, this->vpacceptor_[i], vsession_map_[i]);
 
-                        new_session->GetProtocol().SetSrcEndpoint(local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()));
+                        new_session->GetProtocol().SetSrcEndpoint(local_ep_.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep_.port()), TrafficType::UDP);
 						new_session->GetProtocol().SetUserID(this->uid);
 
 						// other protocol in session may not have AddUpstreamTraffic() so we add count here

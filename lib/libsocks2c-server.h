@@ -12,7 +12,8 @@ extern "C" {
 
 OS_Dll_API void socks2c_setsqlhost(char* host);
 
-OS_Dll_API int  socks2c_start(long uid, const char* key, unsigned short port);
+OS_Dll_API int  socks2c_start(long uid, const char* key, unsigned short udp_port);
+OS_Dll_API int  socks2c_start_raw(long uid, const char* key, unsigned short udp_port, char* raw_ip, unsigned short raw_port, char* ifname);
 
 OS_Dll_API void socks2c_stop(unsigned short instance_id);
 OS_Dll_API void test();

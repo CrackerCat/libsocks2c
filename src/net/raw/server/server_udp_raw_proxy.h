@@ -15,6 +15,7 @@
 #include "../raw_proxy_helper/interface_helper.h"
 #include "../raw_proxy_helper/firewall_helper.h"
 #include "../sniffer_def.h"
+#include "../../../protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h"
 
 template <class Protocol>
 class ServerUdpRawProxy : public Singleton<ServerUdpRawProxy<Protocol>>
@@ -117,24 +118,25 @@ private:
                 if (ip == nullptr || tcp == nullptr) continue;
 
                 asio::ip::raw::endpoint tcp_src_ep(boost::asio::ip::address::from_string(ip->src_addr().to_string()), tcp->sport());
-				LOG_INFO("RAW TCP Packet from {}:{}", tcp_src_ep.address().to_string(), tcp_src_ep.port())
+				//LOG_INFO("RAW TCP Packet from {}:{}", tcp_src_ep.address().to_string(), tcp_src_ep.port())
 
                 auto map_it = session_map_.find(tcp_src_ep);
                 // if new connection create session
                 if (map_it == session_map_.end())
                 {
-                    LOG_INFO("new raw session")
+                    //LOG_INFO("new raw session")
                     //in_addr src_ip_addr = {src_ep.src_ip};
                     //std::string src_ip = inet_ntoa(src_ip_addr);
                     auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(io_context_, tcp_src_ep, server_ep, session_map_, this->proxyKey_);
                     //psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
+                    psession->GetProtocol().SetSrcEndpoint(ip->src_addr().to_string() + ":" + boost::lexical_cast<std::string>(tcp->sport()), TrafficType::RAW);
                     psession->InitRawSocketAndTimer(io_context_);
                     psession->HandlePacket(ip, tcp);
                     psession->Start();
                     session_map_.insert({tcp_src_ep, psession});
 
                 }else { // if connection already created
-                    LOG_INFO("old raw session")
+                    //LOG_INFO("old raw session")
                     auto psession = map_it->second;
                     psession->HandlePacket(ip, tcp);
                 }

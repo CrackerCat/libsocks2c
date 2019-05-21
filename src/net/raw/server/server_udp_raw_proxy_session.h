@@ -13,11 +13,7 @@
 #include "raw_udp_session.h"
 
 // timeout for ServerUdpRawProxySession
-#define RAW_PROXY_SESSION_TIMEOUT 100
-
-// timeout for ServerUdpRawProxySession's inner udp session class 
-#define UDP_PROXY_SESSION_TIMEOUT 60
-
+#define RAW_PROXY_SESSION_TIMEOUT 60
 
 template <class Protocol>
 class ServerUdpRawProxySession : public boost::enable_shared_from_this<ServerUdpRawProxySession<Protocol>>
@@ -130,10 +126,10 @@ public:
             // we send reply back for each syn
             case (TCP::SYN):
             {
-                LOG_INFO("recv SYN")
+                LOG_DEBUG("recv SYN")
                 if (this->status == INIT || this->status == SYN_RCVD)
                 {
-                    LOG_INFO("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
+                    LOG_DEBUG("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
                     // clone tcp cause we have to start new coroutine context
                     handshakeReply(tcp);
                     this->status = SYN_RCVD;
@@ -230,7 +226,7 @@ public:
 
         // we send tcp only, ip hdr is for checksum cal only
         sendPacket(ip_data + ip.header_size(), tcp.size());
-        LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
+        LOG_DEBUG("send {} bytes to local PSH | ACK seq: {}, ack: {}", size, tcp.seq(), tcp.ack_seq())
 
         server_seq += (tcp.size() - tcp.header_size());
     }
@@ -265,24 +261,22 @@ private:
     uint32_t init_seq;
     uint32_t server_ack = 0;
 
+    uint32_t first_local_seq = 0;
+
     void handshakeReply(Tins::TCP* local_tcp)
     {
-        static time_t last_send_time = time(nullptr) - 22;
-
-        auto now = time(nullptr);
-
-        auto diff = now - last_send_time;
-        if (diff < 1)
+        if (first_local_seq == 0)
         {
-            LOG_INFO("time short");
-            return;
+            first_local_seq = local_tcp->seq();
         }
 
         // swap src port and dst port
         auto tcp_reply = Tins::TCP(local_tcp->sport(), local_tcp->dport());
         tcp_reply.flags(Tins::TCP::ACK | Tins::TCP::SYN);
-        tcp_reply.ack_seq(local_tcp->seq() + 1); // +1 client's seq
-        tcp_reply.seq(init_seq++);
+        tcp_reply.ack_seq(first_local_seq + 1); // +1 client's first Zseq
+        tcp_reply.seq(init_seq);
+        if (this->server_seq == init_seq) this->server_seq++;
+
 
         LOG_INFO("send syn ack back, seq: {}, ack: {}", tcp_reply.seq(), tcp_reply.ack_seq());
 
@@ -311,9 +305,8 @@ private:
 //        printf("\n");
 
         // we send tcp only, ip hdr is for checksum cal only
-        LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
+        //LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
         sendPacket(ip_data + ip.header_size(), bytes_tosend);
-        last_send_time = time(nullptr);
         //this->server_ack = local_tcp->seq() + 1;
     }
 
@@ -338,7 +331,7 @@ private:
                 return;
             }
 
-            LOG_INFO("send {} bytes via raw socket", bytes_send)
+            //LOG_INFO("send {} bytes via raw socket", bytes_send)
 
         });
 
@@ -352,7 +345,7 @@ private:
         auto self(this->shared_from_this());
         boost::asio::spawn([this, self, data_copy](boost::asio::yield_context yield){
 
-            LOG_INFO("TCP DATA SIZE {}", data_copy->size());
+            LOG_DEBUG("TCP DATA SIZE {}", data_copy->size());
 
             auto full_data = data_copy->serialize();
 
@@ -360,7 +353,7 @@ private:
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)&full_data[0];
             // decrypt packet and get payload length
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
-            auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr, this->local_ep.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep.port()));
+            auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 
             if (bytes_read == 0 || bytes_read > RAW_UDP_LOCAL_RECV_BUFF_SIZE)
             {
@@ -381,7 +374,7 @@ private:
             }
 
             std::string src_ip_str = inet_ntoa(in_addr({udp_ep.src_ip}));
-            LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, ip_dst, udp_ep.dst_port)
+            //LOG_INFO("raw packet from {}:{} to {}:{}", src_ip_str, udp_ep.src_port, ip_dst, udp_ep.dst_port)
             protocol_.onSocks5IpParse(ip_dst + ":" + boost::lexical_cast<std::string>(udp_ep.dst_port));
 
             // hdr size include the protocol hdr + src ip + src port + socks5 hdr
@@ -426,7 +419,7 @@ private:
         {
             //save server_ack
             //cause we have to know what ack to send when recv udp packet from remote
-            this->server_ack = local_tcp->seq() + local_tcp->inner_pdu()->size();
+            this->server_ack = local_tcp->seq() + 1;
         }
         tcp.ack_seq(this->server_ack);
 
