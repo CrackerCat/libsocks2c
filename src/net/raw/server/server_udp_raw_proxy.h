@@ -26,7 +26,7 @@ public:
 
     ServerUdpRawProxy(boost::asio::io_context& io) : io_context_(io), sniffer_socket(io) {}
 
-    bool SetUpSniffer(std::string server_port, std::string server_ip = std::string(), std::string ifname = std::string())
+    bool SetUpSniffer(std::string server_port, std::string server_ip, std::string ifname = std::string())
     {
         //Get Default if ifname is not set
         if (ifname.empty())

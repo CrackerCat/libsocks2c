@@ -360,7 +360,7 @@ private:
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)&full_data[0];
             // decrypt packet and get payload length
             // n bytes protocol header + 6 bytes src ip port + 10 bytes socks5 header + payload
-            auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr, this->local_ep.address().to_string() + ":" + boost::lexical_cast<std::string>(local_ep.port()));
+            auto bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 
             if (bytes_read == 0 || bytes_read > RAW_UDP_LOCAL_RECV_BUFF_SIZE)
             {

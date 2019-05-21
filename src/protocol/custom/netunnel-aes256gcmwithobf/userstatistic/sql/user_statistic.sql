@@ -7,8 +7,8 @@ CREATE TABLE public.user_statistic (
 	src_host text NOT NULL,
 	dst_host text NOT NULL,
 	last_active_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	upstream_traffic varchar NOT NULL,
+	upstream_traffic int8 NOT NULL,
 	downstream_traffic int8 NOT NULL,
-	"type" text NOT NULL,
+	type text NOT NULL,
 	CONSTRAINT user_statistic_fk FOREIGN KEY (uid) REFERENCES user_info(uid)
 );
