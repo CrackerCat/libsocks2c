@@ -1,12 +1,7 @@
 #include "../client_udp_proxy.h"
 #include "client_raw_proxy_session.h"
-
-#ifdef _WIN32
-#include "../../raw/client/client_udp_raw_proxy_win32.h"
-#else
-#include "client_raw_proxy_session.h"
 #include "helper/firewall.h"
-#endif
+
 
 
 

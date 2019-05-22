@@ -337,7 +337,7 @@ private:
                 tcp.flags(TCP::SYN);
                 tcp.seq(this->init_seq);
 
-                LOG_DEBUG("send SYN seq: {}, ack: {}", tcp.seq(), tcp.ack_seq())
+                LOG_INFO("[{}] send SYN seq: {}, ack: {}", (void*)this, tcp.seq(), tcp.ack_seq())
 
                 // we send tcp only, ip hdr is for checksum cal only
                 auto bytes_send = constructAndSend(ip, tcp, yield);
@@ -392,10 +392,10 @@ private:
             memcpy(&src_ip, &data_copy[Protocol::ProtocolHeader::Size()], 4);
             memcpy(&src_port, &data_copy[Protocol::ProtocolHeader::Size() + 4], 2);
 
-            in_addr addr;
-            memcpy(&addr, &src_ip, 4);
-
-            LOG_INFO("setting original src_ep {}:{}", inet_ntoa(in_addr({src_ip})), src_port)
+		    in_addr addr;
+		    memcpy(&addr, &src_ip, 4);
+			
+            LOG_INFO("setting original src_ep {}:{}", inet_ntoa(addr), src_port)
 
             boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string(inet_ntoa(addr)), src_port);
 
@@ -441,6 +441,7 @@ private:
         this->local_seq = init_seq + 1;
         this->last_ack = remote_seq + 1;
 
+		LOG_INFO("[{}] set ESTABLISHED", (void*)this)
         this->status = ESTABLISHED;
 
         startSendCoroutine();

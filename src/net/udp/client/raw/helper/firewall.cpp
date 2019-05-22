@@ -32,8 +32,7 @@ void Firewall::Unblock(std::string dst_ip, std::string dst_port)
     LOG_INFO("Setting Firewall Rule: **********")
     //system(filewall_rule.c_str());
 }
-
-#elif __linux__
+#elif defined(__linux__)
 void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
 {
     std::string filewall_rule = "iptables -A OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
@@ -46,5 +45,26 @@ void FirewallHelper::Unblock(std::string dst_ip, std::string dst_port)
     std::string filewall_rule = "iptables -D OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
     LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
     system(filewall_rule.c_str());
+}
+#elif defined(_WIN32)
+#include <windivert.h>
+#include <Windows.h>
+void Firewall::BlockRst(std::string dst_ip, std::string dst_port)
+{
+	std::string rst_filter = "outbound and !loopback and "
+		"ip.DstAddr == " + dst_ip + " and "
+		"tcp.SrcPort == " + dst_port + " and "
+		"tcp.Rst";
+
+	HANDLE rst_handle = WinDivertOpen(
+		rst_filter.c_str(),
+		WINDIVERT_LAYER_NETWORK, 0, 0
+	);
+
+	if (rst_handle == INVALID_HANDLE_VALUE)
+	{
+		LOG_INFO("BlockRst err, WinDivertOpen failed, you may need to run as administrator")
+			return;
+	}
 }
 #endif
