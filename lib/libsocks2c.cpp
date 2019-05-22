@@ -73,9 +73,9 @@ int LibSocks2c::StartProxy(Config config)
 
 bool LibSocks2c::StopProxy(int id, bool isServer)
 {
-#ifdef BUILD_SERVER_LIB
     if (isServer)
     {
+#ifdef BUILD_SERVER_LIB
         if (!ServerProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
         return ServerProxyMap<Protocol>::GetInstance()->StopProxy(id);
     }else
