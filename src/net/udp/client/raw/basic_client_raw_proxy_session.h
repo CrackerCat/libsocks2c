@@ -43,7 +43,11 @@ public:
     }
 
     virtual ~BasicClientRawProxySession() {
-        //LOG_INFO("BasicClientRawProxy die")
+        LOG_INFO("BasicClientRawProxy die")
+		while (!bufferqueue_.Empty())
+		{
+			bufferqueue_.Dequeue();
+		}
     }
 
     // set up sniffer(pcap)
@@ -110,7 +114,6 @@ public:
 
             while (!bufferqueue_.Empty())
             {
-                LOG_INFO("bufferqueue_ not empty")
 
                 auto bufferinfo = bufferqueue_.GetFront();
 
@@ -233,7 +236,8 @@ private:
 
     void readFromRemote()
     {
-        boost::asio::spawn(this->io_context_, [this](boost::asio::yield_context yield){
+		auto self(this->shared_from_this());
+        boost::asio::spawn(this->io_context_, [self, this](boost::asio::yield_context yield){
 
             using Tins::TCP;
             while(1)
@@ -373,7 +377,8 @@ private:
         LOG_INFO("recv {} from remote", raw_data->size())
         std::unique_ptr<unsigned char[]> data_copy(new unsigned char[raw_data->size()]);
         memcpy(data_copy.get(), raw_data->serialize().data(), raw_data->size());
-        boost::asio::spawn( [this, data_copy {std::move(data_copy)}] (boost::asio::yield_context yield){
+		auto self(this->shared_from_this());
+		boost::asio::spawn( [self, this, data_copy {std::move(data_copy)}] (boost::asio::yield_context yield){
 
             // decrypt data
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)data_copy.get();

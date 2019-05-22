@@ -14,13 +14,28 @@ class ClientRawProxy : public ClientUdpProxy<Protocol>
 public:
 
 
-    void InitUout(std::string server_ip, std::string server_raw_port, std::string local_ip, std::string ifname)
+    bool InitUout(std::string server_ip, std::string server_raw_port, std::string local_uout_ip, std::string ifname)
     {
         this->server_ip = server_ip;
         this->server_raw_port = server_raw_port;
-        this->local_ip = local_ip;
+
+		if (local_uout_ip == "")
+		{
+			LOG_INFO("TO start raw proxy, you have to specify local_uout_ip")
+			return false;
+		}
+#ifndef _WIN32
+		if (ifname == "")
+		{
+			LOG_INFO("TO start raw proxy, you have to specify ifname")
+			return false;
+		}
+#endif
+
+        this->local_ip = local_uout_ip;
         this->ifname = ifname;
         Firewall::BlockRst(server_ip, server_raw_port);
+		return true;
     }
 
 private:

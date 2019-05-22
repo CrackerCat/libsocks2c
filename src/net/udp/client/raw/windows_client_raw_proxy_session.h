@@ -79,22 +79,6 @@ public:
 	bool initWinDivert()
 	{
 
-		//std::string rst_filter = "outbound and !loopback and "
-		//	"ip.DstAddr == " + remote_ip + " and "
-		//	"tcp.SrcPort == " + boost::lexical_cast<std::string>(remote_port) + " and "
-		//	"tcp.Rst";
-
-		//rst_handle = WinDivertOpen(
-		//	rst_filter.c_str(),
-		//	WINDIVERT_LAYER_NETWORK, 0, 0
-		//);
-
-		//if (rst_handle == INVALID_HANDLE_VALUE)
-		//{
-		//	LOG_INFO("err WinDivertOpen RST filter, you may run as administrator")
-		//		return false;
-		//}
-
 		std::string recv_filter = "inbound and !loopback and "
 			"ip.DstAddr == " + this->local_ip + " and tcp.DstPort == " + boost::lexical_cast<std::string>(this->local_port);
 
