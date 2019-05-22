@@ -40,7 +40,6 @@ public:
 
         auto ep = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(local_address),local_port);
 
-
         boost::system::error_code ec;
 
         pacceptor_->open(ep.protocol(), ec);
