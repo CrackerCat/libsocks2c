@@ -55,8 +55,8 @@ int LibSocks2c::StartProxy(Config config)
             config.server_port,
 			config.server_uout_port,
 		    config.udp_over_utcp,
+			config.local_uout_ifname,
 			config.local_uout_ip,
-			config.local_uout_port,
             config.resolve_dns,
             config.timeout,
             config.uid);

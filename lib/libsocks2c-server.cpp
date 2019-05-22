@@ -32,10 +32,13 @@ int socks2c_start_raw(long uid, const char* key, unsigned short port, char* raw_
     LibSocks2c::Config config;
     config.uid = uid;
     config.isServer = true;
+
     config.server_ip = "::0";
     config.server_port = port;
+
+	config.local_uout_ifname = std::string(ifname);
     config.local_uout_ip = std::string(raw_ip);
-    config.local_uout_port = raw_port;
+    config.server_uout_port = raw_port;
     config.udp_over_utcp = true;
     config.proxyKey = key;
     config.timeout = 0;

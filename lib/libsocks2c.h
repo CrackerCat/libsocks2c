@@ -32,11 +32,12 @@ public:
         uint16_t server_port;
 		uint16_t server_uout_port;
 
+		std::string local_uout_ifname;
 		std::string local_uout_ip;
 		uint16_t local_uout_port;
 
         std::string socks5_ip = "127.0.0.1";
-        uint16_t socks5_port = 5555;
+        uint16_t socks5_port = 1080;
 
         size_t timeout = 0;
         bool udp_over_utcp = false;
