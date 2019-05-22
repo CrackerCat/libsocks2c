@@ -83,7 +83,7 @@ SET(CORE_FILES
         src/factory/client_factory.h
         src/factory/server_factory.h
         lib/client_proxymap.h
-        src/net/raw/server/buffersize_def.h
+        #src/net/raw/server/buffersize_def.h
         )
 
 IF(BUILD_CLIENT_LIB)
@@ -126,33 +126,37 @@ ENDIF()
 
 IF (ENABLE_UOUT)
     message("Build uout")
-
-    LIST(APPEND CORE_FILES
+	IF(BUILD_SERVER_LIB)
+	LIST(APPEND CORE_FILES
         src/net/raw/raw_proxy_helper/interface_helper.h
         src/net/raw/raw_proxy_helper/interface_helper.cpp
         src/net/raw/server/raw_udp_session.h
         src/net/raw/server/server_udp_raw_proxy.h
         src/net/raw/raw_socket.h
-        src/net/raw/client/client_udp_raw_proxy.h
-        src/net/udp/client/client_udp_proxy_withraw.h
         src/net/raw/server/server_udp_raw_proxy_session.h
         src/net/raw/raw_proxy_helper/firewall_helper.h
         src/net/raw/raw_proxy_helper/firewall_helper.cpp
-        src/utils/system/system_exec.h
         src/net/raw/sniffer_def.h
-        src/net/raw/client/basic_client_udp_raw_proxy.h
         src/net/raw/raw_proxy_helper/tcp_checksum_helper.h
         src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp
-		src/net/raw/raw_proxy_helper/port_usable_checker.h
-        src/net/raw/raw_proxy_helper/port_usable_checker.cpp)
-    IF(WIN32)
-        LIST(APPEND CORE_FILES src/net/raw/client/client_udp_raw_proxy_win32.h)
-    ENDIF()
+        src/utils/system/system_exec.h
+		)
+	ENDIF()
+	IF(BUILD_CLIENT_LIB)
+	LIST(APPEND CORE_FILES
+		src/net/udp/client/raw/helper/available_port.cpp
+		src/net/udp/client/raw/helper/available_port.h
+		src/net/udp/client/raw/helper/firewall.cpp
+		src/net/udp/client/raw/helper/firewall.h
+		src/net/udp/client/client_udp_proxy_withraw.h
+        src/utils/system/system_exec.h
+		)
+	ENDIF()
 ENDIF()
 
-add_library(libsocks2c SHARED ${CORE_FILES})
-#LIST(APPEND CORE_FILES main.cpp)
-#add_executable(libsocks2c ${CORE_FILES})
+#add_library(libsocks2c SHARED ${CORE_FILES})
+LIST(APPEND CORE_FILES main.cpp)
+add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
@@ -162,6 +166,8 @@ IF (WIN32)
         target_link_libraries(libsocks2c "C:/WpdPack/Lib/x64/wpcap.lib")
         target_link_libraries(libsocks2c "C:/lib/debug/tins.lib")
         target_link_libraries(libsocks2c "C:/WinDivert-1.4.3-A/x86_64/WinDivert.lib")
+        target_link_libraries(libsocks2c "Iphlpapi.lib")
+
     ENDIF()
         target_link_libraries(libsocks2c "C:/lib/libsodium.lib")
 ELSE()
@@ -192,23 +198,24 @@ IF(NOT BUILD_IOS_LIBRARY)
 
 	IF(WIN32)
 		include_directories("C:/Boost/include/boost-1_70")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_regex-vc142-mt-x64-1_70.lib")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_coroutine-vc142-mt-x64-1_70.lib")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_date_time-vc142-mt-x64-1_70.lib")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_thread-vc142-mt-x64-1_70.lib")
-		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_chrono-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_regex-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_coroutine-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_date_time-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_thread-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_chrono-vc142-mt-x64-1_70.lib")
+		#target_link_libraries(libsocks2c "C:/Boost/lib/libboost_date_time-vc142-mt-x64-1_70.lib")
+
 		
 		
-		
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_regex-vc142-mt-gd-x64-1_70.lib")
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_coroutine-vc142-mt-gd-x64-1_70.lib")
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_date_time-vc142-mt-gd-x64-1_70.lib")
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_thread-vc142-mt-gd-x64-1_70.lib")
-#		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_chrono-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_regex-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_coroutine-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_date_time-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_thread-vc142-mt-gd-x64-1_70.lib")
+		target_link_libraries(libsocks2c "C:/Boost/lib/libboost_chrono-vc142-mt-gd-x64-1_70.lib")
 	ELSE()
 	    target_link_libraries(libsocks2c "/usr/local/lib/libboost_thread.a")
 		target_link_libraries(libsocks2c "/usr/local/lib/libboost_regex.a")
