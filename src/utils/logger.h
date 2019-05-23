@@ -71,8 +71,15 @@ private:
 #define TCP_DEBUG(x, ...)
 #endif
 
+#ifdef RAW_DEBUG_DETAIL
+#define RAW_DEBUG(x, ...) LOG_DEBUG((x), ##__VA_ARGS__)
+#else
+#define RAW_DEBUG(x, ...)
+#endif
+
 #define TCP_LOG_INFO LOG_INFO
 #define UDP_LOG_INFO LOG_INFO
+#define RAW_LOG_INFO LOG_INFO
 
 
 
