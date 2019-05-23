@@ -109,7 +109,7 @@ private:
         uint16_t port;
         Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(socks5_packet, ip, port);
 
-        if (dnsviaraw && isDnsPacket)
+        if (!dnsviaraw && isDnsPacket)
         {
             handlePacketViaUdp(local_ep, bytes_read);
             return;
