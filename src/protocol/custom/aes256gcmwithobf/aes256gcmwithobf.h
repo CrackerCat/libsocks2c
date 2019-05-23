@@ -15,6 +15,7 @@
 #define OBF_MINPADDLE 250
 #define OBF_MAXPADDLE 800
 
+#define MAX_BUFFSIZE 1536
 
 // Example protocol
 /*
@@ -317,7 +318,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
 
     inline bool decryptPayload(aes256gcmwithobf_header *header)
     {
-
+		if (header->PAYLOAD_LENGTH > MAX_BUFFSIZE) return false;
         bool res = aes256gcmwithobf_Helper::decryptData(this->ProxyKey, header->NONCE, header->GetDataOffsetPtr(),
                                                                header->PAYLOAD_LENGTH, decryptedData,
                                                                header->PAYLOAD_TAG);
@@ -342,8 +343,8 @@ private:
 
     unsigned char ProxyKey[32];
 
-    unsigned char encryptedData[1536];
-	unsigned char decryptedData[1536];
+    unsigned char encryptedData[MAX_BUFFSIZE];
+	unsigned char decryptedData[MAX_BUFFSIZE];
 
 };
 
