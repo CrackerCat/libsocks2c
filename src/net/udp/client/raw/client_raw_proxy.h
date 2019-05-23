@@ -21,8 +21,18 @@ public:
 
 		if (local_uout_ip == "")
 		{
-			LOG_INFO("TO start raw proxy, you have to specify local_uout_ip")
-			return false;
+			LOG_INFO("attention that 114.114.114.114 shouldn't be add to vpn route")
+            LOG_INFO("OR we may not be able to get local_uout_ip")
+
+			boost::asio::io_context io;
+            boost::asio::ip::udp::socket socket(io);
+
+            boost::asio::ip::udp::endpoint ep(boost::asio::ip::address::from_string("114.114.114.114"), 53);
+
+            socket.connect(ep);
+
+            local_uout_ip = socket.local_endpoint().address().to_string();
+
 		}
 #ifndef _WIN32
 		if (ifname == "")

@@ -20,7 +20,7 @@ void test()
     config.socks5_ip = "0.0.0.0";
     config.socks5_port = 1080;
 
-    config.local_uout_ip = "192.168.1.104";
+    //config.local_uout_ip = "192.168.1.104";
     config.local_uout_ifname = "en0";
     config.dnsviaraw = true;
 
