@@ -36,15 +36,13 @@ public:
 
     virtual ~ClientRawProxySession() override
     {
-        LOG_INFO("ClientRawProxySession die")
+        LOG_DEBUG("ClientRawProxySession die")
     }
 
 
     virtual void Stop() override
     {
-        if (this->status == this->CLOSED) return;
-        this->sniffer_socket.cancel();
-        this->send_socket_stream.cancel();
+        cleanUp();
     }
 
     virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, std::string ifname) override
@@ -120,7 +118,7 @@ private:
 
         if (ec)
         {
-            LOG_INFO("wait err --> {}", ec.message().c_str());
+            LOG_DEBUG("wait err --> {}", ec.message().c_str());
             return nullptr;
         }
 
@@ -138,7 +136,7 @@ private:
             return;
         }
 
-        if (time(nullptr) - this->last_update_time > RAW_SESSION_TIMEOUT)
+        if (time(nullptr) - this->last_update_time > this->session_timeout)
         {
             cleanUp();
             return;

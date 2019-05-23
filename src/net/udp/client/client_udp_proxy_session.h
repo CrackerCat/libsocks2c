@@ -22,7 +22,7 @@ class ClientUdpProxySession : public boost::enable_shared_from_this<ClientUdpPro
 
 public:
 
-    ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::unordered_set<uint16_t>& port_set) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_executor()), timer_(local_socket->get_executor()), port_set_(port_set)
+    ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref) : session_map_(map_ref), local_socket_(local_socket), remote_socket_(local_socket->get_executor()), timer_(local_socket->get_executor())
     {
         this->protocol_.SetKey(key);
         remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
@@ -31,7 +31,7 @@ public:
 
     }
 
-	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context, boost::unordered_set<uint16_t>& port_set) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_executor()), port_set_(port_set)
+	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_executor())
 	{
 		this->protocol_.SetKey(key);
 		remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
@@ -196,8 +196,6 @@ private:
 	boost::asio::deadline_timer timer_;
 	time_t last_update_time = 0;
 
-	boost::unordered_set<uint16_t>& port_set_;
-
 	bool isDnsReq = false;
 
     void onRemoteSend(const boost::system::error_code &ec, const uint64_t &bytes_send)
@@ -262,7 +260,6 @@ private:
 
 			if (this->isDnsReq){
 				this->session_map_.erase(local_ep_);
-				this->port_set_.erase(local_ep_.port());
 			}
 
 			return;
@@ -277,7 +274,6 @@ private:
 			boost::system::error_code ec;
 			this->remote_socket_.cancel(ec);
 			this->session_map_.erase(local_ep_);
-			this->port_set_.erase(local_ep_.port());
 			return;
 		}
 

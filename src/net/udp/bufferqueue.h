@@ -1,9 +1,12 @@
 #pragma once
 
 #ifdef MULTITHREAD_IO
-    #ifdef __linux__
+    #if defined(__linux__) || defined(ENABLE_UOUT)
+    // on linux
     // we don't need lockfree queue cause -
     // local_socket_ && remote_socket_ share the same context
+    //
+    // same if we enable ENABLE_UOUT, which runs in single thread
     #include "normal_queue.h"
     #else
     // on mac || win32

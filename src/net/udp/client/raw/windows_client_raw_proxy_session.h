@@ -37,11 +37,7 @@ public:
 
 	virtual void Stop() override
 	{
-		if (this->status == CLOSED) return;
-		WinDivertClose(this->rst_handle);
-		this->psniffer_socket->cancel();
-		this->psend_socket->cancel();
-		WinDivertClose(this->recv_handle);
+		cleanUp();
 	}
 
 	virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, std::string ifname) override
@@ -182,11 +178,11 @@ private:
 		if (ec)
 		{
 			LOG_INFO("Udp timer err --> {}", ec.message().c_str())
-				cleanUp();
+			cleanUp();
 			return;
 		}
 
-		if (time(nullptr) - this->last_update_time > RAW_SESSION_TIMEOUT)
+		if (time(nullptr) - this->last_update_time > this->session_timeout)
 		{
 			cleanUp();
 			return;
@@ -199,6 +195,7 @@ private:
 
 	void cleanUp()
 	{
+		this->status = CLOSED;
 		//WinDivertClose(this->rst_handle);
 		boost::system::error_code ec;
 		this->psniffer_socket->cancel(ec);

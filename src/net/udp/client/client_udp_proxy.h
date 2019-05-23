@@ -102,8 +102,6 @@ protected:
 
     SESSION_MAP session_map_;
 
-	boost::unordered_set<uint16_t> port_set;
-
     unsigned char local_recv_buff_[UDP_LOCAL_RECV_BUFF_SIZE];
 
     virtual void startAcceptorCoroutine() override
@@ -161,9 +159,12 @@ protected:
 
         if (map_it == session_map_.end())
         {
-
-            auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext(), this->port_set);
-
+#ifdef ENABLE_UOUT
+            // when UOUT is enalbe, we don't use lf queue, so we can't dispatch downstream_context to other thread
+            auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetIOContext());
+#else
+            auto new_session = boost::make_shared<ClientUdpProxySession<Protocol>>(this->server_ip, this->server_port, proxyKey_, pacceptor_, session_map_, this->GetRandomIOContext());
+#endif
             UDP_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep.address().to_string().c_str(), local_ep.port());
 
             if (isDnsPacket) new_session->SetDnsPacket();

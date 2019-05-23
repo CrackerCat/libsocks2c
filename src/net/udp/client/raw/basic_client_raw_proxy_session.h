@@ -20,6 +20,7 @@
 #define MAX_HANDSHAKE_TRY 5
 // IF we send 10 packet out and didn't get any ack, then we close the connection
 const int RAW_SESSION_TIMEOUT = 25;
+const int RAW_SESSION_TIMEOUT_DNS = 5;
 /*
  * BasicClientRawProxySession run in single thread mode
  *
@@ -43,7 +44,7 @@ public:
     }
 
     virtual ~BasicClientRawProxySession() {
-        LOG_INFO("BasicClientRawProxy die")
+        LOG_DEBUG("BasicClientRawProxy die")
 		while (!bufferqueue_.Empty())
 		{
 			bufferqueue_.Dequeue();
@@ -71,7 +72,7 @@ public:
 
     void SetDnsPacket()
     {
-        this->isDnsReq = true;
+        this->session_timeout = RAW_SESSION_TIMEOUT_DNS;
     }
 
     void sendToRemote(void* data, uint32_t size)
@@ -104,7 +105,7 @@ public:
             LOG_INFO("remote sending, return")
             return;
         }
-        LOG_INFO("startSendCoroutine")
+        LOG_DEBUG("startSendCoroutine")
 
         auto self(this->shared_from_this());
         boost::asio::spawn(this->io_context_, [self, this](boost::asio::yield_context yield){
@@ -127,7 +128,7 @@ public:
 
                 tcp = tcp / payload;
 
-                LOG_INFO("send {} bytes PSH | ACK seq: {}, ack: {}", bufferinfo->size_, tcp.seq(), tcp.ack_seq())
+                LOG_DEBUG("send {} bytes PSH | ACK seq: {}, ack: {}", bufferinfo->size_, tcp.seq(), tcp.ack_seq())
 
                 auto bytes_send = this->constructAndSend(ip, tcp, yield);
 
@@ -143,7 +144,7 @@ public:
                 this->local_seq += (tcp.size() - tcp.header_size());
 
             }
-            LOG_INFO("send finished")
+            LOG_DEBUG("send finished")
 
             this->remote_sending = false;
 
@@ -206,17 +207,13 @@ protected:
 
     boost::asio::deadline_timer timer_;
     time_t last_update_time = 0;
+    int session_timeout = RAW_SESSION_TIMEOUT;
 
     boost::asio::ip::udp::endpoint local_ep_;
 
 private:
     // flag for distinguishing whether another handshake process is running
     bool handshaking = false;
-
-    // every packet send via raw will increase 1 to ack_expect_sum
-    // when ack is recved, we clear ack_expect_sum
-    // if ack_expect_sum exceed the maximum after packet send(via raw), we close session and fallback to udp proxy
-    unsigned int ack_expect_sum = 0;
 
     unsigned int last_ack = 0;
 
@@ -228,8 +225,6 @@ private:
 
     BufferQueue bufferqueue_;
     bool remote_sending = false;
-
-    bool isDnsReq = false;
 
     // platform specific impl
     virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) = 0;
@@ -252,7 +247,7 @@ private:
 
                 if (ec)
                 {
-                    LOG_INFO("recvFromRemote err --> {}", ec.message())
+                    LOG_DEBUG("recvFromRemote err --> {}", ec.message())
                     return;
                 }
 
@@ -273,21 +268,20 @@ private:
                     }
                     case (TCP::SYN | TCP::ACK):
                     {
-                        LOG_INFO("recv SYN | ACK seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
+                        LOG_DEBUG("recv SYN | ACK seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
                         this->handshakeReply(tcp->seq(), tcp->ack_seq(), yield);
                         continue;
                     }
                         // without data
                     case TCP::ACK :
                     {
-                        LOG_INFO("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
-                        this->ack_expect_sum = 0;
+                        LOG_DEBUG("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                         continue;
                     }
                         // with data
                     case (TCP::PSH | TCP::ACK) :
                     {
-                        LOG_INFO("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
+                        LOG_DEBUG("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                         //only reply when ESTABLISHED
                         if (this->status != ESTABLISHED) continue;
 
@@ -321,7 +315,7 @@ private:
     void tcpHandShake()
     {
         if (this->handshaking == true) return;
-        LOG_INFO("[{}] tcpHandShake Start", (void*)this)
+        LOG_DEBUG("[{}] tcpHandShake Start", (void*)this)
         this->handshaking = true;
         using Tins::TCP;
         using Tins::IP;
@@ -341,7 +335,7 @@ private:
                 tcp.flags(TCP::SYN);
                 tcp.seq(this->init_seq);
 
-                LOG_INFO("[{}] send SYN seq: {}, ack: {}", (void*)this, tcp.seq(), tcp.ack_seq())
+                LOG_DEBUG("[{}] send SYN seq: {}, ack: {}", (void*)this, tcp.seq(), tcp.ack_seq())
 
                 // we send tcp only, ip hdr is for checksum cal only
                 auto bytes_send = constructAndSend(ip, tcp, yield);
@@ -364,8 +358,8 @@ private:
             // if handshake failed, we set status to CLOSED
             if (this->status != ESTABLISHED)
             {
-                LOG_INFO("handshake failed, closed")
-                this->status = CLOSED;
+                LOG_DEBUG("handshake failed, closed")
+                this->Stop();
             }
         });
 
@@ -374,7 +368,7 @@ private:
 
     void sendToLocal(Tins::PDU* raw_data)
     {
-        LOG_INFO("recv {} from remote", raw_data->size())
+        LOG_DEBUG("send {} to local", raw_data->size())
         std::unique_ptr<unsigned char[]> data_copy(new unsigned char[raw_data->size()]);
         memcpy(data_copy.get(), raw_data->serialize().data(), raw_data->size());
 		auto self(this->shared_from_this());
@@ -400,13 +394,13 @@ private:
 		    in_addr addr;
 		    memcpy(&addr, &src_ip, 4);
 			
-            LOG_INFO("setting original src_ep {}:{}", inet_ntoa(addr), src_port)
+            LOG_DEBUG("setting original src_ep {}:{}", inet_ntoa(addr), src_port)
 
             boost::asio::ip::udp::endpoint local_ep(boost::asio::ip::address::from_string(inet_ntoa(addr)), src_port);
 
             boost::system::error_code ec;
 
-            LOG_INFO("send {} bytes udp back to local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port())
+            LOG_DEBUG("send {} bytes udp back to local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port())
 
             auto bytes_send = this->plocal_socket->async_send_to(boost::asio::buffer(data_copy.get() + Protocol::ProtocolHeader::Size() + 6, bytes_read - 6), local_ep, yield[ec]);
 
@@ -414,13 +408,6 @@ private:
             {
                 LOG_INFO("async_send_to err --> {}", ec.message().c_str())
                 return;
-            }
-
-            //LOG_INFO("send {} bytes to local", bytes_send)
-            if (this->isDnsReq)
-            {
-                timer_.cancel();
-                this->status = CLOSED;
             }
 
             last_update_time = time(nullptr);
@@ -439,14 +426,14 @@ private:
         tcp.flags(TCP::ACK);
         tcp.ack_seq(remote_seq + 1);
         tcp.seq(++local_seq);
-        LOG_INFO("send handshake ACK back, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
+        LOG_DEBUG("send handshake ACK back, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
         constructAndSend(ip, tcp, yield);
 
         this->local_seq = init_seq + 1;
         this->last_ack = remote_seq + 1;
 
-		LOG_INFO("[{}] set ESTABLISHED", (void*)this)
+		LOG_DEBUG("[{}] raw ESTABLISHED", (void*)this)
         this->status = ESTABLISHED;
 
         startSendCoroutine();
@@ -464,7 +451,7 @@ private:
 
         tcp.ack_seq(remote_tcp->seq() + remote_tcp->size() - remote_tcp->header_size());
         tcp.seq(local_seq);
-        LOG_INFO("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
+        LOG_DEBUG("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
         constructAndSend(ip, tcp, yield);
     }

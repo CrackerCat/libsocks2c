@@ -22,7 +22,7 @@ void test()
 
     //config.local_uout_ip = "192.168.1.104";
     config.local_uout_ifname = "en0";
-    config.dnsviaraw = true;
+    config.dnsviaraw = false;
 
     config.resolve_dns = false;
     config.udp_over_utcp = true;

@@ -9,10 +9,7 @@ void socks2c_setsqlhost(char* host)
 {
     LibSocks2c::SetSqlHost(host);
 }
- void test()
- {
 
- }
 
 int socks2c_start(long uid, const char* key, uint16_t port)
 {

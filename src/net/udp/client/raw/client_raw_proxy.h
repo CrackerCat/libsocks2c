@@ -115,6 +115,7 @@ private:
             return;
         }
 
+        LOG_INFO("[raw proxy] {}:{}", ip, port)
         handlePacketViaRaw(local_ep, bytes_read, isDnsPacket);
 
     }
@@ -148,7 +149,7 @@ private:
 
             auto new_session = boost::make_shared<ClientRawProxySession<Protocol>>(this->GetIOContext(), this->server_ip, atoi(this->server_raw_port.c_str()), this->proxyKey_, this->pacceptor_, raw_session_map_);
 
-            LOG_INFO("new session [{}] from {}:{}", (void*)new_session.get(), local_ep.address().to_string().c_str(), local_ep.port());
+            LOG_DEBUG("new session [{}] from {}:{}", (void*)new_session.get(), local_ep.address().to_string().c_str(), local_ep.port());
 
             raw_session_map_.insert(std::make_pair(local_ep, new_session));
             new_session->SaveLocalEP(local_ep);
@@ -158,7 +159,7 @@ private:
             new_session->sendToRemote(this->local_recv_buff_, bytes_to_send);
 
         } else{
-            LOG_INFO("old session from {}:{}", local_ep.address().to_string().c_str(), local_ep.port())
+            LOG_DEBUG("old session from {}:{}", local_ep.address().to_string().c_str(), local_ep.port())
             map_it->second->sendToRemote(this->local_recv_buff_, bytes_to_send);
         }
 
