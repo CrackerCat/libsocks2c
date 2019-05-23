@@ -11,13 +11,17 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
+IF(BUILD_NETUNNEL_SERVER)
+    add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
+ELSE()
+    add_definitions(-DPROTOCOL_AES256GCM)
+ENDIF()
 
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
 #add_definitions(-DUDP_DEBUG_DETAIL)
 #add_definitions(-DTCP_DEBUG_DETAIL)
-add_definitions(-DMULTITHREAD_IO)
+#add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
 set(CMAKE_CXX_STANDARD 17)
@@ -149,19 +153,19 @@ IF (ENABLE_UOUT)
 		src/net/udp/client/raw/helper/firewall.cpp
 		src/net/udp/client/raw/helper/firewall.h
 		src/net/udp/client/client_udp_proxy_withraw.h
+        src/net/udp/client/raw/helper/tcp_checksum.cpp
+
         src/utils/system/system_exec.h
 		)
 	ENDIF()
     IF(UNIX)
-        LIST(APPEND CORE_FILES
-                src/net/udp/client/raw/helper/tcp_checksum.cpp
-                )
+
     ENDIF()
 ENDIF()
 
-#add_library(libsocks2c SHARED ${CORE_FILES})
-LIST(APPEND CORE_FILES main.cpp)
-add_executable(libsocks2c ${CORE_FILES})
+add_library(libsocks2c ${CORE_FILES})
+#LIST(APPEND CORE_FILES main.cpp)
+#add_executable(libsocks2c ${CORE_FILES})
 set_target_properties(libsocks2c PROPERTIES PREFIX "")
 
 #link libs and platform specific source file
@@ -236,9 +240,9 @@ IF(BUILD_NETUNNEL_SERVER)
     remove_definitions(-DBUILD_CLIENT_LIB)
     add_definitions(-DBUILD_NETUNNEL_SERVER)
     add_definitions(-DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
-    include_directories(/home/mariolau/Desktop/ozo-master/include)
-    include_directories(/usr/include/postgresql)
-    target_link_libraries(libsocks2c pq)
+    include_directories(/home/mario/Documents/ozo/include)
+    include_directories(/usr/local/pgsql/include)
+    target_link_libraries(libsocks2c "/usr/local/pgsql/lib/libpq.a")
 ENDIF()
 
 if (BUILD_IOS_LIB)

@@ -129,7 +129,9 @@ private:
                     //std::string src_ip = inet_ntoa(src_ip_addr);
                     auto psession = boost::make_shared<ServerUdpRawProxySession<Protocol>>(io_context_, tcp_src_ep, server_ep, session_map_, this->proxyKey_);
                     //psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
+#ifdef BUILD_NETUNNEL_SERVER
                     psession->GetProtocol().SetSrcEndpoint(ip->src_addr().to_string() + ":" + boost::lexical_cast<std::string>(tcp->sport()), TrafficType::RAW);
+#endif
                     psession->InitRawSocketAndTimer(io_context_);
                     psession->HandlePacket(ip, tcp);
                     psession->Start();

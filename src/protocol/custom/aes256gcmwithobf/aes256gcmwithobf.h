@@ -272,7 +272,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
     // invoked when the server read real data from local
     // return the length of real data
     // return 0 if decrypt err
-    uint64_t OnUdpPayloadReadFromServerLocal(aes256gcmwithobf_header *header, std::string client_ip)
+    uint64_t OnUdpPayloadReadFromServerLocal(aes256gcmwithobf_header *header)
     {
 		auto data_len = decryptHeader(header);
 		if (data_len == 0) return 0;
@@ -319,6 +319,7 @@ struct aes256gcmwithobf_Protocol : public ClientProxyProtocol<aes256gcmwithobf_h
     inline bool decryptPayload(aes256gcmwithobf_header *header)
     {
 		if (header->PAYLOAD_LENGTH > MAX_BUFFSIZE) return false;
+
         bool res = aes256gcmwithobf_Helper::decryptData(this->ProxyKey, header->NONCE, header->GetDataOffsetPtr(),
                                                                header->PAYLOAD_LENGTH, decryptedData,
                                                                header->PAYLOAD_TAG);

@@ -50,7 +50,7 @@ public:
 #ifdef UDP_OVER_UTCP
         if (udp2raw)
         {
-            auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetIOContextAt1());
+            auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
             auto init_res = pudp2raw->SetUpSniffer(boost::lexical_cast<std::string>(server_uout_port));
             if (init_res)
             {

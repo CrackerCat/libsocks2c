@@ -98,7 +98,7 @@ public:
 	void StopProxy()
 	{
 	    auto self(this->shared_from_this());
-	    this->pacceptor_->get_executor().post([this, self]{
+	    boost::asio::post(this->pacceptor_->get_executor(),[this, self]{
             for (auto it = session_map_.begin(); it != session_map_.end(); )
             {
 
@@ -109,7 +109,7 @@ public:
             this->pacceptor_->cancel();
             // only close timer when it is set
             if (this->ptimer_) this->ptimer_->cancel();
-	    });
+        });
 	}
 
 private:
@@ -152,7 +152,7 @@ private:
 
 				auto protocol_hdr = (typename Protocol::ProtocolHeader*)local_recv_buff_;
 				// decrypt packet and get payload length
-				bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr, std::string());
+				bytes_read = protocol_.OnUdpPayloadReadFromServerLocal(protocol_hdr);
 				UDP_DEBUG("udp payload length: {}", bytes_read)
 
 				if (bytes_read == 0)

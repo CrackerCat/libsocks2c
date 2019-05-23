@@ -17,6 +17,8 @@
 #define OBF_MINPADDLE 250
 #define OBF_MAXPADDLE 800
 
+#define MAX_BUFFSIZE 1536
+
 #include "user_info.h"
 
 struct netunnel_aes256gcmwithobf_header{
@@ -306,6 +308,7 @@ struct netunnel_aes256gcmwithobf_Protocol : public ClientProxyProtocol<netunnel_
 
     inline bool decryptPayload(netunnel_aes256gcmwithobf_header *header)
     {
+        if (header->PAYLOAD_LENGTH > MAX_BUFFSIZE) return false;
 
         bool res = netunnel_aes256gcmwithobf_Helper::decryptData(this->ProxyKey, header->NONCE, header->GetDataOffsetPtr(),
                                                         header->PAYLOAD_LENGTH, decryptedData,
@@ -331,8 +334,8 @@ private:
 
     unsigned char ProxyKey[32];
 
-    unsigned char encryptedData[1536];
-    unsigned char decryptedData[1536];
+    unsigned char encryptedData[MAX_BUFFSIZE];
+    unsigned char decryptedData[MAX_BUFFSIZE];
 
     size_t uid = 0;
 
