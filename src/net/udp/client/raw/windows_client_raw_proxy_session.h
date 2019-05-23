@@ -31,7 +31,7 @@ public:
 
 	virtual ~ClientRawProxySession() override
 	{
-		LOG_INFO("ClientRawProxySession die")
+		LOG_INFO("[{}] ClientRawProxySession die", (void*)this)
 	}
 
 
@@ -120,21 +120,19 @@ public:
 		if (ec)
 		{
 			LOG_INFO("psend_socket async_wait err --> {}", ec.message())
-				return 0;
+			return 0;
 		}
 
 		DWORD transferred;
 		GetOverlappedResult(sniffer_overlapped.hEvent, &sniffer_overlapped, &transferred, FALSE);
 
-		LOG_DEBUG("send {} bytes", size);
+		LOG_INFO("send {} bytes", size);
 		return size;
 	}
 
 private:
 
 	RAW_SESSION_MAP& raw_session_map;
-
-	HANDLE rst_handle;
 
 	HANDLE recv_handle;
 	std::unique_ptr<SnifferSocket> psniffer_socket;
@@ -146,6 +144,8 @@ private:
 	unsigned char remote_recv_buff[1500];
 
 	boost::asio::ip::tcp::socket dummy_socket;
+
+	bool cleanup_started = false;
 
 	virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code & ec) override
 	{
@@ -159,7 +159,7 @@ private:
 		if (ec)
 		{
 			LOG_INFO("psniffer_socket async_wait err --> {}", ec.message())
-				return nullptr;
+			return nullptr;
 		}
 
 		DWORD transferred;
@@ -167,7 +167,12 @@ private:
 
 		LOG_INFO("recv {} bytes from remote", transferred)
 
-			auto ip_pdu = std::make_unique<Tins::IP>(remote_recv_buff, transferred);
+		if (transferred == 0)
+		{
+			LOG_DEBUG("recvFromRemote err");
+			return nullptr;
+		}
+		auto ip_pdu = std::make_unique<Tins::IP>(remote_recv_buff, transferred);
 		return ip_pdu;
 
 	}
@@ -195,8 +200,10 @@ private:
 
 	void cleanUp()
 	{
+		if (cleanup_started) return;
+		cleanup_started = true;
+		LOG_INFO("[{}] clean up call", (void*)this)
 		this->status = CLOSED;
-		//WinDivertClose(this->rst_handle);
 		boost::system::error_code ec;
 		this->psniffer_socket->cancel(ec);
 		this->psend_socket->cancel(ec);

@@ -82,7 +82,7 @@ private:
 
                 if (ec || bytes_read == 0)
                 {
-                    LOG_INFO("UDP async_receive_from local err --> {}", ec.message().c_str())
+                    LOG_DEBUG("UDP async_receive_from local err --> {}", ec.message().c_str())
                     if (ec == boost::system::errc::operation_canceled) return;
                     continue;
                 }
