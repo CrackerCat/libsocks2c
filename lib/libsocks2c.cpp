@@ -47,19 +47,7 @@ int LibSocks2c::StartProxy(Config config)
     #ifdef BUILD_CLIENT_LIB
     //run client
     if (ClientProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port) || config.isServer) return 0;
-    auto handle = ClientFactory::CreateClientProxy<Protocol>(
-            config.proxyKey,
-            config.socks5_ip,
-            config.socks5_port,
-            config.server_ip,
-            config.server_port,
-			config.server_uout_port,
-		    config.udp_over_utcp,
-			config.local_uout_ifname,
-			config.local_uout_ip,
-            config.resolve_dns,
-            config.timeout,
-            config.uid);
+    auto handle = ClientFactory::CreateClientProxy<Protocol>(config);
 
     auto res = ClientProxyMap<Protocol>::GetInstance()->Insert(config.socks5_port, handle);
 

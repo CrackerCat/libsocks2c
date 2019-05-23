@@ -35,6 +35,7 @@ public:
 		std::string local_uout_ifname;
 		std::string local_uout_ip;
 		uint16_t local_uout_port;
+        bool dnsviaraw;
 
         std::string socks5_ip = "127.0.0.1";
         uint16_t socks5_port = 1080;

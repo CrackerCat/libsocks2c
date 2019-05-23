@@ -152,6 +152,11 @@ IF (ENABLE_UOUT)
         src/utils/system/system_exec.h
 		)
 	ENDIF()
+    IF(UNIX)
+        LIST(APPEND CORE_FILES
+                src/net/udp/client/raw/helper/tcp_checksum.cpp
+                )
+    ENDIF()
 ENDIF()
 
 #add_library(libsocks2c SHARED ${CORE_FILES})

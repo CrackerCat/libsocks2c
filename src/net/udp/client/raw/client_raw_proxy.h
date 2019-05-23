@@ -38,6 +38,13 @@ public:
 		return true;
     }
 
+
+    void EnableDnsViaRaw()
+    {
+        this->dnsviaraw = true;
+    }
+
+
 private:
 
     RAW_SESSION_MAP raw_session_map_;
@@ -46,6 +53,7 @@ private:
     std::string local_ip;
     std::string ifname;
 
+    bool dnsviaraw = false;
 
     virtual void startAcceptorCoroutine() override
     {
@@ -91,13 +99,13 @@ private:
         uint16_t port;
         Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(socks5_packet, ip, port);
 
+        if (dnsviaraw && isDnsPacket)
+        {
+            handlePacketViaUdp(local_ep, bytes_read);
+            return;
+        }
 
-//        if (isDnsPacket) {
-//            handlePacketViaUdp(local_ep, bytes_read);
-//            return;
-//        }
-
-        handlePacketViaRaw(local_ep, bytes_read, false);
+        handlePacketViaRaw(local_ep, bytes_read, isDnsPacket);
 
     }
 
