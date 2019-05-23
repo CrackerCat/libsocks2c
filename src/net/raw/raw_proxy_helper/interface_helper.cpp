@@ -19,11 +19,13 @@ std::string InterfaceHelper::GetDefaultNetIp()
     const std::string default_if_str = "hostname -I";
     auto res = ExecAndGetRes(default_if_str.c_str());
 
-    std::vector<std::string> ips;
+    std::vector<std::string> details;
+    boost::split(details, res, boost::is_any_of(" "));
 
-    boost::split(ips, res, boost::is_any_of(" "));
+    boost::trim_if(details[0], boost::is_any_of("\n"));
+    boost::trim_right(details[0]);
 
-    return ips[0];
+    return details[0];
 
     return res;
 }

@@ -55,6 +55,7 @@ public:
             if (init_res)
             {
                 pudp2raw->SetProxyKey(proxyKey);
+                pudp2raw->SetUid(uid);
                 pudp2raw->StartProxy();
             }
         }

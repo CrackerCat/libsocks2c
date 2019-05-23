@@ -7,7 +7,7 @@ void test()
     config.proxyKey = "12345678";
     config.server_ip = "0.0.0.0";
     config.server_port = 4567;
-    config.server_uout_port = 4444;
+    config.server_uout_port = 4568;
     config.udp_over_utcp = true;
     config.timeout = 0;
 

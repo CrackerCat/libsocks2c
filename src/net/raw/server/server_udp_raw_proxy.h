@@ -69,6 +69,13 @@ public:
         memcpy(this->proxyKey_, key.c_str(), key.size() < 32 ? key.size() : 32);
     }
 
+    void SetUid(int uid)
+    {
+#ifdef BUILD_NETUNNEL_SERVER
+        this->uid = uid;
+#endif
+    }
+
     // start sniffing from local
     void StartProxy()
     {
@@ -131,6 +138,7 @@ private:
                     //psession->SaveOriginalTcpEp(tcp->sport(), tcp->dport());
 #ifdef BUILD_NETUNNEL_SERVER
                     psession->GetProtocol().SetSrcEndpoint(ip->src_addr().to_string() + ":" + boost::lexical_cast<std::string>(tcp->sport()), TrafficType::RAW);
+                    psession->GetProtocol().SetUserID(this->uid);
 #endif
                     psession->InitRawSocketAndTimer(io_context_);
                     psession->HandlePacket(ip, tcp);
