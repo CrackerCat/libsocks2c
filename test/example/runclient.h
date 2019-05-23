@@ -13,7 +13,7 @@ void test()
     LibSocks2c::Config config;
     config.isServer = false;
     config.proxyKey = "12345678";
-    config.server_ip = "108.61.181.123";
+    config.server_ip = "112.74.160.183";
     config.server_port = 3000;
 	config.server_uout_port = 3001;
 
@@ -22,7 +22,7 @@ void test()
 
     //config.local_uout_ip = "192.168.1.104";
     config.local_uout_ifname = "en0";
-    config.dnsviaraw = false;
+    config.dnsviaraw = true;
 
     config.resolve_dns = false;
     config.udp_over_utcp = true;
