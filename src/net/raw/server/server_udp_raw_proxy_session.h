@@ -127,12 +127,11 @@ public:
             case (TCP::SYN):
             {
                 LOG_DEBUG("recv SYN")
+                // only INIT and SYN_RCVD state would handle SYN packet
                 if (this->status == INIT || this->status == SYN_RCVD)
                 {
                     LOG_DEBUG("recv syn seq: {} ack: {}", tcp->seq(), tcp->ack_seq());
-                    // clone tcp cause we have to start new coroutine context
                     handshakeReply(tcp);
-                    this->status = SYN_RCVD;
                     return true;
                 }
                 //sendRst(tcp);
@@ -265,18 +264,28 @@ private:
 
     void handshakeReply(Tins::TCP* local_tcp)
     {
+        // we save the seq of the first syn packet
         if (first_local_seq == 0)
-        {
             first_local_seq = local_tcp->seq();
-        }
+
+        // if the seq of local_tcp != first_local_seq
+        // than we ignore the packet
+        if (local_tcp.seq() != first_local_seq)
+            return;
 
         // swap src port and dst port
         auto tcp_reply = Tins::TCP(local_tcp->sport(), local_tcp->dport());
         tcp_reply.flags(Tins::TCP::ACK | Tins::TCP::SYN);
-        tcp_reply.ack_seq(first_local_seq + 1); // +1 client's first Zseq
-        tcp_reply.seq(init_seq);
-        if (this->server_seq == init_seq) this->server_seq++;
 
+        // if syn is retransmited
+        // which means that ack | syn send last time was lost
+        // or the client provided the wrong local_uout_ip
+        // the ack in tcp_reply is always the first_local_seq + 1
+        tcp_reply.ack_seq(first_local_seq + 1);
+        // the seq in reply is always the init_seq which is inited in ctor
+        tcp_reply.seq(init_seq);
+        // after sending the syn we increase the server_seq by 1
+        if (this->server_seq == init_seq) this->server_seq++;
 
         LOG_INFO("send syn ack back, seq: {}, ack: {}", tcp_reply.seq(), tcp_reply.ack_seq());
 
@@ -288,26 +297,14 @@ private:
 
         auto vip_data = ip.serialize();
         auto ip_data = vip_data.data();
-//        printf("before cal\n");
-//        for (int i = 0; i < bytes_tosend; i++)
-//        {
-//            printf("%x ", ip_data[ip.header_size() + i]);
-//            fflush(stdout);
-//        }
-        //printf("\n");
+
         CalTcpChecksum(ip, ip_data);
-//        printf("after cal\n");
-//        for (int i = 0; i < bytes_tosend; i++)
-//        {
-//            printf("%x ", ip_data + ip.header_size() + i);
-//            fflush(stdout);
-//        }
-//        printf("\n");
+
+        this->status = SYN_RCVD;
 
         // we send tcp only, ip hdr is for checksum cal only
         //LOG_INFO("iphdr size {} handshake reply {} bytes", ip.header_size(), bytes_tosend)
         sendPacket(ip_data + ip.header_size(), bytes_tosend);
-        //this->server_ack = local_tcp->seq() + 1;
     }
 
     // data will be copy
