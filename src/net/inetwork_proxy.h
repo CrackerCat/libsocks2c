@@ -66,13 +66,16 @@ public:
     }
 #endif
 
+    auto& GetDefaultIO()
+    {
+        return this->GetIOContext();
+    }
+
 protected:
 
     unsigned char proxyKey_[32U];
     
-#ifdef BUILD_NETUNNEL_SERVER
     int uid = 0;
-#endif
 
 #if !defined(BUILD_NETUNNEL_SERVER)
     std::unique_ptr<boost::asio::deadline_timer> ptimer_;

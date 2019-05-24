@@ -47,7 +47,7 @@ public:
         udps->StartProxy(server_ip, server_port);
 
 #ifndef _WIN32
-#ifdef UDP_OVER_UTCP
+    #ifdef UDP_OVER_UTCP
         if (udp2raw)
         {
             auto pudp2raw = ServerUdpRawProxy<Protocol>::GetInstance(udps->GetDefaultIO());
@@ -59,7 +59,7 @@ public:
                 pudp2raw->StartProxy();
             }
         }
-#endif
+    #endif
 #endif
         return ServerProxy<Protocol>(tcps, udps);
     }

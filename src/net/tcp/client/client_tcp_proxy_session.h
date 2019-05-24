@@ -9,7 +9,7 @@
 
 #include "../../../protocol/basic_protocol/iproxy_protocol.h"
 #include "../../../utils/randomNumberGenerator.h"
-#include "../../../utils/trafficcounter.h"
+
 
 #include "../../bufferdef.h"
 

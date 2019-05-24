@@ -21,7 +21,7 @@ add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
 #add_definitions(-DUDP_DEBUG_DETAIL)
 #add_definitions(-DTCP_DEBUG_DETAIL)
-#add_definitions(-DMULTITHREAD_IO)
+add_definitions(-DMULTITHREAD_IO)
 add_definitions(-DSINGLETON_RAW_POINTER)
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
 set(CMAKE_CXX_STANDARD 17)
@@ -59,8 +59,6 @@ SET(CORE_FILES
         src/netio/basic_network_io_mt.h
         src/netio/basic_network_io_mt.cpp
 
-		src/state/globalstate.h
-
         src/utils/logger.cpp
         src/utils/logger.h
         src/protocol/custom/chacha20poly1305withobf/chacha20poly1305withobf.h
@@ -75,7 +73,6 @@ SET(CORE_FILES
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
-        src/utils/trafficcounter.cpp
 
         lib/server_proxymap.h
         src/utils/singleton.h
@@ -115,37 +112,10 @@ IF(BUILD_NETUNNEL_SERVER)
         src/protocol/custom/netunnel-aes256gcmwithobf/user_info.h)
 ENDIF()
 
-IF(BUILD_SERVER_LIB)
-    message("Build server")
-    add_definitions(-DBUILD_SERVER_LIB)
-    LIST(APPEND CORE_FILES
-            src/net/tcp/server/server_tcp_proxy.h
-            src/net/tcp/server/server_tcp_proxy_session.h
-            src/net/tcp/server/server_tcp_proxy_mt.h
-
-            src/net/udp/server/server_udp_proxy.h
-            src/net/udp/server/server_udp_proxy_session.h)
-ENDIF()
-
 
 IF (ENABLE_UOUT)
     message("Build uout")
-	IF(BUILD_SERVER_LIB)
-	LIST(APPEND CORE_FILES
-        src/net/raw/raw_proxy_helper/interface_helper.h
-        src/net/raw/raw_proxy_helper/interface_helper.cpp
-        src/net/raw/server/raw_udp_session.h
-        src/net/raw/server/server_udp_raw_proxy.h
-        src/net/raw/raw_socket.h
-        src/net/raw/server/server_udp_raw_proxy_session.h
-        src/net/raw/raw_proxy_helper/firewall_helper.h
-        src/net/raw/raw_proxy_helper/firewall_helper.cpp
-        src/net/raw/sniffer_def.h
-        src/net/raw/raw_proxy_helper/tcp_checksum_helper.h
-        src/net/raw/raw_proxy_helper/tcp_checksum_helper.cpp
-        src/utils/system/system_exec.h
-		)
-	ENDIF()
+
 	IF(BUILD_CLIENT_LIB)
 	LIST(APPEND CORE_FILES
 		src/net/udp/client/raw/helper/available_port.cpp
