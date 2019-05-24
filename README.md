@@ -11,36 +11,22 @@
 ---
 
 ***bUild***
-1. you need to add options before build
-
-    -DBUILD_SERVER_LIB=(ON)OFF
-    -DBUILD_CLIENT_LIB=(ON)OFF
-
-    you may enable both with -DPROTOCOL_AES256GCM
-
-2. by adding option -DENABLE_UOUT=ON, udp over utcp feature will be enabled and it requires some extra libraries
+1. by adding option -DENABLE_UOUT=ON, udp over utcp feature will be enabled and it requires some extra libraries
 
    on Linux or OSX, libtins, libpcap are required
    on Windows, wpcap, WinDivert, tins are required
 
    check the following list for support info
 
-3. when building lib for IOS, you need to add -DBUILD_IOS_LIB=ON
-
-   it will build client that is single thread version
+2. when building lib for mobile platform, you need to add -DBUILD_MOBILE_LIB=ON
 
    UOUT is not support on mobile platform
 
 ---
 ***Encryption:***
 
-There are three enctyption methods avaliable
+We implement AES256GCM as encryption method
 
-1. **PROTOCOL_CHACHA20**
-2. **PROTOCOL_CHACHA20POLY1305**
-3. **PROTOCOL_AES256GCM**
-
-define one before build
 
 ---
 ***UDP over uTCP***
@@ -51,10 +37,10 @@ support list:
 
 | Platform | Server | Client |
 | ------ | ------ | ------ |
-| OSX | ✔ | ✔ |
+| OSX | ✘ | ✔ |
 | Linux | ✔ | ✔ |
 | Win64 | ✘ | ✔ |
-| Win32 | ✘ | ✘ |
+| Win32 | ✘ | ✔ |
 
 ---
 ***The following libraries are required***
