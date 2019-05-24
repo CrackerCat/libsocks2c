@@ -6,27 +6,26 @@
 2. **DISABLE_DEBUG_LOG**    disable all debug log
 3. **UDP_DEBUG_DETAIL**     enable tcp log
 3. **TCP_DEBUG_DETAIL**     enable udp log
-4. **MULTITHREAD_IO**       will enable multithread support both server and client proxy
-5. **BUILD_DLL**			export dll on win32
+4. **MULTITHREAD_IO**       enable multithread support
+5. **BUILD_DLL**			export dll, by default only static lib is compiled
 ---
 
 ***bUild***
-1. by adding option -DENABLE_UOUT=ON, udp over utcp feature will be enabled and it requires some extra libraries
+1. by adding option ```-DENABLE_UOUT=ON```, udp over utcp feature will be enabled and it requires some extra libraries
 
-   on Linux or OSX, libtins, libpcap are required
-   on Windows, wpcap, WinDivert, tins are required
+   on Linux or OSX, ```libtins```, ```libpcap``` are required \
+   on Windows, ```wpcap```, ```WinDivert```, ```tins``` are required
 
    check the following list for support info
 
-2. when building lib for mobile platform, you need to add -DBUILD_MOBILE_LIB=ON
+2. when building lib for mobile platform, you need to add ```-DBUILD_MOBILE_LIB=ON```
 
-   UOUT is not support on mobile platform
+   <b>UOUT is not support on mobile platform</b>
 
 ---
 ***Encryption:***
 
-We implement AES256GCM as encryption method
-
+the encryption method ```AES-256-GCM``` provided by libsodium
 
 ---
 ***UDP over uTCP***
@@ -72,7 +71,7 @@ on Win64 you need
 
 4. ```server_uout_port``` the <b>Port</b> for uout connection. 
 
-5. ```dnsuout``` whether to proxy <b>dns packet</b> via utcp.
+5. ```dnsuout``` whether to proxy <b>dns packet</b> via utcp, it just simply check if the dst port is 53, we are not doing any packet inspection
 
 #### Misc
 
