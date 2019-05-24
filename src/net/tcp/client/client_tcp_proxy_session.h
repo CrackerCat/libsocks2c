@@ -9,7 +9,7 @@
 
 #include "../../../protocol/basic_protocol/iproxy_protocol.h"
 #include "../../../utils/randomNumberGenerator.h"
-#include "../../../utils/trafficcounter.h"
+
 
 #include "../../bufferdef.h"
 
@@ -493,7 +493,6 @@ private:
             return false;
         }
 		LOG_DETAIL(TCP_DEBUG("[{:p}] send {} bytes to Local", (void*)this, bytes_write))
-		AddDownTraffic(bytes_write)
         return true;
     }
 
@@ -551,7 +550,6 @@ private:
         }
 
 		LOG_DETAIL(TCP_DEBUG("[{:p}] send {} bytes to remote", (void*)this, bytes_write))
-		AddUpTraffic(bytes_write)
         return true;
     }
 
