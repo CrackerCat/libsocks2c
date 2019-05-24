@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
 
-OPTION(BUILD_SERVER_LIB "" OFF)
 OPTION(BUILD_CLIENT_LIB "" OFF)
-OPTION(BUILD_NETUNNEL_SERVER "netunnel" OFF)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
 OPTION(BUILD_IOS_LIB "build ios lib" OFF)
 
@@ -11,11 +9,8 @@ IF (ENABLE_UOUT)
     add_definitions(-DUDP_OVER_UTCP)
 ENDIF()
 
-IF(BUILD_NETUNNEL_SERVER)
-    add_definitions(-DPROTOCOL_NETUNNEL_AES256GCM)
-ELSE()
-    add_definitions(-DPROTOCOL_AES256GCM)
-ENDIF()
+add_definitions(-DPROTOCOL_AES256GCM)
+
 
 add_definitions(-DDISABLE_DEBUG_LOG)
 #add_definitions(-DLOG_DEBUG_DETAIL)
@@ -49,8 +44,6 @@ ELSE()
 ENDIF()
 
 SET(CORE_FILES
-        lib/libsocks2c-server.cpp
-        lib/libsocks2c-server.h
         lib/libsocks2c.cpp
         lib/libsocks2c.h
         src/protocol/socks5/socks5_protocol.h
@@ -67,24 +60,18 @@ SET(CORE_FILES
         src/protocol/basic_protocol/client_proxy_protocol.h
         src/utils/randomNumberGenerator.cpp
         src/utils/randomNumberGenerator.h
-        src/protocol/basic_protocol/server_proxy_protocol.h
 
         src/protocol/basic_protocol/protocol_def.h
 
         src/protocol/custom/chacha20/chacha20.h
         src/protocol/custom/chacha20/chacha20_helper.h
 
-        lib/server_proxymap.h
         src/utils/singleton.h
 		src/net/udp/bufferqueue.h
         src/utils/macro_def.h
-        src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol.h
-        src/protocol/custom/netunnel-aes256gcmwithobf/netunnel_protocol_helper.h
         src/utils/sqlhost.h
         src/factory/client_factory.h
-        src/factory/server_factory.h
         lib/client_proxymap.h
-        #src/net/raw/server/buffersize_def.h
         )
 
 IF(BUILD_CLIENT_LIB)
@@ -96,20 +83,6 @@ LIST(APPEND CORE_FIELS
 
         src/net/udp/client/client_udp_proxy.h
         src/net/udp/client/client_udp_proxy_session.h)
-ENDIF()
-
-
-IF(BUILD_NETUNNEL_SERVER)
-    message("configure Netunnel server")
-    IF (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
-        MESSAGE(FATAL_ERROR "Netunnel server can only build on linux")
-    ENDIF()
-    add_definitions(-DBUILD_SERVER_LIB)
-
-    LIST(APPEND CORE_FILES
-        src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.cpp
-        src/protocol/custom/netunnel-aes256gcmwithobf/userstatistic/statistic_helper.h
-        src/protocol/custom/netunnel-aes256gcmwithobf/user_info.h)
 ENDIF()
 
 
@@ -204,21 +177,9 @@ IF(NOT BUILD_IOS_LIBRARY)
 	ENDIF()
 ENDIF()
 
-
-IF(BUILD_NETUNNEL_SERVER)
-    message("Build netunnelserver, removing client definition")
-    remove_definitions(-DBUILD_CLIENT_LIB)
-    add_definitions(-DBUILD_NETUNNEL_SERVER)
-    add_definitions(-DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
-    include_directories(/home/mario/Documents/ozo/include)
-    include_directories(/usr/local/pgsql/include)
-    target_link_libraries(libsocks2c "/usr/local/pgsql/lib/libpq.a")
-ENDIF()
-
 if (BUILD_IOS_LIB)
     set(ENABLE_UOUT, OFF)
     remove_definitions(-DUDP_OVER_UTCP)
-    remove_definitions(-DBUILD_SERVER_LIB)
     remove_definitions(-DMULTITHREAD_IO)
 endif()
 
