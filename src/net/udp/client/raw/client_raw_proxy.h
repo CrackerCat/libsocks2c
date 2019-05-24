@@ -13,6 +13,11 @@ class ClientRawProxy : public ClientUdpProxy<Protocol>
 
 public:
 
+    virtual ~ClientRawProxy() override
+    {
+        Firewall::Unblock(this->server_ip, this->server_raw_port);
+        LOG_DEBUG("ClientRawProxy die")
+    }
 
     bool InitUout(std::string server_ip, std::string server_raw_port, std::string local_uout_ip, std::string ifname)
     {
@@ -21,9 +26,6 @@ public:
 
 		if (local_uout_ip == "")
 		{
-			LOG_INFO("attention that 114.114.114.114 shouldn't be add to vpn route")
-            LOG_INFO("OR we may not be able to get local_uout_ip")
-
 			boost::asio::io_context io;
             boost::asio::ip::udp::socket socket(io);
 
@@ -45,13 +47,19 @@ public:
         this->local_ip = local_uout_ip;
         this->ifname = ifname;
         Firewall::BlockRst(server_ip, server_raw_port);
-		return true;
+        LOG_INFO("[Client] RawProxy started, Server: [{}:{}], Key: [{}], Local raw addr: [{}]", this->server_ip.c_str(), this->server_raw_port, this->proxyKey_, local_uout_ip)
+        return true;
     }
 
 
     void EnableDnsViaRaw()
     {
         this->dnsviaraw = true;
+    }
+
+    virtual void StopRaw() override
+    {
+
     }
 
 
@@ -88,8 +96,6 @@ private:
                 }
 
                 LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local {}:{}", bytes_read, local_ep.address().to_string(), local_ep.port()))
-
-                this->last_active_time = time(nullptr);
 
                 // if send via raw failed, send it via udp
                 //dmemmove(this->local_recv_buff_ + Protocol::ProtocolHeader::Size(), this->local_recv_buff_ + Protocol::ProtocolHeader::Size() + 6, bytes_read);

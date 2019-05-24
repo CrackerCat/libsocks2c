@@ -43,7 +43,7 @@ public:
     };
 
     static int  StartProxy(Config);
-    static bool StopProxy(int, bool isServer);
+    static bool StopProxy(int);
 
     static std::string Version();
 

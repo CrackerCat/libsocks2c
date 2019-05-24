@@ -49,23 +49,6 @@ public:
         this->server_port = server_port;
     }
 
-    /*
-     *  timeout for destroying idle proxy instance
-     *
-     */
-    void SetExpireTime(uint64_t time_sec)
-    {
-        this->expire_time = time_sec;
-        last_active_time = time(nullptr);
-    }
-    
-#ifdef BUILD_NETUNNEL_SERVER
-    virtual void SetUid(int id)
-    {
-        this->uid = id;
-    }
-#endif
-
     auto& GetDefaultIO()
     {
         return this->GetIOContext();
@@ -74,15 +57,6 @@ public:
 protected:
 
     unsigned char proxyKey_[32U];
-    
-    int uid = 0;
-
-#if !defined(BUILD_NETUNNEL_SERVER)
-    std::unique_ptr<boost::asio::deadline_timer> ptimer_;
-#endif
-
-    time_t last_active_time;
-    time_t expire_time = 0;
 
     std::string server_ip;
     uint16_t server_port;

@@ -19,8 +19,8 @@
 // maximum try for resending syn
 #define MAX_HANDSHAKE_TRY 5
 // IF we send 10 packet out and didn't get any ack, then we close the connection
-const int RAW_SESSION_TIMEOUT = 25;
-const int RAW_SESSION_TIMEOUT_DNS = 5;
+const int RAW_SESSION_TIMEOUT = 23;
+const int RAW_SESSION_TIMEOUT_DNS = 2;
 /*
  * BasicClientRawProxySession run in single thread mode
  *

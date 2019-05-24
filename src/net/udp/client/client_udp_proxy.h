@@ -27,9 +27,9 @@ public:
 
     ClientUdpProxy() : protocol_(nullptr) {}
 
-	~ClientUdpProxy()
+	virtual ~ClientUdpProxy()
 	{
-		UDP_DEBUG("ClientUdpProxy die")
+		LOG_DEBUG("ClientUdpProxy die")
 	}
 
     virtual void StartProxy(std::string local_address, uint16_t local_port) override
@@ -85,13 +85,11 @@ public:
         }
 
         this->pacceptor_->cancel();
-        // only close timer when it is set
-        if (this->ptimer_) this->ptimer_->cancel();
 
-		StopUout();
+		StopRaw();
 	}
 
-	virtual void StopUout() {}
+	virtual void StopRaw() {}
 
 
 protected:
@@ -126,7 +124,6 @@ protected:
                 }
 
 				LOG_DETAIL(UDP_DEBUG("read {} bytes udp data from local ", bytes_read))
-                last_active_time = time(nullptr);
 
                 handleLocalPacket(local_ep, bytes_read);
 
@@ -183,26 +180,6 @@ protected:
         }
     }
 
-
-    void onTimeExpire(const boost::system::error_code &ec)
-    {
-        UDP_DEBUG("onTimeExpire")
-
-        if (ec) return;
-
-        if (time(nullptr) - last_active_time > expire_time)
-        {
-            boost::system::error_code ec;
-            this->pacceptor_->cancel(ec);
-            LOG_INFO("client at port {} timeout", server_port)
-            return;
-        }
-
-        ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
-        ptimer_->async_wait(boost::bind(&ClientUdpProxy::onTimeExpire, this, boost::asio::placeholders::error));
-
-
-    }
 
 };
 

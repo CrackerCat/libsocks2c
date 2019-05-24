@@ -26,10 +26,7 @@ class ClientTcpProxy : public INetworkProxy, public boost::enable_shared_from_th
 
 public:
 
-    ClientTcpProxy()
-    {
-        last_active_time = time(nullptr);
-    }
+    ClientTcpProxy(){}
 
 	~ClientTcpProxy()
 	{
@@ -100,7 +97,6 @@ public:
 	void StopProxy()
 	{
 		this->pacceptor_->cancel();
-		if (this->ptimer_) this->ptimer_->cancel();
 	}
 
 private:
@@ -131,38 +127,16 @@ private:
 
                 if (ec)
                 {
-                    LOG_INFO("client accept err --> {}", ec.message().c_str())
+                    LOG_DEBUG("client accept err --> {}", ec.message().c_str())
                     return;
                 }
                 LOG_DEBUG("new connection from {}:{}", new_session->GetLocalSocketRef().remote_endpoint().address().to_string().c_str(), new_session->GetLocalSocketRef().remote_endpoint().port())
-                //last_active_time = time(nullptr);
 
                 new_session->Start();
             }
 
 
         });
-    }
-
-
-    void onTimeExpire(const boost::system::error_code &ec)
-    {
-        TCP_DEBUG("onTimeExpire")
-
-        if (ec) return;
-
-        if (time(nullptr) - last_active_time > expire_time)
-        {
-            boost::system::error_code ec;
-            this->pacceptor_->cancel(ec);
-            LOG_INFO("client at port {} timeout", server_port)
-            return;
-        }
-
-        ptimer_->expires_from_now(boost::posix_time::seconds(expire_time));
-        ptimer_->async_wait(boost::bind(&ClientTcpProxy::onTimeExpire, this, boost::asio::placeholders::error));
-
-
     }
 
 };

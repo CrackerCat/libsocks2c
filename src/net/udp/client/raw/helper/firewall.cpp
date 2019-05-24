@@ -3,6 +3,7 @@
 
 #ifdef __APPLE__
 #include <boost/filesystem.hpp>
+
 void Firewall::BlockRst(std::string dst_ip, std::string dst_port)
 {
     boost::filesystem::path full_path {"/etc/pf.conf"};
@@ -17,21 +18,19 @@ void Firewall::BlockRst(std::string dst_ip, std::string dst_port)
 
     boost::filesystem::ofstream ofs {full_path};
     std::string filewall_rule = "block drop proto tcp from any to " + dst_ip + " port " + dst_port + " flags R/R\n";
-    LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
+    LOG_DEBUG("Setting Firewall Rule: {}", filewall_rule)
 
     ofs << filewall_rule;
     ofs.close();
 
-    system ("pfctl -evf /etc/pf.conf");
+    system("pfctl -evf /etc/pf.conf &> /dev/null");
 
 }
 void Firewall::Unblock(std::string dst_ip, std::string dst_port)
 {
-    //std::string filewall_rule = "iptables -D OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
-    //TODO
-    LOG_INFO("Setting Firewall Rule: **********")
-    //system(filewall_rule.c_str());
+    system("pfctl -d &> /dev/null");
 }
+
 #elif defined(__linux__)
 void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
 {

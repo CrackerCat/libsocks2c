@@ -11,7 +11,6 @@ void test()
      */
 
     LibSocks2c::Config config;
-    config.isServer = false;
     config.proxyKey = "12345678";
     //config.server_ip = "112.74.160.183";
     config.server_ip = "192.168.1.102";
@@ -23,16 +22,18 @@ void test()
 
     //config.local_uout_ip = "192.168.1.104";
     config.local_uout_ifname = "en0";
-    config.dnsviaraw = true;
+    config.dnsuout = true;
 
     config.resolve_dns = false;
     config.udp_over_utcp = true;
-    config.timeout = 0;
 
     config.logtofile = false;
 
-    LibSocks2c::StartProxy(config);
+    auto res = LibSocks2c::StartProxy(config);
 
+    getchar();
+
+    LibSocks2c::StopProxy(res);
     getchar();
 
 }

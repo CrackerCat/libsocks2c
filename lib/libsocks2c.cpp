@@ -18,14 +18,14 @@ int LibSocks2c::StartProxy(Config config)
 
     auto res = ClientProxyMap<Protocol>::GetInstance()->Insert(config.socks5_port, handle);
 
-    if (res) return -1;
+    if (!res) return -1;
 
     return config.socks5_port;
 
 }
 
 
-bool LibSocks2c::StopProxy(int id, bool isServer)
+bool LibSocks2c::StopProxy(int id)
 {
     if (!ClientProxyMap<Protocol>::GetInstance()->IsProxyExist(id)) return false;
     return ClientProxyMap<Protocol>::GetInstance()->StopProxy(id);
