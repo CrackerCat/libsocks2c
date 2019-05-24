@@ -13,8 +13,7 @@ int LibSocks2c::StartProxy(Config config)
 
     App::Init(config.logtofile);
 
-    //run client
-    if (ClientProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port) || config.isServer) return 0;
+    if (ClientProxyMap<Protocol>::GetInstance()->IsProxyExist(config.socks5_port)) return 0;
     auto handle = ClientFactory::CreateClientProxy<Protocol>(config);
 
     auto res = ClientProxyMap<Protocol>::GetInstance()->Insert(config.socks5_port, handle);
@@ -32,10 +31,10 @@ bool LibSocks2c::StopProxy(int id, bool isServer)
     return ClientProxyMap<Protocol>::GetInstance()->StopProxy(id);
 }
 
-void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &io_context)
-{
-
-}
+//void LibSocks2c::StartProxyWithContext(Config config, boost::asio::io_context &io_context)
+//{
+//
+//}
 
 #include "../src/utils/sqlhost.h"
 

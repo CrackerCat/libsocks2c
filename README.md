@@ -61,3 +61,21 @@ on Win64 you need
 1. libtins v4.2 
 2. WpdPack 4.1.2
 3. WinDivert-1.4.3-A
+
+
+#### Startup Config
+1. ```udp_over_utcp``` enable <b>UDP over uTCP</b> feature, the udp packet will be proxy via unordered tcp connection.
+
+2. ```local_uout_ifname``` On <b>Linux or Mac</b> you have to specified the name of default network interface for sending packet. 
+
+3. ```local_uout_ip``` if it is set to "" or left blank, it would try to fetch the ip of default network interface on startup, if it retrives the wrong ip, the uout connection would be unable to establish, you might set an ip to override. 
+
+4. ```server_uout_port``` the <b>Port</b> for uout connection. 
+
+5. ```dnsuout``` whether to proxy <b>dns packet</b> via utcp.
+
+#### Misc
+
+1. ```resolve_dns``` if set true, it will resolve dns locally instead of sending domain proxy request, udp proxy doesn't support domain resolve
+
+1. ```logtofile``` set true to write log to file at the current directory

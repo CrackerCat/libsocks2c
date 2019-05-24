@@ -41,7 +41,7 @@ public:
 			if (!res)
 				break;
 
-			if (config.dnsviaraw)
+			if (config.dnsuout)
 			    uout->EnableDnsViaRaw();
 			uout->StartProxy(config.socks5_ip, config.socks5_port);
 			//uout->StartUout();
