@@ -49,7 +49,6 @@ public:
 
     ~ClientTcpProxySession()
     {
-        LOG_INFO("TCPSESSION DIE")
         LOG_DETAIL(TCP_DEBUG("[{:p}] tcp session die", (void*)this))
     }
 
@@ -598,7 +597,6 @@ private:
 
         if (time(nullptr) - last_active_time_ > TCP_SESSION_TIMTOUT)
         {
-            LOG_INFO("tcp session timeup, should die")
             this->remote_socket_.cancel();
             this->local_socket_.cancel();
             return;
