@@ -95,7 +95,6 @@ IF (ENABLE_UOUT)
 		src/net/udp/client/raw/helper/available_port.h
 		src/net/udp/client/raw/helper/firewall.cpp
 		src/net/udp/client/raw/helper/firewall.h
-		src/net/udp/client/client_udp_proxy_withraw.h
         src/net/udp/client/raw/helper/tcp_checksum.cpp
 
         src/utils/system/system_exec.h

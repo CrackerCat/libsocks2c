@@ -497,7 +497,7 @@ private:
 
     inline void initRandomTCPSeq() noexcept
     {
-        std::random_device rd;
+        static std::random_device rd;
         std::mt19937 eng(rd());
         std::uniform_int_distribution<unsigned int> distr;
 

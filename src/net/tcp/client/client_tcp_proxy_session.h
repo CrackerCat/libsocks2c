@@ -10,8 +10,10 @@
 #include "../../../protocol/basic_protocol/iproxy_protocol.h"
 #include "../../../utils/randomNumberGenerator.h"
 
-
 #include "../../bufferdef.h"
+
+const int TCP_SESSION_TIMTOUT = 30;
+const int TCP_SESSION_TIMER_TICK = 35;
 
 namespace socks5 {
 	extern unsigned char DEFAULT_UDP_REQ_REPLY[10];
@@ -31,7 +33,7 @@ class ClientTcpProxySession : public boost::enable_shared_from_this<ClientTcpPro
 public:
 
     ClientTcpProxySession(IO_CONTEXT &io_context, std::string server_ip, uint16_t server_port, unsigned char key[32U], bool resolve_dns_locally) \
-            : protocol_(nullptr), local_socket_(io_context), remote_socket_(io_context)
+            : protocol_(nullptr), local_socket_(io_context), remote_socket_(io_context), timer_(io_context)
     {
         this->protocol_.SetKey(key);
 
@@ -42,10 +44,12 @@ public:
             this->pdns_resolver_ = std::make_unique<DNS_RESOLVER >(io_context);
         }
 
+        last_active_time_ = time(nullptr);
 	}
 
     ~ClientTcpProxySession()
     {
+        LOG_INFO("TCPSESSION DIE")
         LOG_DETAIL(TCP_DEBUG("[{:p}] tcp session die", (void*)this))
     }
 
@@ -54,8 +58,11 @@ public:
         if (!setNoDelay()) return;
 
         auto self(this->shared_from_this());
-        boost::asio::spawn(this->local_socket_.get_executor(),[this, self](boost::asio::yield_context yield){
 
+        timer_.expires_from_now(boost::posix_time::seconds(TCP_SESSION_TIMER_TICK));
+        timer_.async_wait(boost::bind(&ClientTcpProxySession::onTimesUp, self, boost::asio::placeholders::error));
+
+        boost::asio::spawn(this->local_socket_.get_executor(),[this, self](boost::asio::yield_context yield){
 
             if (!handleMethodSelection(yield)) DestorySession
             if (!handleSocks5Request(yield)) DestorySession
@@ -86,6 +93,9 @@ private:
     boost::asio::ip::tcp::endpoint remote_ep_;
 
     PDNS_RESOLVER pdns_resolver_;
+
+    boost::asio::deadline_timer timer_;
+    time_t last_active_time_;
 
     bool setNoDelay()
     {
@@ -367,7 +377,7 @@ private:
 
 		if (ec)
 		{
-			LOG_ERROR("err when opening remote_socket_ --> {}", ec.message().c_str())
+			LOG_DEBUG("err when opening remote_socket_ --> {}", ec.message().c_str())
 			return false;
 		}
 
@@ -493,6 +503,9 @@ private:
             return false;
         }
 		LOG_DETAIL(TCP_DEBUG("[{:p}] send {} bytes to Local", (void*)this, bytes_write))
+
+        last_active_time_ = time(nullptr);
+
         return true;
     }
 
@@ -550,6 +563,9 @@ private:
         }
 
 		LOG_DETAIL(TCP_DEBUG("[{:p}] send {} bytes to remote", (void*)this, bytes_write))
+
+        last_active_time_ = time(nullptr);
+
         return true;
     }
 
@@ -569,6 +585,29 @@ private:
 		TCP_DEBUG("[{}] connected to --> {}:{}", (void*)this, this->remote_ep_.address().to_string().c_str(), this->remote_ep_.port())
 
         return true;
+    }
+
+    void onTimesUp(const boost::system::error_code& ec)
+    {
+
+        if (ec)
+        {
+            LOG_DEBUG("timer_ err -> {}", ec.message().c_str())
+            return;
+        }
+
+        if (time(nullptr) - last_active_time_ > TCP_SESSION_TIMTOUT)
+        {
+            LOG_INFO("tcp session timeup, should die")
+            this->remote_socket_.cancel();
+            this->local_socket_.cancel();
+            return;
+        }
+
+        auto self(this->shared_from_this());
+        timer_.expires_from_now(boost::posix_time::seconds(TCP_SESSION_TIMER_TICK));
+        timer_.async_wait(boost::bind(&ClientTcpProxySession::onTimesUp, self, boost::asio::placeholders::error));
+
     }
 
 
