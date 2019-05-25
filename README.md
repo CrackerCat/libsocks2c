@@ -32,7 +32,7 @@ the encryption method ```AES-256-GCM``` provided by libsodium
 
 proxy udp over unordered tcp connection
 
-what it basically does is wrapping your udp packet with tcp header and send it via a tcp connection which doesn't have retransmission and initiative congestion control
+what it basically does is wrapping your udp packet with tcp header and send it via tcp connection which doesn't have retransmission and initiative congestion control
 
 support list:
 
