@@ -1,4 +1,4 @@
-# libsocks2c is a multithreaded socks5 proxy
+# libsocks2c is a multithreaded socks5 proxy lib building client
 
 ***Macro***
 
@@ -31,6 +31,8 @@ the encryption method ```AES-256-GCM``` provided by libsodium
 ***UDP over uTCP***
 
 proxy udp over unordered tcp connection
+
+what it basically does is wrapping your udp packet with tcp header and send it via a tcp connection which doesn't have retransmission and initiative congestion control
 
 support list:
 
