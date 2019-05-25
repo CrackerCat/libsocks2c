@@ -146,9 +146,9 @@ public:
 				{
 					UDP_DEBUG("onRemoteSend err --> {}", ec.message().c_str())
 
-					while (!bufferqueue_.Empty()) {
-						bufferqueue_.Dequeue();
-					}
+//					while (!bufferqueue_.Empty()) {
+//						bufferqueue_.Dequeue();
+//					}
 
 					return;
 				}
