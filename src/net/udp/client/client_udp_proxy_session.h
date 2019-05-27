@@ -28,7 +28,6 @@ public:
         remote_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(server_ip), server_port);
         this->remote_socket_.open(remote_ep_.protocol());
 		this->last_update_time = time(nullptr);
-
     }
 
 	ClientUdpProxySession(std::string server_ip, uint16_t server_port, unsigned char key[32U], boost::shared_ptr<boost::asio::ip::udp::socket> local_socket, SESSION_MAP& map_ref, boost::asio::io_context& downstream_context) : protocol_(nullptr), session_map_(map_ref), local_socket_(local_socket), remote_socket_(downstream_context), timer_(local_socket->get_executor())
@@ -42,12 +41,10 @@ public:
 	~ClientUdpProxySession()
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
-        //assert(bufferqueue_.Empty());
         while (!bufferqueue_.Empty())
         {
             bufferqueue_.Dequeue();
         }
-
     }
 
     auto& GetLocalEndpoint()

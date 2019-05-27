@@ -276,6 +276,11 @@ private:
                     case TCP::ACK :
                     {
                         LOG_DEBUG("recv ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
+
+                        if (this->status != ESTABLISHED) continue;
+                        if (tcp->inner_pdu() == nullptr) continue;
+
+                        this->sendToLocal(tcp->inner_pdu());
                         continue;
                     }
                         // with data
@@ -284,6 +289,7 @@ private:
                         LOG_DEBUG("recv PSH | ACK seq: {}, ack: {}", tcp->seq(), tcp->ack_seq())
                         //only reply when ESTABLISHED
                         if (this->status != ESTABLISHED) continue;
+                        if (tcp->inner_pdu() == nullptr) continue;
 
                         this->ackReply(tcp, yield);
                         this->sendToLocal(tcp->inner_pdu());
