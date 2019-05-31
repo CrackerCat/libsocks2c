@@ -110,6 +110,13 @@ public:
         return local_ep_;
     }
 
+    /*
+     * when data comes from local_socket we enqueue and send it via remote_socket
+     * we dequeue and release packet after it's send
+     * but local_socket and remote_socket could be in the diff context
+     * the queue might be modified when the send coroutine callback
+     * push and pop operation should be thread safe
+     */
     void sendToRemote(uint64_t bytes)
     {
 
@@ -137,7 +144,7 @@ public:
 
 				auto bufferinfo = bufferqueue_.GetFront();
 
-				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_, bufferinfo->size_), bufferinfo->remote_ep_, yield[ec]);
+				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_.get(), bufferinfo->size_), bufferinfo->remote_ep_, yield[ec]);
 
 				if (ec)
 				{

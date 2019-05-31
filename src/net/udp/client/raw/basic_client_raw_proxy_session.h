@@ -124,7 +124,7 @@ public:
                 tcp.seq(this->local_seq);
                 tcp.ack_seq(this->last_ack);
 
-                auto payload = Tins::RawPDU((uint8_t*)bufferinfo->payload_, bufferinfo->size_);
+                auto payload = Tins::RawPDU((uint8_t*)bufferinfo->payload_.get(), bufferinfo->size_);
 
                 tcp = tcp / payload;
 

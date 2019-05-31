@@ -20,14 +20,15 @@ public:
         buffer_data(size_t size, void* src, boost::asio::ip::udp::endpoint& ep)
         {
             size_ = size;
-            payload_ = new char[size];
-            memcpy(payload_, src, size);
+            payload_ = std::make_unique<char[]>(size);
+            //payload_ = new char[size];
+            memcpy(payload_.get(), src, size);
             remote_ep_ = ep;
-
         }
 
         size_t size_;
-        char* payload_;
+        std::unique_ptr<char[]> payload_;
+        //char* payload_;
         boost::asio::ip::udp::endpoint remote_ep_;
     };
     using PBufferData = std::shared_ptr<buffer_data>;
@@ -45,12 +46,14 @@ public:
 
     void Dequeue()
     {
-        if (data_queue_.read_available() > 0)
-        {
-            auto front = data_queue_.front();
-            data_queue_.pop();
-            delete [] front->payload_;
-        }
+        data_queue_.pop();
+
+//        if (data_queue_.read_available() > 0)
+//        {
+//            //auto front = data_queue_.front();
+//            data_queue_.pop();
+//            //delete [] front->payload_;
+//        }
     }
 
     PBufferData GetFront()
