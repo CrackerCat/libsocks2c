@@ -45,7 +45,9 @@ ENDIF()
 
 SET(CORE_FILES
         lib/libsocks2c.cpp
-        lib/libsocks2c.h
+		lib/libsocks2c.h
+        lib/libsocks2c-client.cpp
+        lib/libsocks2c-client.h
         src/protocol/socks5/socks5_protocol.h
         src/protocol/socks5/socks5_protocol_helper.cpp
         src/protocol/socks5/socks5_protocol_helper.h
