@@ -15,27 +15,26 @@ public:
 
     virtual ~ClientRawProxy() override
     {
-        Firewall::Unblock(this->server_ip, this->server_raw_port);
+#ifndef _WIN32
+		Firewall::Unblock(this->server_ip, this->server_raw_port);
+#endif // !_WIN32
         LOG_DEBUG("ClientRawProxy die")
     }
 
-    bool InitUout(std::string server_ip, std::string server_raw_port, std::string local_uout_ip, std::string ifname)
+    bool InitUout(std::string server_ip, std::string server_raw_port, std::string ifname)
     {
         this->server_ip = server_ip;
         this->server_raw_port = server_raw_port;
 
-		if (local_uout_ip == "")
-		{
-			boost::asio::io_context io;
-            boost::asio::ip::udp::socket socket(io);
+		boost::asio::io_context io;
+		boost::asio::ip::udp::socket socket(io);
 
-            boost::asio::ip::udp::endpoint ep(boost::asio::ip::address::from_string("114.114.114.114"), 53);
+		boost::asio::ip::udp::endpoint ep(boost::asio::ip::address::from_string("114.114.114.114"), 53);
 
-            socket.connect(ep);
+		socket.connect(ep);
 
-            local_uout_ip = socket.local_endpoint().address().to_string();
+		this->local_ip = socket.local_endpoint().address().to_string();
 
-		}
 #ifndef _WIN32
 		if (ifname == "")
 		{
@@ -44,10 +43,9 @@ public:
 		}
 #endif
 
-        this->local_ip = local_uout_ip;
         this->ifname = ifname;
         Firewall::BlockRst(server_ip, server_raw_port);
-        LOG_INFO("[Client] RawProxy started, Server: [{}:{}], Key: [{}], Local raw addr: [{}]", this->server_ip.c_str(), this->server_raw_port, this->proxyKey_, local_uout_ip)
+        LOG_INFO("[Client] RawProxy started, Server: [{}:{}], Key: [{}], Local raw addr: [{}]", this->server_ip.c_str(), this->server_raw_port, this->proxyKey_, this->local_ip)
         return true;
     }
 

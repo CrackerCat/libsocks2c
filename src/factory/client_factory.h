@@ -37,7 +37,7 @@ public:
             auto uout = boost::make_shared<ClientRawProxy<Protocol>>();
             uout->SetProxyKey(config.proxyKey);
             uout->SetProxyInfo(config.server_ip, config.server_port);
-			auto res = uout->InitUout(config.server_ip, boost::lexical_cast<std::string>(config.server_uout_port), config.local_uout_ip, config.local_uout_ifname);
+			auto res = uout->InitUout(config.server_ip, boost::lexical_cast<std::string>(config.server_uout_port), config.local_uout_ifname);
 			if (!res)
 				break;
 

@@ -31,8 +31,6 @@ public:
 
         bool udp_over_utcp = false;
         std::string local_uout_ifname;
-		std::string local_uout_ip;
-		uint16_t local_uout_port;
         bool dnsuout;
 
         std::string socks5_ip = "127.0.0.1";
