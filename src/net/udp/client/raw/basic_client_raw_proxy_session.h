@@ -374,7 +374,7 @@ private:
         std::unique_ptr<unsigned char[]> data_copy(new unsigned char[raw_data->size()]);
         memcpy(data_copy.get(), raw_data->serialize().data(), raw_data->size());
 		auto self(this->shared_from_this());
-		boost::asio::spawn( [self, this, data_copy {std::move(data_copy)}] (boost::asio::yield_context yield){
+		boost::asio::spawn(this->io_context_, [self, this, data_copy {std::move(data_copy)}] (boost::asio::yield_context yield){
 
             // decrypt data
             auto protocol_hdr = (typename Protocol::ProtocolHeader*)data_copy.get();

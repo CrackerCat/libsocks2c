@@ -597,8 +597,9 @@ private:
 
         if (time(nullptr) - last_active_time_ > TCP_SESSION_TIMTOUT)
         {
-            this->remote_socket_.cancel();
-            this->local_socket_.cancel();
+            boost::system::error_code ec;
+            this->remote_socket_.cancel(ec);
+            this->local_socket_.cancel(ec);
             return;
         }
 
