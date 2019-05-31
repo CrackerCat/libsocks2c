@@ -14,6 +14,14 @@ public:
 
     }
 
+    ~BufferQueue()
+    {
+        while (!data_queue_.empty())
+        {
+            data_queue_.pop();
+        }
+    }
+
     struct buffer_data
     {
 
@@ -25,6 +33,8 @@ public:
             memcpy(payload_.get(), src, size);
             remote_ep_ = ep;
         }
+
+        char* GetPayload() { return payload_.get(); }
 
         size_t size_;
         std::unique_ptr<char[]> payload_;

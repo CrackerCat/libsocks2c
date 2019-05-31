@@ -41,10 +41,6 @@ public:
 	~ClientUdpProxySession()
 	{
 		LOG_DETAIL(UDP_DEBUG("[{:p}] udp session die", (void*)this))
-        while (!bufferqueue_.Empty())
-        {
-            bufferqueue_.Dequeue();
-        }
     }
 
     auto& GetLocalEndpoint()
@@ -144,7 +140,7 @@ public:
 
 				auto bufferinfo = bufferqueue_.GetFront();
 
-				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->payload_.get(), bufferinfo->size_), bufferinfo->remote_ep_, yield[ec]);
+				size_t bytes_send = this->remote_socket_.async_send_to(boost::asio::buffer(bufferinfo->GetPayload(), bufferinfo->size_), bufferinfo->remote_ep_, yield[ec]);
 
 				if (ec)
 				{

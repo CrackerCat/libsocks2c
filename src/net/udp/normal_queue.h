@@ -15,6 +15,14 @@ public:
     {
     }
 
+    ~BufferQueue()
+    {
+        while (!data_queue_.empty())
+        {
+            data_queue_.pop();
+        }
+    }
+
     struct buffer_data
     {
 
