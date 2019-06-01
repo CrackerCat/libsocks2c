@@ -202,13 +202,20 @@ private:
 	{
 		if (cleanup_started) return;
 		cleanup_started = true;
-		LOG_INFO("[{}] clean up call", (void*)this)
 		this->status = CLOSED;
-		boost::system::error_code ec;
-		this->psniffer_socket->cancel(ec);
-		this->psend_socket->cancel(ec);
-		WinDivertClose(this->recv_handle);
-		this->raw_session_map.erase(this->local_ep_);
-		ReleasePort(this->local_port);
+
+		auto self(this->shared_from_this());
+		boost::asio::spawn(this->io_context_, [self, this](boost::asio::yield_context yield) {
+			this->finReply(yield);
+			boost::system::error_code ec;
+			this->psniffer_socket->cancel(ec);
+			this->psend_socket->cancel(ec);
+			WinDivertClose(this->recv_handle);
+			this->raw_session_map.erase(this->local_ep_);
+			ReleasePort(this->local_port);
+		});
+
+		
+		
 	}
 };
