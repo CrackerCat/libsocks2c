@@ -31,7 +31,7 @@ public:
 
 	virtual ~ClientRawProxySession() override
 	{
-		LOG_INFO("[{}] ClientRawProxySession die", (void*)this)
+		LOG_DEBUG("[{}] ClientRawProxySession die", (void*)this)
 	}
 
 
