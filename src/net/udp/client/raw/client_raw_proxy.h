@@ -31,7 +31,13 @@ public:
 
 		boost::asio::ip::udp::endpoint ep(boost::asio::ip::address::from_string("114.114.114.114"), 53);
 
-		socket.connect(ep);
+		boost::system::error_code ec;
+		socket.connect(ep, ec);
+
+		if (ec) {
+		    LOG_INFO("InitUout err {}", ec.message())
+		    return false;
+		}
 
 		this->local_ip = socket.local_endpoint().address().to_string();
 
