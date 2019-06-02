@@ -58,6 +58,7 @@ public:
 
     void EnableDnsViaRaw()
     {
+        LOG_INFO("DNS now proxy via utcp")
         this->dnsviaraw = true;
     }
 

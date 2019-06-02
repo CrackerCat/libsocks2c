@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(libsocks2c)
 
-OPTION(BUILD_CLIENT_LIB "" OFF)
+OPTION(BUILD_DLL "" OFF)
 OPTION(ENABLE_UOUT "whether build with UDP Over UTCP feature" OFF)
 OPTION(BUILD_MOBILE_LIB "build mobile platform lib" OFF)
 
@@ -76,22 +76,18 @@ SET(CORE_FILES
         lib/client_proxymap.h
         )
 
-IF(BUILD_CLIENT_LIB)
 message("Build Client")
-add_definitions(-DBUILD_CLIENT_LIB)
 LIST(APPEND CORE_FIELS
         src/net/tcp/client/client_tcp_proxy.h
         src/net/tcp/client/client_tcp_proxy_session.h
 
         src/net/udp/client/client_udp_proxy.h
         src/net/udp/client/client_udp_proxy_session.h)
-ENDIF()
 
 
 IF (ENABLE_UOUT)
     message("Build uout")
 
-	IF(BUILD_CLIENT_LIB)
 	LIST(APPEND CORE_FILES
 		src/net/udp/client/raw/helper/available_port.cpp
 		src/net/udp/client/raw/helper/available_port.h
@@ -101,10 +97,6 @@ IF (ENABLE_UOUT)
 
         src/utils/system/system_exec.h
 		)
-	ENDIF()
-    IF(UNIX)
-
-    ENDIF()
 ENDIF()
 
 IF(BUILD_DLL)

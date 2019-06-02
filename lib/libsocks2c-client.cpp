@@ -36,12 +36,14 @@ extern "C" {
 		config.server_port = atoi(server_port);
 		config.socks5_ip = s5_ip;
 		config.socks5_port = s5_port;
-		config.resolve_dns = local_dns;
+		if (local_dns != 0)
+			config.resolve_dns = true;
 
 		config.udp_over_utcp = true;
 		config.server_uout_port = atoi(server_uout_port);
 		config.local_uout_ifname = ifname;
-		config.dnsuout = dns_uout;
+		if (dns_uout != 0)
+			config.dnsuout = true;
 
 		LibSocks2c::StartProxy(config);
 		return s5_port;
