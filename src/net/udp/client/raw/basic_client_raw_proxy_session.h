@@ -207,6 +207,22 @@ protected:
 
     boost::asio::ip::udp::endpoint local_ep_;
 
+    void finReply(boost::asio::yield_context yield)
+    {
+        using Tins::TCP;
+        using Tins::IP;
+
+        auto ip = IP(this->remote_ip, this->local_ip);
+        auto tcp = TCP(this->remote_port, this->local_port);
+        tcp.flags(TCP::FIN | TCP::ACK);
+
+        tcp.ack_seq(this->last_ack);
+        tcp.seq(this->local_seq);
+        LOG_INFO("FIN ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
+
+        constructAndSend(ip, tcp, yield);
+    }
+
 private:
     // flag for distinguishing whether another handshake process is running
     bool handshaking = false;
@@ -451,8 +467,8 @@ private:
         auto tcp = TCP(remote_tcp->sport(), remote_tcp->dport());
         tcp.flags(TCP::ACK);
 
-        tcp.ack_seq(remote_tcp->seq() + remote_tcp->size() - remote_tcp->header_size());
-        tcp.seq(local_seq);
+        tcp.ack_seq(this->last_ack);
+        tcp.seq(this->local_seq);
         LOG_DEBUG("ACK Reply, seq: {}, ack: {}", tcp.seq(), tcp.ack_seq());
 
         constructAndSend(ip, tcp, yield);
