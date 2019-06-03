@@ -19,8 +19,8 @@
 // maximum try for resending syn
 #define MAX_HANDSHAKE_TRY 4
 // IF we send 4 packet out and didn't get any ack, then we close the connection
-const int RAW_SESSION_TIMEOUT = 23;
-const int RAW_SESSION_TIMEOUT_DNS = 2;
+const int RAW_SESSION_TIMSUP = 13;
+const int RAW_SESSION_TIMEOUT = 25;
 /*
  * BasicClientRawProxySession run in single thread mode
  *
@@ -58,7 +58,7 @@ public:
         readFromRemote();
         tcpHandShake();
 
-        timer_.expires_from_now(boost::posix_time::seconds(RAW_SESSION_TIMEOUT));
+        timer_.expires_from_now(boost::posix_time::seconds(RAW_SESSION_TIMSUP));
         timer_.async_wait(boost::bind(&BasicClientRawProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
     }
@@ -68,7 +68,7 @@ public:
 
     void SetDnsPacket()
     {
-        this->session_timeout = RAW_SESSION_TIMEOUT_DNS;
+        this->dns_pk_close = true;
     }
 
     void sendToRemote(void* data, uint32_t size)
@@ -237,6 +237,8 @@ private:
 
     BufferQueue bufferqueue_;
     bool remote_sending = false;
+
+	bool dns_pk_close = false;
 
     // platform specific impl
     virtual std::unique_ptr<Tins::PDU> recvFromRemote(boost::asio::yield_context yield, boost::system::error_code& ec) = 0;
@@ -429,6 +431,10 @@ private:
             }
 
             last_update_time = time(nullptr);
+
+			if (this->dns_pk_close) {
+				this->Stop();
+			}
 
         });
 

@@ -193,7 +193,7 @@ private:
 			return;
 		}
 
-		this->timer_.expires_from_now(boost::posix_time::seconds(RAW_SESSION_TIMEOUT));
+		this->timer_.expires_from_now(boost::posix_time::seconds(RAW_SESSION_TIMSUP));
 		this->timer_.async_wait(boost::bind(&BasicClientRawProxySession<Protocol>::onTimesup, this->shared_from_this(), boost::asio::placeholders::error));
 
 	}
@@ -214,8 +214,6 @@ private:
 			this->raw_session_map.erase(this->local_ep_);
 			ReleasePort(this->local_port);
 		});
-
-		
-		
+	
 	}
 };
