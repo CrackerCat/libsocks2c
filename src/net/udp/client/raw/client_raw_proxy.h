@@ -164,8 +164,13 @@ private:
 
             raw_session_map_.insert(std::make_pair(local_ep, new_session));
             new_session->SaveLocalEP(local_ep);
-            new_session->SetUpSniffer(this->server_ip, this->server_raw_port, this->local_ip, this->ifname);
-            if (isdns) new_session->SetDnsPacket();
+            auto res = new_session->SetUpSniffer(this->server_ip, this->server_raw_port, this->local_ip, this->ifname);
+			if (!res)
+			{
+				LOG_INFO("SetUpSniffer err, you might need to run as administrator")
+				return;
+			}
+			if (isdns) new_session->SetDnsPacket();
             new_session->Start();
             new_session->sendToRemote(this->local_recv_buff_, bytes_to_send);
 

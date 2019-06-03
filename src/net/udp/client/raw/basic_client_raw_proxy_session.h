@@ -207,6 +207,8 @@ protected:
 
     boost::asio::ip::udp::endpoint local_ep_;
 
+	bool handshake_failed = false;
+
     void finReply(boost::asio::yield_context yield)
     {
         using Tins::TCP;
@@ -224,8 +226,6 @@ protected:
     }
 
 private:
-    // flag for distinguishing whether another handshake process is running
-    bool handshaking = false;
 
     unsigned int last_ack = 0;
 
@@ -334,9 +334,7 @@ private:
 
     void tcpHandShake()
     {
-        if (this->handshaking == true) return;
         LOG_DEBUG("[{}] tcpHandShake Start", (void*)this)
-        this->handshaking = true;
         using Tins::TCP;
         using Tins::IP;
 
@@ -379,6 +377,7 @@ private:
             if (this->status != ESTABLISHED)
             {
                 LOG_DEBUG("handshake failed, closed")
+				this->handshake_failed = true;
                 this->Stop();
             }
         });

@@ -152,7 +152,8 @@ private:
         auto self(this->shared_from_this());
 
         boost::asio::spawn(this->io_context_, [self, this](boost::asio::yield_context yield){
-            this->finReply(yield);
+			if (!handshake_failed)
+				this->finReply(yield);
             boost::system::error_code ec;
             this->sniffer_socket.close(ec);
             this->send_socket_stream.close(ec);
