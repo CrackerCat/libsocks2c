@@ -1,4 +1,4 @@
-# libsocks2c is a multithreaded socks5 proxy lib with utcp supoort
+# A multithreaded socks5 proxy lib with utcp support
 
 ***Macro***
 
