@@ -43,7 +43,7 @@ inline u_short getChecksum(unsigned short* addr, size_t count)
     return ~sum;
 }
 
-int CalTcpChecksum(Tins::IP ip_including_tcp, unsigned char* ip_data_with_tcp)
+int CalTcpChecksum(Tins::PDU& ip_including_tcp, unsigned char* ip_data_with_tcp)
 {
     Tins::TCP* tins_tcp = ip_including_tcp.find_pdu<Tins::TCP>();
     if (tins_tcp == nullptr) return 0;
