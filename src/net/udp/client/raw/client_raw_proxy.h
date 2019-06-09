@@ -29,7 +29,14 @@ public:
 		boost::asio::io_context io;
 		boost::asio::ip::udp::socket socket(io);
 
-		boost::asio::ip::udp::endpoint ep(boost::asio::ip::address::from_string("114.114.114.114"), 53);
+        boost::asio::ip::udp::endpoint ep;
+        auto remote_addr = boost::asio::ip::address::from_string(server_ip);
+        if (remote_addr.is_v4()) {
+            ep = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("114.114.114.114"), 53);
+        }else if(remote_addr.is_v6()) {
+            ep = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("2001:4860:4860::8888"), 53);
+            isV6 = true;
+        }
 
 		boost::system::error_code ec;
 		socket.connect(ep, ec);
@@ -39,7 +46,7 @@ public:
 		    return false;
 		}
 
-		this->local_ip = socket.local_endpoint().address().to_string();
+		this->local_raw_ip = socket.local_endpoint().address().to_string();
 
 #ifndef _WIN32
 		if (ifname == "")
@@ -51,7 +58,7 @@ public:
 
         this->ifname = ifname;
         Firewall::BlockRst(server_ip, server_raw_port);
-        LOG_INFO("[Client] RawProxy started, Server: [{}:{}], Key: [{}], Local raw addr: [{}]", this->server_ip.c_str(), this->server_raw_port, this->proxyKey_, this->local_ip)
+        LOG_INFO("[Client] RawProxy started, Server: [{}:{}], Key: [{}], Local raw addr: [{}]", this->server_ip.c_str(), this->server_raw_port, this->proxyKey_, this->local_raw_ip)
         return true;
     }
 
@@ -73,10 +80,11 @@ private:
     RAW_SESSION_MAP raw_session_map_;
 
     std::string server_raw_port;
-    std::string local_ip;
+    std::string local_raw_ip;
     std::string ifname;
 
     bool dnsviaraw = false;
+    bool isV6 = false;
 
     virtual void startAcceptorCoroutine() override
     {
@@ -164,7 +172,7 @@ private:
 
             raw_session_map_.insert(std::make_pair(local_ep, new_session));
             new_session->SaveLocalEP(local_ep);
-            auto res = new_session->SetUpSniffer(this->server_ip, this->server_raw_port, this->local_ip, this->ifname);
+            auto res = new_session->SetUpSniffer(this->server_ip, this->server_raw_port, this->local_raw_ip, isV6, this->ifname);
 			if (!res)
 			{
 				LOG_INFO("SetUpSniffer err, you might need to run as administrator")

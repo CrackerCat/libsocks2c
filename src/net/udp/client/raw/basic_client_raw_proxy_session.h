@@ -49,7 +49,7 @@ public:
 
     // set up sniffer(pcap)
     // server endpoint must be provided, whereas local endpoint can be chosen automatically
-    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, std::string ifname) = 0;
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, bool isV6, std::string ifname) = 0;
 
 
     // start 2 coroutine here
@@ -208,6 +208,8 @@ protected:
     boost::asio::ip::udp::endpoint local_ep_;
 
 	bool handshake_failed = false;
+
+    bool isV6 = false;
 
     void finReply(boost::asio::yield_context yield)
     {

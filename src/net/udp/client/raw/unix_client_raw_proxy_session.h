@@ -45,7 +45,7 @@ public:
         cleanUp();
     }
 
-    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, std::string ifname) override
+    virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_raw_ip, bool isV6, std::string ifname) override
     {
         auto lport = GetPort();
         if (lport == 0) return false;
@@ -62,10 +62,15 @@ public:
         }
 
         this->local_port = lport;
-        this->local_ip = local_ip;
+        this->local_ip = local_raw_ip;
 
         //setup sniffer
-        config.set_filter("ip dst "+ local_ip + " and dst port " + boost::lexical_cast<std::string>(this->local_port));
+        if (isV6){
+            config.set_filter("ip6 dst "+ local_raw_ip + " and dst port " + boost::lexical_cast<std::string>(this->local_port));
+            this->isV6 = true;
+        }else{
+            config.set_filter("ip dst "+ local_raw_ip + " and dst port " + boost::lexical_cast<std::string>(this->local_port));
+        }
         config.set_immediate_mode(true);
         psniffer = std::make_unique<Tins::Sniffer>(ifname, config);
         char errbuf[PCAP_ERRBUF_SIZE];
