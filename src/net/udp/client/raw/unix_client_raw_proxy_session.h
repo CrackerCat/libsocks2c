@@ -25,13 +25,6 @@ public:
         sniffer_socket(io), send_socket_stream(io), raw_session_map(map_ref),dummy_socket(io)
     {
         this->protocol_.SetKey(key);
-
-        boost::system::error_code ec;
-        send_socket_stream.open(asio::ip::raw::endpoint().protocol(), ec);
-        if (ec) {
-            LOG_INFO("raw send_socket_stream open err --> {}", ec.message())
-            return;
-        }
     }
 
     virtual ~ClientRawProxySession() override
@@ -80,6 +73,17 @@ public:
         //save server endpoint
         this->remote_ip = remote_ip;
         this->remote_port = boost::lexical_cast<unsigned short>(remote_port);
+
+        if (isV6) {
+            this->send_socket_stream.open(asio::ip::raw::v6(), ec);
+        }else{
+            send_socket_stream.open(asio::ip::raw::v4(), ec);
+        }
+
+        if (ec) {
+            LOG_INFO("raw send_socket_stream open err --> {}", ec.message())
+            return false;
+        }
 
         return true;
     }
