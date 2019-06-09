@@ -44,7 +44,7 @@ public:
     }
 
     virtual ~BasicClientRawProxySession() {
-        LOG_DEBUG("BasicClientRawProxy die")
+        LOG_INFO("BasicClientRawProxy die")
     }
 
     // set up sniffer(pcap)
@@ -334,11 +334,24 @@ private:
         });
     }
 
+    auto makeIP()
+    {
+        using Tins::IP;
+        using Tins::IPv6;
+
+        std::unique_ptr<Tins::PDU> ip;
+        if (isV6) {
+            ip = std::make_unique<IPv6>(this->remote_ip, this->local_ip);
+        }else{
+            ip = std::make_unique<IP>(this->remote_ip, this->local_ip);
+        }
+        return ip;
+    }
+
     void tcpHandShake()
     {
         LOG_DEBUG("[{}] tcpHandShake Start", (void*)this)
         using Tins::TCP;
-        using Tins::IP;
 
         auto self(this->shared_from_this());
         boost::asio::spawn(this->io_context_, [self, this](boost::asio::yield_context yield){
@@ -350,7 +363,8 @@ private:
             while(this->status == INIT && handshake_count < MAX_HANDSHAKE_TRY)
             {
                 //LOG_INFO("remote {}:{}, local {}:{}",this->remote_ip.c_str(), this->remote_port,this->local_ip.c_str(), this->local_port)
-                auto ip = IP(this->remote_ip, this->local_ip);
+
+                auto ip = makeIP();
                 auto tcp = TCP(this->remote_port, this->local_port);
                 tcp.flags(TCP::SYN);
                 tcp.seq(this->init_seq);
@@ -358,7 +372,7 @@ private:
                 LOG_DEBUG("[{}] send SYN seq: {}, ack: {}", (void*)this, tcp.seq(), tcp.ack_seq())
 
                 // we send tcp only, ip hdr is for checksum cal only
-                auto bytes_send = constructAndSend(ip, tcp, yield);
+                auto bytes_send = constructAndSend(*ip, tcp, yield);
 
                 if (bytes_send == 0)
                 {
@@ -507,9 +521,18 @@ private:
 
     // return the bytes that actually send
     // return 0 if err
-    size_t constructAndSend(Tins::IP& ip, Tins::TCP& tcp, boost::asio::yield_context& yield)
+    size_t constructAndSend(Tins::PDU& ip, Tins::TCP& tcp, boost::asio::yield_context& yield)
     {
-        ip = ip / tcp;
+        switch(ip.pdu_type()) {
+            case Tins::PDU::IP: {
+                ip = (Tins::IP&)ip / tcp;
+                break;
+            }
+            case Tins::PDU::IPv6: {
+                ip = (Tins::IPv6&)ip / tcp;
+                break;
+            }
+        }
         auto vip_data = ip.serialize();
         auto ip_data = vip_data.data();
 #ifdef _WIN32 // we don't need to cal tcp checksum on win32

@@ -43,8 +43,12 @@ public:
         auto lport = GetPort();
         if (lport == 0) return false;
 
-        auto ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("0.0.0.0"), lport);
-
+        boost::asio::ip::tcp::endpoint ep;
+        if (isV6){
+            ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("::0"), lport);
+        } else {
+            ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("0.0.0.0"), lport);
+        }
         boost::system::error_code ec;
         dummy_socket.open(ep.protocol());
         dummy_socket.bind(ep, ec);
@@ -141,7 +145,6 @@ private:
         if (ec)
         {
             LOG_INFO("Udp timer err --> {}", ec.message().c_str())
-            cleanUp();
             return;
         }
 
@@ -164,6 +167,7 @@ private:
 			if (!this->handshake_failed)
 				this->finReply(yield);
             boost::system::error_code ec;
+            this->timer_.cancel(ec);
             this->sniffer_socket.close(ec);
             this->send_socket_stream.close(ec);
             this->raw_session_map.erase(this->local_ep_);
