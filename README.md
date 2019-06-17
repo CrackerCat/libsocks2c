@@ -90,6 +90,7 @@ on Win64 you need
 Server and Client are running on the same machine, we use iperf + proxychains4 for testing
 
 server: ```iperf -s -i 1```
+
 client: ```proxychains4 iperf -c 127.0.0.1 -P x -t 10``` where x is the connection number
 
 ***Result:*** 
@@ -106,4 +107,4 @@ client: ```proxychains4 iperf -c 127.0.0.1 -P x -t 10``` where x is the connecti
 
 i3 8100 has only 4 cores and no HT support, we can get almost double performance when increase conn number from 1 to 2, but the curve start to drop slightly when we add more conn into testing.
 
-the tcp session buffer limits the bandwidth, increase buff size to 20480 bytes yields 8.6 Gbits/sec(about 1024MB/s) with dual core which is about 3.6 times than the default
+the tcp session buffer limits the bandwidth,increase buff size to 20480 bytes yields 8.6 Gbits/sec(about 1024MB/s) with dual core which is about 3.6 times than the default.The encryption and obfuscation also have significant impact on performance.
