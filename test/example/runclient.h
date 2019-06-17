@@ -13,7 +13,7 @@ void test()
     LibSocks2c::Config config;
     config.proxyKey = "12345678";
     //config.server_ip = "112.74.160.183";
-    config.server_ip = "192.168.1.102";
+    config.server_ip = "127.0.0.1";
     config.server_port = 3000;
 	config.server_uout_port = 3001;
 

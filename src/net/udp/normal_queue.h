@@ -35,6 +35,8 @@ public:
 
         }
 
+        char* GetPayload() { return payload_; }
+
         size_t size_;
         char* payload_;
         boost::asio::ip::udp::endpoint remote_ep_;

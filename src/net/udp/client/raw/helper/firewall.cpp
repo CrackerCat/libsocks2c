@@ -32,19 +32,19 @@ void Firewall::Unblock(std::string dst_ip, std::string dst_port)
 }
 
 #elif defined(__linux__)
-void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
-{
-    std::string filewall_rule = "iptables -A OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
-    LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
-    system(filewall_rule.c_str());
-}
-
-void FirewallHelper::Unblock(std::string dst_ip, std::string dst_port)
-{
-    std::string filewall_rule = "iptables -D OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
-    LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
-    system(filewall_rule.c_str());
-}
+//void FirewallHelper::BlockRst(std::string dst_ip, std::string dst_port)
+//{
+//    std::string filewall_rule = "iptables -A OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
+//    LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
+//    system(filewall_rule.c_str());
+//}
+//
+//void FirewallHelper::Unblock(std::string dst_ip, std::string dst_port)
+//{
+//    std::string filewall_rule = "iptables -D OUTPUT -p tcp --sport " + dst_port + " --tcp-flags RST RST -s " + dst_ip + " -j DROP";
+//    LOG_INFO("Setting Firewall Rule: {}", filewall_rule)
+//    system(filewall_rule.c_str());
+//}
 #elif defined(_WIN32)
 #include <windivert.h>
 #include <Windows.h>

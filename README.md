@@ -80,3 +80,16 @@ on Win64 you need
 1. ```resolve_dns``` if set true, it will resolve dns locally instead of sending domain proxy request, udp proxy doesn't support domain resolve
 
 1. ```logtofile``` set true to write log to file at the current directory
+
+#### Benchmark
+    Test Platform: 
+        i3 8100
+        DDR4 2400 16G
+        Ubuntu 18.04 64bit
+    
+Server and Client are running on the same machine, we use iperf + proxychains4 for testing
+
+server: ```iperf -s -i 1```
+client: ```proxychains4 iperf -c 127.0.0.1 -P x -t 10``` where x is the connection number
+
+Result:
