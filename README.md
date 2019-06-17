@@ -92,4 +92,18 @@ Server and Client are running on the same machine, we use iperf + proxychains4 f
 server: ```iperf -s -i 1```
 client: ```proxychains4 iperf -c 127.0.0.1 -P x -t 10``` where x is the connection number
 
-Result:
+***Result:*** 
+
+    Direct connect 70.5 Gbits/sec
+
+    Proxy via libsocks2c
+        1 Conn: 1.290 Gbits/sec
+        2 Conn: 2.400 Gbits/sec
+        3 Conn: 2.340 Gbits/sec
+        4 Conn: 2.390 Gbits/sec
+
+![Imgur](https://i.imgur.com/80TDKK0.png)
+
+i3 8100 has only 4 cores and no HT support, we can get almost double performance when increase conn number from 1 to 2, but the curve start to drop slightly when we add more conn into testing.
+
+the tcp session buffer limits the bandwidth, increase buff size to 20480 bytes yields 8.6 Gbits/sec(about 1024MB/s) with dual core which is about 3.6 times than the default
