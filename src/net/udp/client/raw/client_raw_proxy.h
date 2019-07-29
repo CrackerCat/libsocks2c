@@ -1,3 +1,4 @@
+#pragma once
 #include "../client_udp_proxy.h"
 #include "client_raw_proxy_session.h"
 #include "helper/firewall.h"
@@ -51,7 +52,7 @@ public:
 #ifndef _WIN32
 		if (ifname == "")
 		{
-			LOG_INFO("TO start raw proxy, you have to specify ifname")
+			LOG_INFO("TO start raw proxy, you have to specify uifname")
 			return false;
 		}
 #endif

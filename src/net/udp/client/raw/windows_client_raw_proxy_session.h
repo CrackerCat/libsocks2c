@@ -40,21 +40,25 @@ public:
 		cleanUp();
 	}
 
-	virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, std::string ifname) override
+	virtual bool SetUpSniffer(std::string remote_ip, std::string remote_port, std::string local_ip, bool isV6, std::string ifname) override
 	{
 		auto lport = GetPort();
 		if (lport == 0) return false;
 
-		auto ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("0.0.0.0"), lport);
+		boost::asio::ip::tcp::endpoint ep;
+        if (isV6){
+            ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("::0"), lport);
+        } else {
+            ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("0.0.0.0"), lport);
+        }
+        boost::system::error_code ec;
+        dummy_socket.open(ep.protocol());
+        dummy_socket.bind(ep, ec);
 
-		boost::system::error_code ec;
-		dummy_socket.open(ep.protocol());
-		dummy_socket.bind(ep, ec);
-
-		if (ec) {
-			LOG_INFO("SetUpSniffer err --> {}", ec.message().c_str())
-				return false;
-		}
+        if (ec) {
+            LOG_INFO("SetUpSniffer err --> {}", ec.message().c_str())
+            return false;
+        }
 
 		this->local_port = lport;
 		this->local_ip = local_ip;
@@ -202,7 +206,7 @@ private:
 	{
 		if (cleanup_started) return;
 		cleanup_started = true;
-		this->status = CLOSED;
+		this->status = this->CLOSED;
 
 		auto self(this->shared_from_this());
 		boost::asio::spawn(this->io_context_, [self, this](boost::asio::yield_context yield) {
