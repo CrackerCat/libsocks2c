@@ -1,0 +1,4 @@
+{
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools",
+    "cmake.configureArgs": ["-DBUILD_DLL=ON","-DENABLE_UOUT=ON"]
+}
